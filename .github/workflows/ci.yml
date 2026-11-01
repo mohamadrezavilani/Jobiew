@@ -1,0 +1,27 @@
+name: Jobiew checks
+on: [push, pull_request]
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Syntax and offline regression
+        run: |
+          python -m compileall -q backend crawler scripts
+          python -m unittest discover -s tests -v
+          (cd crawler && python -m unittest discover -s tests -v)
+      - name: Django local SQLite schema and smoke
+        env:
+          DJANGO_DEBUG: '1'
+          WI_DB_ENGINE: sqlite
+          DJANGO_SECRET_KEY: jobiew-ci-test-only-secret
+        run: |
+          cd backend
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py test companies.test_company_ui_v23 companies.test_public_map_v24 assessments.test_five_criteria_contract_v6 -v 1

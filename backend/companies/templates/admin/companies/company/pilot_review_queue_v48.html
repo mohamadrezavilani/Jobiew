@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'companies/css/pilot_review_queue_v48.css' %}">{% endblock %}
+{% block content %}
+<div class="wi-pilot-queue" dir="rtl">
+  <h1>صف بررسی نامزدهای پایلوت</h1>
+  <p class="wi-explainer">طبق PRD 0.1، دامنه اولیه «تعداد محدود شرکت‌های فناوری تهران» است، اما <strong>معیار نهایی پذیرش پایلوت هنوز تصویب نشده</strong>. این صفحه فقط برای غربالگری انسانی است؛ هیچ شرکتی را انتخاب، تأیید یا منتشر نمی‌کند.</p>
+  <p>تعداد کل شرکت‌های ثبت‌شده: <strong>{{ total_companies }}</strong> · موارد منطبق با فیلتر: <strong>{{ matched_count }}</strong></p>
+  <form method="get" class="wi-pilot-filters">
+    <label for="pilot-q">نام شرکت</label><input id="pilot-q" name="q" type="search" value="{{ query }}" maxlength="100" placeholder="نام شرکت">
+    <label for="pilot-stage">وضعیت بررسی</label><select id="pilot-stage" name="stage">{% for key, label in stages %}<option value="{{ key }}" {% if key == stage %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <label for="pilot-coverage">حجم تجربه‌های کاری گردآوری‌شده</label><select id="pilot-coverage" name="coverage">{% for key, label in coverages %}<option value="{{ key }}" {% if key == coverage %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <label for="pilot-sort">ترتیب نمایش</label><select id="pilot-sort" name="sort">{% for key, label in sorts %}<option value="{{ key }}" {% if key == sort %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    <button class="button default" type="submit">اعمال فیلتر</button>
+    <a href="{% url 'admin:companies_company_pilot_review_queue' %}">پاک‌کردن فیلترها</a>
+  </form>
+  <p class="wi-caution"><strong>توجه:</strong> تعداد تجربه‌ها صرفاً میزان پوشش منبع را نشان می‌دهد؛ معادل تعداد کارکنان مستقل، کیفیت شرکت، اعتبار تحلیل AI یا واجدشرایط‌بودن برای پایلوت نیست. نام شهر یا صنعت در داده خام نیز تأیید رسمی تهران/فناوری محسوب نمی‌شود.</p>
+  <div class="wi-table-wrap">
+    <table class="wi-pilot-table">
+      <thead><tr><th scope="col">شرکت</th><th scope="col">تجربه کاری</th><th scope="col">مصاحبه</th><th scope="col">هویت</th><th scope="col">فناوری</th><th scope="col">تهران</th><th scope="col">مکان</th><th scope="col">آمادگی نقشه</th><th scope="col">اقدام</th></tr></thead>
+      <tbody>{% for row in rows %}
+        <tr>
+          <th scope="row"><strong>{{ row.company.display_name }}</strong><span class="wi-source">{{ row.company.source_name }}</span>{% if row.company.source_url %}<a href="{{ row.company.source_url }}" rel="noopener noreferrer" target="_blank">منبع گردآوری</a>{% endif %}</th>
+          <td>{{ row.company.source_work_count }}</td><td>{{ row.company.source_interview_count }}</td>
+          {% for status in row.statuses %}
+          <td>{% if status == 'verified' %}<span class="wi-status wi-verified">تأیید</span>{% elif status == 'rejected' %}<span class="wi-status wi-rejected">رد</span>{% else %}<span class="wi-status">بررسی‌نشده</span>{% endif %}</td>
+          {% endfor %}
+          <td>{% if row.map_ready %}شرایط برقرار{% else %}خیر{% endif %}</td>
+          <td><a href="{{ row.review_url }}">بررسی شرکت</a></td>
+        </tr>
+        {% empty %}<tr><td colspan="9">هیچ شرکتی با این فیلترها یافت نشد.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <nav class="wi-pages" aria-label="صفحات نتایج">
+  {% if page.has_previous %}<a href="?{{ nav_without_page }}&amp;page={{ page.previous_page_number }}">صفحه قبل</a>{% endif %}
+  <span>صفحه {{ page.number }} از {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?{{ nav_without_page }}&amp;page={{ page.next_page_number }}">صفحه بعد</a>{% endif %}
+  </nav>
+  <p><a href="{{ review_list_url }}">بازگشت به فهرست شرکت‌ها</a></p>
+</div>
+{% endblock %}

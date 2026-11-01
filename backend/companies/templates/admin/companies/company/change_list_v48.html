@@ -1,0 +1,5 @@
+{% extends "admin/change_list.html" %}
+{% block object-tools-items %}
+<li><a href="{% url 'admin:companies_company_pilot_review_queue' %}">صف بررسی نامزدهای پایلوت</a></li>
+{{ block.super }}
+{% endblock %}

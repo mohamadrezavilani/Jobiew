@@ -1,0 +1,78 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>مقایسه پنج‌معیاری شرکت‌ها | پژوهشی و داخلی</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}
+body{font:15px/1.9 Tahoma,Arial,sans-serif;margin:0 auto;max-width:1250px;padding:22px;color:#233149;background:#f3f6fb}
+a{color:#116d80}h1{font-size:1.6rem;margin:4px 0 12px}h2{font-size:1.15rem;margin:0 0 14px}
+section{background:#fff;border:1px solid #dbe5f0;border-radius:15px;padding:20px;margin:14px 0}
+.hint{color:#50617a;font-size:.93rem}.note{background:#edf6f7;border-right:4px solid #0d7888;border-radius:7px;padding:10px 14px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0 18px}.bar a{margin-left:auto}
+input[type=search]{font:inherit;padding:9px 12px;width:min(100%,400px);border:1px solid #aebbd0;border-radius:9px}
+button{font:inherit;background:#126e83;color:#fff;border:0;border-radius:8px;padding:9px 15px;cursor:pointer}
+button:hover,button:focus-visible{background:#0d5264;outline:2px solid #9bd2d9}label.choice{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;margin:4px;border:1px solid #dbe5f0;border-radius:9px;cursor:pointer}
+label.chosen{background:#eef7f8;border-color:#9bd2d9}.selection{margin:12px 0;display:flex;gap:7px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:13px}
+.company{border:1px solid #dbe5f0;border-radius:12px;padding:14px;min-width:0}.company h3{font-size:1.03rem;margin:2px 0 6px;overflow-wrap:anywhere}
+.company svg{width:100%;height:auto;max-width:300px;display:block;margin:0 auto}
+.badge{color:#476077;font-size:.86rem}.score{font-weight:bold;direction:ltr;unicode-bidi:isolate}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:660px;text-align:right}
+th,td{border-bottom:1px solid #e0e8f1;padding:11px 13px;white-space:nowrap;vertical-align:top}
+th{background:#f5f8fc}td small{color:#5a6c82;display:block;line-height:1.5}
+caption{caption-side:bottom;text-align:right;padding:8px;color:#51627a}
+@media(max-width:650px){body{padding:9px}section{padding:13px}.bar a{margin:0}}
+</style>
+</head>
+<body>
+<p class="polarity-v14" role="note" style="font-size:.9rem;color:#3c556b;padding:9px 12px;border:1px solid #ccdce6;border-radius:8px;background:#eff5f8">راهنمای خواندن امتیازها: در هر پنج معیار، <strong>۱۰ یعنی وضعیت بهتر و ۱ یعنی وضعیت ضعیف‌تر</strong>. معیار اول «تعادل کار و زندگی و تناسب حجم کار» است؛ فشار کاری بیشتر، نمره این معیار را <strong>کمتر</strong> می‌کند. نبود امتیاز به معنی صفر نیست. همه این اعداد پژوهشی و تأییدنشده‌اند.</p>
+<div class="bar"><a href="{% url 'company-index' %}">فهرست عمومی شرکت‌ها</a></div>
+<header><h1>مقایسه پنج‌معیاری شرکت‌ها</h1><p class="note"><strong>پژوهشی و فقط داخلی — غیرقابل انتشار:</strong> امتیازها پیشنهادهای تأییدنشدهٔ AI هستند؛ رتبه رسمی یا نظر تأییدشدهٔ کارکنان نیستند. هر معیار بدون شاهد، خالی می‌ماند، نه صفر.</p></header>
+<section>
+<h2>انتخاب شرکت‌ها</h2>
+<p class="hint">نام یا شناسه شرکت را جست‌وجو کن، سپس ۲ تا ۵ شرکت را علامت بزن و دکمه مقایسه را بزن. می‌توانی انتخاب‌های فعلی را نگه داری و دوباره جست‌وجو کنی.</p>
+<form method="get" action="{% url 'company-five-criteria-private-compare' %}">
+<div class="bar"><input type="search" name="q" value="{{ q }}" placeholder="جست‌وجوی شرکت ..." aria-label="جست‌وجوی نام شرکت"><button type="submit">جست‌وجو / مقایسه</button></div>
+{% if selected %}<strong>شرکت‌های انتخاب‌شده (برای حذف، تیک را بردار):</strong>
+<div class="selection">{% for c in selected %}<label class="choice chosen"><input type="checkbox" name="company" value="{{ c.pk }}" checked>{{ c.display_name }}</label>{% endfor %}</div>{% endif %}
+{% if candidates %}<strong>نتایج جست‌وجو (حداکثر ۳۰ نتیجه اول):</strong>
+<div class="selection">{% for c in candidates %}<label class="choice"><input type="checkbox" name="company" value="{{ c.pk }}">{{ c.display_name }}</label>{% endfor %}</div>{% else %}<p class="hint">شرکت دیگری با این عبارت پیدا نشد.</p>{% endif %}
+<button type="submit">نمایش مقایسه انتخاب‌شده‌ها</button>
+</form>
+</section>
+{% if ready %}
+<section><h2>نمودارهای پنج‌معیاری با مقیاس یکسان (۱ تا ۱۰)</h2>
+<div class="grid">{% for entry in entries %}<article class="company">
+<h3><a href="{% url 'company-five-criteria-private-preview' entry.company.pk %}">{{ entry.company.display_name }}</a></h3>
+<div class="badge">{{ entry.unique_experiences }} تجربه کاری ثبت‌شده | {{ entry.scored_criteria }} معیار دارای امتیاز</div>
+<svg class="compare-chart" data-company-id="{{ entry.company.pk }}" viewBox="0 0 300 300" role="img" aria-label="پنج‌ضلعی پژوهشی {{ entry.company.display_name }}"></svg>
+{% if entry.scored_criteria < 5 %}<div class="badge">داده ناقص: نقاط فاقد امتیاز به هم متصل نمی‌شوند.</div>{% endif %}
+</article>{% endfor %}</div>
+<p class="hint">پنج‌ضلعی فقط زمانی بسته می‌شود که هر پنج معیار امتیاز داشته باشند. نقاط منفرد به معنی داده ناکامل‌اند؛ این نمودارها برای رتبه‌بندی شرکت‌ها نیستند.</p>
+</section>
+<section><h2>جدول تطبیقی امتیازها و شمار شواهد</h2><div class="scroll"><table><thead><tr><th scope="col">معیار</th>{% for entry in entries %}<th scope="col">{{ entry.company.display_name }}</th>{% endfor %}</tr></thead><tbody>
+{% for item in matrix %}<tr><th scope="row">{{ item.label }}</th>{% for cell in item.cells %}<td>{% if cell.score is not None %}<span class="score">{{ cell.score }} / ۱۰</span><small>{{ cell.n }} نظر دارای امتیاز</small>{% else %}—<small>شاهد کافی برای امتیاز ندارد</small>{% endif %}</td>{% endfor %}</tr>{% endfor %}
+</tbody><caption>اعداد میانگین‌های مقدماتی هستند؛ هر معیار با شمار نظرهای مختص خودش محاسبه شده است.</caption></table></div></section>
+{% else %}<section><p>برای مشاهده مقایسه، حداقل دو شرکت را انتخاب کن. حداکثر {{ max_companies }} شرکت قابل مقایسه‌اند.</p></section>{% endif %}
+{{ plot_data|json_script:"company-compare-v12-data" }}
+<script>
+(function(){'use strict';
+const data=JSON.parse(document.getElementById('company-compare-v12-data').textContent),byId=new Map(data.map(d=>[d.id,d]));
+const NS='http://www.w3.org/2000/svg', C=150, R=105;
+function point(i,v){const angle=-Math.PI/2+i*2*Math.PI/5;return [C+R*v/10*Math.cos(angle),C+R*v/10*Math.sin(angle)];}
+function shape(tag,attrs,parent,title){const el=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));if(title){const t=document.createElementNS(NS,'title');t.textContent=title;el.appendChild(t);}parent.appendChild(el);return el;}
+for(const svg of document.querySelectorAll('.compare-chart')){
+const record=byId.get(svg.dataset.companyId);if(!record)continue;
+for(let level=2;level<=10;level+=2)shape('polygon',{points:Array.from({length:5},(_,i)=>point(i,level).join(',')).join(' '),fill:'none',stroke:'#e0e8ef','stroke-width':'1'},svg);
+for(let i=0;i<5;i++){const end=point(i,10);shape('line',{x1:C,y1:C,x2:end[0],y2:end[1],stroke:'#bdccdc','stroke-width':'1'},svg);}
+const dims=record.criteria;
+if(dims.every(d=>typeof d.score==='number'))shape('polygon',{points:dims.map((d,i)=>point(i,d.score).join(',')).join(' '),fill:'rgba(15,118,133,.15)',stroke:'#0f7685','stroke-width':'2.5','stroke-dasharray':'5 3'},svg);
+else for(let i=0;i<4;i++){const a=dims[i],b=dims[i+1];if(typeof a.score==='number'&&typeof b.score==='number'){const p=point(i,a.score),q=point(i+1,b.score);shape('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:'#0f7685','stroke-width':'2.5','stroke-dasharray':'5 3'},svg);}}
+for(let i=0;i<5;i++){const d=dims[i];if(typeof d.score!=='number')continue;const p=point(i,d.score);shape('circle',{cx:p[0],cy:p[1],r:5,fill:'#0f7685',stroke:'#fff','stroke-width':'1.5'},svg,d.label+': '+d.score+'/۱۰ ('+d.n+' نظر)');}
+}
+})();
+</script>
+<script defer src="{% static "companies/js/persian_digits_v22.js" %}"></script>
+</body></html>

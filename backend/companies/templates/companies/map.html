@@ -1,0 +1,143 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="light">
+  <title>نقشه شرکت‌های فناوری تهران | جابیو</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+  <style>
+    :root{color-scheme:light;--ink:#17294b;--muted:#5f728d;--line:#dfe7f2;--blue:#1765cf}
+    *{box-sizing:border-box}
+    body{margin:0;background:#f4f7fc;font:15px/1.85 Tahoma,Arial,sans-serif;color:var(--ink)}
+    a{color:#125cbd;text-decoration:none}a:hover{text-decoration:underline}
+    .shell{max-width:1180px;margin:0 auto;padding:0 20px}
+    header{background:white;border-bottom:1px solid var(--line)}
+    .top{min-height:64px;display:flex;justify-content:space-between;gap:20px;align-items:center}
+    .brand{font-weight:900;font-size:1.2rem;color:#13366c}
+    .topnav{display:flex;align-items:center;gap:20px}
+    main{padding:30px 20px 50px}
+    h1{font-size:clamp(1.35rem,3vw,2rem);margin:0 0 6px;line-height:1.65}
+    .lead{color:var(--muted);margin:0 0 23px}
+    .card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 25px rgba(22,52,91,.04)}
+    .head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:center;padding:17px 20px;border-bottom:1px solid var(--line)}
+    .head h2{margin:0;font-size:1.06rem}.head p{margin:3px 0 0;font-size:.88rem;color:var(--muted)}
+    .pill{font-size:.8rem;background:#eaf6ef;color:#16714b;padding:6px 12px;border-radius:40px;font-weight:bold}
+    #map{height:545px;width:100%;direction:ltr;background:#e8eef6;border-radius:0 0 18px 18px;overflow:hidden}
+    #map[hidden]{display:none}
+    #status{margin:0;padding:12px 20px;color:#23506b;background:#f5faff;font-size:.9rem}
+    #status.error{color:#a12432;background:#fff1f1}
+    .maplibregl-popup-content{direction:rtl;text-align:right;font:14px/1.9 Tahoma,Arial,sans-serif;border-radius:11px;padding:10px 14px}
+    .maplibregl-ctrl-attrib{font-size:11px}
+    .below{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}
+    .note{padding:17px 21px;color:#465b73}
+    .note h2{font-size:1.06rem;margin:0 0 9px;color:var(--ink)}
+    .note p{margin:0}.note small{font-size:.78rem}
+    #places{margin:0;padding:0 20px 20px;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:9px}
+    #places li{border:1px solid var(--line);border-radius:10px;background:#f9fbff;padding:9px 12px}
+    .copyright{font-size:.8rem;color:var(--muted);margin:15px 0 0}
+    @media(max-width:650px){.shell{padding-inline:12px}main{padding-top:18px}.top{min-height:56px}.topnav{gap:12px;font-size:.86rem}.head{padding:12px}.below{grid-template-columns:1fr}#map{height:400px}#places{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header><div class="shell top"><a class="brand" href="{% url 'company-index' %}">جابیو</a>
+<nav class="topnav" aria-label="پیوندهای صفحه"><a href="{% url 'company-index' %}">شرکت‌ها</a><a href="{% url 'company-index' %}">بازگشت به فهرست</a></nav></div></header>
+<main class="shell">
+  <h1>نقشه شرکت‌های فناوری تهران</h1>
+  <p class="lead">موقعیت شرکت‌ها فقط پس از راستی‌آزمایی مستقل روی نقشه قرار می‌گیرد.</p>
+  <section class="card" aria-label="نقشه شرکت‌ها">
+    <div class="head"><div><h2>موقعیت‌های تأییدشده</h2><p>برای دیدن نام شرکت، نشانگر آن را انتخاب کنید.</p></div><span class="pill">فقط داده‌های تأییدشده</span></div>
+    <p id="status" role="status" aria-live="polite">در حال خواندن موقعیت‌های تأییدشده…</p>
+    <div id="map" role="application" aria-label="نقشه مکان‌های تأییدشده شرکت‌ها"></div>
+  </section>
+  <div class="below">
+    <section class="card note"><h2>راهنمای نقشه</h2><p>فقط مکان‌هایی نمایش داده می‌شوند که موقعیت، هویت شرکت، فناوری‌بودن و ارتباط با تهران به‌صورت مستقل بررسی شده باشند. نبود پین به معنی نبود شرکت در تهران نیست.</p></section>
+    <section class="card note"><h2>درباره منابع نقشه</h2><p>زمینه نقشه از OpenFreeMap با داده‌های OpenStreetMap نمایش داده می‌شود. اگر سرویس نقشه در دسترس نبود، فهرست شرکت‌ها همچنان قابل استفاده است.</p></section>
+  </div>
+  <section class="card" style="margin-top:20px" aria-label="فهرست مکان‌ها"><div class="head"><h2>فهرست مکان‌های تأییدشده</h2></div><ul id="places"></ul></section>
+  <p class="copyright">© <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer" target="_blank">OpenStreetMap contributors</a> · <a href="https://openfreemap.org/" rel="noopener noreferrer" target="_blank">OpenFreeMap</a></p>
+</main>
+<script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+<script>
+(async function(){
+  'use strict';
+  const status=document.getElementById('status');
+  const mapEl=document.getElementById('map');
+  const list=document.getElementById('places');
+  const fa=(n)=>Number(n).toLocaleString('fa-IR');
+  function warn(s){status.textContent=s;status.classList.add('error');}
+  function valid(f){
+    const c=f && f.geometry && f.geometry.coordinates;
+    return Array.isArray(c)&&c.length===2&&c.every(Number.isFinite)&&Math.abs(c[0])<=180&&Math.abs(c[1])<=90;
+  }
+  let features;
+  try{
+    const res=await fetch("{% url 'verified-company-locations' %}",{credentials:'same-origin'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const json=await res.json();
+    features=Array.isArray(json.features)?json.features.filter(valid):[];
+  }catch(err){warn('دریافت موقعیت‌ها ناموفق بود؛ لطفاً اتصال به سرور را بررسی کنید.');mapEl.hidden=true;return;}
+  if(!features.length){status.textContent='هنوز هیچ موقعیت تأییدشده‌ای برای نمایش نداریم.';mapEl.hidden=true;return;}
+  status.textContent=fa(features.length)+' شرکت دارای موقعیت تأییدشده';
+  const locs=[];
+  features.forEach((f)=>{
+    const name=String((f.properties&&f.properties.name)||'شرکت');
+    const id=String((f.properties&&f.properties.company_id)||'');
+    const link=document.createElement('a');link.textContent=name;
+    link.href='/companies/'+encodeURIComponent(id)+'/';
+    const li=document.createElement('li');li.append(link);list.append(li);
+    locs.push({coords:f.geometry.coordinates,name,url:link.href});
+  });
+  if(typeof maplibregl==='undefined'){
+    warn('کتابخانه نمایش نقشه بارگیری نشد؛ فهرست شرکت‌ها در پایین در دسترس است.');mapEl.hidden=true;return;
+  }
+  if(typeof maplibregl.supported === 'function' && !maplibregl.supported()){
+    warn('مرورگر از نمایش نقشه برداری پشتیبانی نمی‌کند؛ فهرست شرکت‌ها در دسترس است.');mapEl.hidden=true;return;
+  }
+  // Persian/Arabic map labels require bidirectional ordering and Arabic shaping.
+  // Initialize this before creating MapLibre so existing vector labels render correctly.
+  if(typeof maplibregl.setRTLTextPlugin === 'function'){
+    try{
+      await maplibregl.setRTLTextPlugin(
+        'https://unpkg.com/@mapbox/mapbox-gl-rtl-text@0.3.0/dist/mapbox-gl-rtl-text.js',
+        false
+      );
+    }catch(rtlError){
+      console.warn('Map RTL text plugin could not load:', rtlError);
+      status.textContent='نقشه در دسترس است، اما نمایش نوشته‌های فارسی ممکن است ناقص باشد.';
+    }
+  }else{
+    console.warn('MapLibre RTL text plugin API is unavailable.');
+  }
+  try{
+    const map=new maplibregl.Map({
+      container:'map',style:'https://tiles.openfreemap.org/styles/liberty',
+      center:[51.3890,35.6892],zoom:10,minZoom:3,maxZoom:18,
+      attributionControl:true,cooperativeGestures:true
+    });
+    map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-left');
+    let errorReported=false;
+    map.on('error',()=>{
+      if(!errorReported){errorReported=true;warn('زمینه نقشه بارگیری نشد. اینترنت یا دسترسی به OpenFreeMap را بررسی کنید؛ فهرست شرکت‌ها همچنان در دسترس است.');}
+    });
+    locs.forEach(({coords,name,url})=>{
+      const a=document.createElement('a');a.href=url;a.textContent=name;
+      const wrap=document.createElement('div');wrap.dir='rtl';wrap.append(a);
+      new maplibregl.Marker({color:'#1b66d4'})
+        .setLngLat(coords)
+        .setPopup(new maplibregl.Popup({offset:18}).setDOMContent(wrap))
+        .addTo(map);
+    });
+    if(locs.length===1){map.setCenter(locs[0].coords);map.setZoom(12);}
+    else{
+      const bounds=new maplibregl.LngLatBounds();
+      locs.forEach(l=>bounds.extend(l.coords));
+      map.fitBounds(bounds,{padding:55,maxZoom:13,duration:0});
+    }
+  }catch(err){warn('نقشه در این مرورگر باز نشد؛ فهرست شرکت‌ها در دسترس است.');mapEl.hidden=true;}
+})();
+</script>
+<script defer src="{% static "companies/js/persian_digits_v22.js" %}"></script>
+</body></html>

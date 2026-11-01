@@ -1,0 +1,79 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive"><meta name="color-scheme" content="light">
+  <title>پنج معیار {{ company.display_name }} | پژوهش داخلی جابیو</title>
+  <link rel="stylesheet" href="{% static 'companies/css/company_profile_v23.css' %}">
+  <script defer src="{% static 'companies/js/company_profile_v23.js' %}"></script>
+  <script defer src="{% static "companies/js/persian_digits_v22.js" %}"></script>
+<link rel="stylesheet" href="{% static 'companies/css/company_images_v27.css' %}"><script defer src="{% static 'companies/js/company_images_v27.js' %}"></script>
+<!-- v27-company-imagery -->
+</head>
+<body class="wi-page" data-profile-kind="staff">
+  <a class="wi-skip" href="#main-content">رفتن به محتوا</a><div class="wi-topline"></div>
+  <header class="wi-topbar"><div class="wi-shell wi-topbar-inner">
+    <a class="wi-brand" href="{% url 'company-index' %}" aria-label="جابیو؛ شرکت‌ها"><span class="wi-brand-symbol" aria-hidden="true"><i></i><i></i><i></i></span><span>جابیو</span></a>
+    <nav class="wi-top-nav" aria-label="ناوبری داخلی"><a href="{% url 'company-detail' company.pk %}">صفحه شرکت</a><a href="{% url 'company-five-criteria-private-compare' %}">مقایسه شرکت‌ها</a><a href="{% url 'company-five-criteria-private-analytics' %}">تحلیل شرکت‌ها</a></nav>
+    <span class="wi-internal-chip">محیط داخلی · غیرقابل انتشار</span>
+  </div></header>
+  <main class="wi-shell wi-main" id="main-content">
+    <nav class="wi-breadcrumb" aria-label="مسیر صفحه"><a href="{% url 'company-index' %}">شرکت‌ها</a><span aria-hidden="true">/</span><a href="{% url 'company-detail' company.pk %}">{{ company.display_name }}</a><span aria-hidden="true">/</span><span>ارزیابی پنج‌معیاری</span></nav>
+    <section class="wi-hero wi-panel" aria-labelledby="company-name">
+      <div class="wi-hero-content"><div class="wi-eyebrow"><span class="wi-mini-dot"></span> پیش‌نمایش پژوهشی پنج معیار</div>
+        <h1 id="company-name">{{ company.display_name }}</h1>
+        <p class="wi-hero-lead">تصویری روشن از امتیازهای پیشنهادیِ مبتنی بر تجربه‌های ثبت‌شده در منبع</p>
+        <span class="wi-tag wi-tag--amber">امتیازهای تأییدنشده · فقط اعضای مجاز</span>
+        <div class="wi-actions"><a class="wi-button wi-button--primary" href="{% url 'company-five-criteria-private-compare' %}">مقایسه با شرکت‌های دیگر <span aria-hidden="true">←</span></a><a class="wi-button wi-button--subtle" href="{% url 'company-detail' company.pk %}">صفحه عمومی شرکت</a></div>
+      </div>
+      <div class="wi-hero-art wi-company-cover wi-company-cover-v27" data-company-photo-id="{{ company.pk }}" data-photo-manifest="{% static 'companies/company_images_v27.json' %}" data-static-prefix="{% get_static_prefix %}" aria-label="تصویر نمایه شرکت">
+        <span class="wi-v27-initial" aria-hidden="true">{{ company.display_name|slice:":1" }}</span>
+        <span class="wi-v27-photo-credit" hidden></span>
+      </div>
+    </section>
+
+    <section class="wi-stats" aria-label="آمار پنج‌معیاری">
+      <div class="wi-stat wi-stat--blue"><span class="wi-stat-icon" aria-hidden="true">◉</span><div><strong>{{ preview.unique_experiences_in_scope }}</strong><span>تجربه کاری یکتا</span></div></div>
+      <div class="wi-stat wi-stat--mint"><span class="wi-stat-icon" aria-hidden="true">♧</span><div><strong>{{ preview.assessment_runs_in_scope }}</strong><span>ارزیابی AI (نه افراد مستقل)</span></div></div>
+      <div class="wi-stat wi-stat--lavender"><span class="wi-stat-icon" aria-hidden="true">▥</span><div><strong>۵</strong><span>معیار هم‌جهت از ۱۰</span></div></div>
+      <div class="wi-stat wi-stat--warm"><span class="wi-stat-icon" aria-hidden="true">◇</span><div><strong class="wi-stat-word">غیرعمومی</strong><span>پژوهشی · تأییدنشده</span></div></div>
+    </section>
+
+    <div class="wi-main-grid">
+      <section class="wi-panel wi-chart-card" aria-labelledby="radar-heading">
+        <div class="wi-section-head"><div><span class="wi-overline">نمای کلی عملکرد</span><h2 id="radar-heading">پروفایل پنج معیار محیط کار</h2></div><span class="wi-status-pill">میانگین‌های مقدماتی</span></div>
+        <p class="wi-muted">هر محور از ۱ تا ۱۰ است؛ هرچه امتیاز بالاتر باشد، تجربه گزارش‌شده بهتر است. معیار فاقد داده به صفر تبدیل نمی‌شود.</p>
+        <div class="wi-radar-wrap">
+          <svg class="wi-radar" data-chart-mode="provisional" viewBox="0 0 520 480" role="img" aria-label="نمودار پنج معیار پژوهشی با امتیازهای پیشنهادی تأییدنشده">
+            <g class="wi-radar-grid" data-radar-grid></g><g class="wi-radar-plot" data-radar-plot></g>
+          </svg>
+          <p class="wi-radar-fallback" data-radar-empty hidden>برای رسم پنج‌ضلعی کامل، امتیاز همه معیارها لازم است. نقاط موجود به‌صورت جداگانه نمایش داده می‌شوند.</p>
+        </div>
+        <div class="wi-chart-footer"><span class="wi-legend-swatch"></span> میانگین پیشنهادی AI (تأییدنشده) <span class="wi-legend-swatch wi-legend-swatch--verified"></span> شواهد پژوهشیِ تأییدشده (در صورت وجود)</div>
+      </section>
+
+      <section class="wi-panel wi-criteria-card" aria-labelledby="criteria-heading">
+        <div class="wi-section-head"><div><span class="wi-overline">مرور معیارها</span><h2 id="criteria-heading">امتیازها در پنج معیار اصلی</h2></div></div>
+        <div class="wi-good-note">در همه معیارها، امتیاز بالاتر بهتر است.</div>
+        <div class="wi-criterion-grid" id="wi-criterion-controls">
+          {% for item in preview.criteria %}
+          <button class="wi-criterion-item wi-criterion-button" type="button" data-criterion-index="{{ forloop.counter0 }}" aria-pressed="false" aria-controls="wi-criterion-detail">
+            <span class="wi-criterion-icon wi-axis-{{ forloop.counter }}" aria-hidden="true">{{ forloop.counter }}</span>
+            <span class="wi-criterion-copy"><strong>{{ item.label }}</strong><small>{% if item.mean_provisional is not None %}{{ item.n_provisional_used }} نظر دارای امتیاز{% else %}بدون امتیاز پیشنهادی{% endif %}</small></span>
+            <span class="wi-criterion-score">{% if item.mean_provisional is not None %}{{ item.mean_provisional|floatformat:2 }}<small>/۱۰</small>{% else %}—{% endif %}</span>
+          </button>
+          {% endfor %}
+        </div>
+        <div class="wi-help"><span class="wi-help-icon" aria-hidden="true">i</span><p>این نمره‌ها میانگین پیشنهادی هستند، نه رتبه شرکت یا ارزیابی مستقل کارشناسی. امتیاز ناموجود به معنی صفر نیست.</p></div>
+      </section>
+    </div>
+
+    <div class="wi-bottom-grid wi-bottom-grid--internal">
+      <section class="wi-panel wi-detail-panel" aria-labelledby="detail-heading"><div class="wi-detail-title"><span class="wi-icon-round wi-icon-round--blue" aria-hidden="true">▤</span><div><span class="wi-overline">جزئیات معیار انتخاب‌شده</span><h2 id="detail-heading">توضیح امتیاز و کیفیت داده</h2></div></div><div id="wi-criterion-detail" class="wi-detail-body" role="status" aria-live="polite">روی یکی از پنج معیار کلیک کنید تا جزئیات نمایش داده شود.</div></section>
+      <section class="wi-panel wi-info-box" aria-labelledby="quality-heading"><div class="wi-icon-round wi-icon-round--mint" aria-hidden="true">✓</div><h2 id="quality-heading">آنچه این امتیازها می‌گویند</h2><p>میانگین هر محور، فقط از نظرات دارای نمره برای همان معیار محاسبه می‌شود. تعداد نظرات مؤثر معیارها لزوماً برابر نیست.</p><div class="wi-relative-note" id="wi-relative-highlights">مقایسه نسبی معیارها بعد از بارگذاری نمایش داده می‌شود.</div></section>
+      <section class="wi-panel wi-info-box" aria-labelledby="privacy-heading"><div class="wi-icon-round wi-icon-round--violet" aria-hidden="true">◇</div><h2 id="privacy-heading">وضعیت داده‌ها و انتشار</h2><p><strong>پژوهشی و غیرقابل انتشار:</strong> محاسبات هوش مصنوعی تأیید انسانی نشده‌اند. صفحه عمومی شرکت هیچ‌یک از این امتیازهای پیشنهادی را نمایش نمی‌دهد.</p><p class="wi-tiny">نسخه معیارها: five_v1 · مقادیر بدون داده: بدون امتیاز</p></section>
+    </div>
+    <footer class="wi-footer"><span>جابیو · پیش‌نمایش پژوهشی داخلی</span><a href="{% url 'company-five-criteria-private-analytics' %}">گزارش تحلیلی شرکت‌ها</a></footer>
+  </main>
+  {{ preview.criteria|json_script:"wi-criteria-v23-data" }}
+</body></html>

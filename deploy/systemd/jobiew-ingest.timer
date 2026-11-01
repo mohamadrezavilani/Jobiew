@@ -1,0 +1,12 @@
+[Unit]
+Description=Schedule Jobiew authorized crawler and PostgreSQL sync daily
+
+[Timer]
+# 01:30 UTC = 05:00 Asia/Tehran. Adjust cadence only after a successful manual run.
+OnCalendar=*-*-* 01:30:00 UTC
+RandomizedDelaySec=10m
+Persistent=true
+Unit=jobiew-ingest.service
+
+[Install]
+WantedBy=timers.target

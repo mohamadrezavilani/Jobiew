@@ -1,0 +1,15 @@
+<section class="module wi-location-panel" id="wi-location-picker" dir="rtl" aria-labelledby="wi-picker-title">
+  <h2 id="wi-picker-title">انتخاب مکان شرکت روی نقشه</h2>
+  <p class="wi-tip">روی نقشه کلیک کنید یا نشانگر را جابه‌جا کنید؛ مختصات <b>Latitude</b> و <b>Longitude</b> در فرم پایین خودکار پر می‌شوند. مرکز اولیه نقشه صرفاً تهران است، نه مکان شرکت.</p>
+  <div class="wi-picker-tools">
+    <label for="wi-location-search">جست‌وجوی نشانی یا مکان (اختیاری)</label>
+    <input id="wi-location-search" type="search" placeholder="مثلاً: تهران، میدان ونک" autocomplete="off" spellcheck="false">
+    <button class="button" id="wi-location-search-button" type="button">جست‌وجو در نقشه</button>
+    <button class="button" id="wi-location-clear-button" type="button">پاک‌کردن انتخاب</button>
+  </div>
+  <p class="wi-tip">جست‌وجو فقط با فشردن دکمه انجام می‌شود و عبارت جست‌وجو به سرویس OpenStreetMap Nominatim ارسال می‌شود. بدون جست‌وجو هم می‌توانید نقشه را جابه‌جا و بزرگ‌نمایی کنید.</p>
+  <div id="wi-location-search-results" aria-live="polite"></div>
+  <div id="wi-location-map" role="application" aria-label="نقشه انتخاب مکان شرکت؛ برای تعیین موقعیت روی نقشه کلیک کنید"></div>
+  <p id="wi-location-picker-status" role="status" aria-live="polite">در حال بارگذاری نقشه…</p>
+  <p class="wi-tip"><b>توجه:</b> انتخاب پین به‌تنهایی نشانی، مالکیت دفتر یا هویت شرکت را تأیید نمی‌کند. برای گزینه «مکان تأیید شد»، نشانی واقعی، لینک منبع HTTPS و توضیح بررسی را هم در فرم ثبت کنید؛ تا تأیید سایر ویژگی‌های شرکت، مکان در نقشه عمومی نمایش داده نمی‌شود.</p>
+</section>

@@ -1,0 +1,19 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+{% block extrahead %}
+  {{ block.super }}
+  <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js" defer></script>
+  <script src="{% static 'locations/js/location_picker_v39.js' %}" defer></script>
+  <script src="{% static 'locations/js/review_evidence_helper_v46.js' %}" defer></script>
+{% endblock %}
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="{% static 'locations/css/location_picker_v38.css' %}">
+{% endblock %}
+{% block field_sets %}
+  {% if add %}
+    {% include 'admin/locations/companylocationreviewevent/map_picker.html' %}
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

@@ -1,0 +1,275 @@
+{
+  "version": "v27",
+  "companies": {
+    "c8a19a54a6e76f538acee": {
+      "company_name": "اسنپ",
+      "official_domain": "snapp.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c8a19a54a6e76f538acee.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://snapp.ir&size=256"
+    },
+    "c02d53e6c891a4e7998d4": {
+      "company_name": "اسنپ فود",
+      "official_domain": "snappfood.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c02d53e6c891a4e7998d4.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://snappfood.ir&size=256"
+    },
+    "c2d541cba54c2843c20c7": {
+      "company_name": "اسنپ پی",
+      "official_domain": "snapp.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c2d541cba54c2843c20c7.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://snapp.ir&size=256"
+    },
+    "c6a5924dfba6b93ee5b4f": {
+      "company_name": "اسنپ باکس",
+      "official_domain": "snapp.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c6a5924dfba6b93ee5b4f.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://snapp.ir&size=256"
+    },
+    "c1bfbf98b6f02b91855e8": {
+      "company_name": "اسنپ دکتر",
+      "official_domain": "snappdoctor.ir",
+      "origin": "official_website_candidate",
+      "image": null,
+      "image_kind": null
+    },
+    "c90becb6ef64754e12fd5": {
+      "company_name": "اسنپ تریپ",
+      "official_domain": "snapptrip.com",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c90becb6ef64754e12fd5.webp",
+      "image_kind": "official_web_image",
+      "source_url": "https://store.snapptrip.com/assets/builds/website/_next/static/media/logo.12xjc4xr19yoa.png"
+    },
+    "c6969a729c761f1e232cd": {
+      "company_name": "دیجی کالا",
+      "official_domain": "digikala.com",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c6969a729c761f1e232cd.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://www.digikala.com/pwa-icon-180.png"
+    },
+    "cf2a885c8f50084664010": {
+      "company_name": "دیجی پی",
+      "official_domain": "mydigipay.com",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/cf2a885c8f50084664010.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://www.mydigipay.com/bck-assets/manifest-icons/digipay-152.png"
+    },
+    "ce679ee5e997653678795": {
+      "company_name": "تپسی",
+      "official_domain": "tapsi.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/ce679ee5e997653678795.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://tapsi.ir&size=256"
+    },
+    "c4a19f9835fca7e0c1b64": {
+      "company_name": "پیشگامان فناوری و دانش آرامیس (تپسی)",
+      "official_domain": "tapsi.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c4a19f9835fca7e0c1b64.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://tapsi.ir&size=256"
+    },
+    "c541f2263c8ca4882586d": {
+      "company_name": "کافه بازار",
+      "official_domain": "cafebazaar.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c541f2263c8ca4882586d.png",
+      "image_kind": "official_web_image",
+      "source_url": "https://webassets.cafebazaar.ir/images/brand-image.png"
+    },
+    "c3e892214cb16639d84f5": {
+      "company_name": "آروان کلاد",
+      "official_domain": "arvancloud.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c3e892214cb16639d84f5.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://arvancloud.ir&size=256"
+    },
+    "c4e5c0db526b93142d794": {
+      "company_name": "زرین پال",
+      "official_domain": "zarinpal.com",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c4e5c0db526b93142d794.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://zarinpal.com&size=256"
+    },
+    "ce28eef6991bc6ef33594": {
+      "company_name": "شاتل",
+      "official_domain": "shatel.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/ce28eef6991bc6ef33594.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shatel.ir&size=256"
+    },
+    "cb57e4661916c151a9db5": {
+      "company_name": "علی بابا",
+      "official_domain": "alibaba.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/cb57e4661916c151a9db5.png",
+      "image_kind": "official_web_image",
+      "source_url": "https://www.alibaba.ir/logo.png?v2"
+    },
+    "c31cc29ac46478dbfc2bc": {
+      "company_name": "مایکت",
+      "official_domain": "myket.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c31cc29ac46478dbfc2bc.png",
+      "image_kind": "official_web_image",
+      "source_url": "https://myket.ir/core/images/logo/favicon/android-icon-192x192.png"
+    },
+    "c59420df421e9f52a7bbb": {
+      "company_name": "سایت اینترنتی دیوار",
+      "official_domain": "divar.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c59420df421e9f52a7bbb.png",
+      "image_kind": "official_web_image",
+      "source_url": "https://s100.divarcdn.com/web-assets/publics/android-chrome-512x512.png"
+    },
+    "c5c18ccb2843a930ede4c": {
+      "company_name": "شیپور",
+      "official_domain": "sheypoor.com",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c5c18ccb2843a930ede4c.png",
+      "image_kind": "official_web_image",
+      "source_url": "https://www.sheypoor.com/opengraph-image.png"
+    },
+    "c0bf7d70dfe54b1a7d4ae": {
+      "company_name": "همراه اول",
+      "official_domain": "mci.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c0bf7d70dfe54b1a7d4ae.png",
+      "image_kind": "official_web_image",
+      "source_url": "https://mci.ir/o/mci-theme-2018/images/brand/brand-192.png"
+    },
+    "c3d7591a1b66aa95f8c07": {
+      "company_name": "بانک ملت",
+      "official_domain": "bankmellat.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c3d7591a1b66aa95f8c07.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bankmellat.ir&size=256"
+    },
+    "c86f9744129876bfec035": {
+      "company_name": "بانک تجارت",
+      "official_domain": "tejaratbank.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c86f9744129876bfec035.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://tejaratbank.ir&size=256"
+    },
+    "c70e85bdb5d3777853ffa": {
+      "company_name": "بانک شهر",
+      "official_domain": "shahr-bank.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c70e85bdb5d3777853ffa.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shahr-bank.ir&size=256"
+    },
+    "ca556a44c863f4290ccb7": {
+      "company_name": "بلوبانک",
+      "official_domain": "blubank.com",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/ca556a44c863f4290ccb7.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://blubank.com&size=256"
+    },
+    "ce6baab34687eb911e217": {
+      "company_name": "آسان پرداخت",
+      "official_domain": "asanpardakht.ir",
+      "origin": "official_website_candidate",
+      "image": null,
+      "image_kind": null
+    },
+    "c5d78714331e90954fdb5": {
+      "company_name": "جاب ویژن",
+      "official_domain": "jobvision.ir",
+      "origin": "official_website_candidate",
+      "image": null,
+      "image_kind": null
+    },
+    "c12cb9e70b3f993789f27": {
+      "company_name": "باسلام",
+      "official_domain": "basalam.com",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c12cb9e70b3f993789f27.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://basalam.com/icon.png"
+    },
+    "cb3b348d6b46abd0a7448": {
+      "company_name": "ایران خودرو",
+      "official_domain": "ikco.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/cb3b348d6b46abd0a7448.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ikco.ir&size=256"
+    },
+    "c295dea0c98a6f37db26f": {
+      "company_name": "پرداخت الکترونیک سامان کیش(سپ)",
+      "official_domain": "sep.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c295dea0c98a6f37db26f.jpg",
+      "image_kind": "official_web_image",
+      "source_url": "https://www.sep.ir/uploads/1/2022/Aug/02/Squre-post.jpg"
+    },
+    "c5d63529bfe2e06c76fb6": {
+      "company_name": "نوبیتکس",
+      "official_domain": "nobitex.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c5d63529bfe2e06c76fb6.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://nobitex.ir&size=256"
+    },
+    "cd62b341bd77083387226": {
+      "company_name": "والکس",
+      "official_domain": "wallex.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/cd62b341bd77083387226.png",
+      "image_kind": "official_web_image",
+      "source_url": "https://wallex.ir/og.png"
+    },
+    "c2add0e374e4074d972ef": {
+      "company_name": "فرادرس",
+      "official_domain": "faradars.org",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c2add0e374e4074d972ef.webp",
+      "image_kind": "official_web_image",
+      "source_url": "https://faradars.org/wp-content/uploads/2025/05/31/mainpagelogo.png"
+    },
+    "c293d522120f707e9ce35": {
+      "company_name": "شاتل موبایل",
+      "official_domain": "shatelmobile.ir",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c293d522120f707e9ce35.png",
+      "image_kind": "official_web_image",
+      "source_url": "https://shatelmobile.ir/assets/themes/khorshid-shatel/dist/images/shatelmobile-192.png"
+    },
+    "c349326f182a2a2e489a7": {
+      "company_name": "شاتل لند",
+      "official_domain": "shatelland.com",
+      "origin": "official_website",
+      "image": "companies/official_images_v27/c349326f182a2a2e489a7.png",
+      "image_kind": "brand_logo",
+      "source_url": "https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://shatelland.com&size=256"
+    },
+    "c728abe6cfd909de6bc6c": {
+      "company_name": "توسن (شرکت توسعه سامانه‌های نرم افزاری نگین)",
+      "official_domain": "tosan.com",
+      "origin": "user_supplied",
+      "image": "companies/official_images_v27/tosan_user_supplied.webp",
+      "image_kind": "photo"
+    }
+  },
+  "coverage": 34,
+  "note": "Curated exact company ids and official domains; no generated corporate photos"
+}

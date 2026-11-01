@@ -1,0 +1,75 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/feasibility_review_v53.css' %}">{% endblock %}
+{% block content %}
+<div class="wi-ai-review" dir="rtl">
+  <p class="wi-ai-link"><a href="{% url 'admin:assessments_aiassessment_changelist' %}">→ بازگشت به فهرست ارزیابی‌های AI</a></p>
+  <h1>بازبینی انسانی خروجی‌های تاریخی AI</h1>
+  <p class="wi-ai-warning">{{ other_reviewers_notice }} <b>متن‌های زیر خصوصی‌اند و تنها برای بررسی داخلی نمایش داده می‌شوند.</b> هیچ درخواست جدیدی به Claude یا سرویس خارجی فرستاده نمی‌شود.</p>
+  <div class="wi-ai-stats">
+    <span>تجربه‌های AI: <b>{{ totals.assessments }}</b></span>
+    <span>ردیف‌های موجود: <b>{{ totals.dimensions }}</b></span>
+    <span>داوری‌شده: <b>{{ totals.reviewed }}</b></span>
+    <span>باقی‌مانده: <b>{{ totals.unreviewed }}</b></span>
+  </div>
+  <section class="module wi-ai-metrics">
+    <h2>خلاصه داوری انسانی به تفکیک ۹ شاخص</h2>
+    <p>خطای مشاهده‌شده فقط از داوری‌های قطعی محاسبه می‌شود؛ موارد «نامشخص» از مخرج خارج هستند. با نمونه محدود، این درصد <b>نرخ خطای عمومی مدل</b> محسوب نمی‌شود.</p>
+    <div class="wi-ai-overflow"><table><thead><tr><th>شاخص</th><th>بازبینی شده</th><th>تأیید امتیاز</th><th>نبود درست امتیاز</th><th>امتیاز نادرست</th><th>شاهد جامانده</th><th>نامشخص</th><th>خطای مشاهده‌شده*</th></tr></thead><tbody>
+      {% for row in metrics %}<tr><td>{{ row.label }}</td><td>{{ row.reviewed }}</td><td>{{ row.supported }}</td><td>{{ row.correct_abstention }}</td><td>{{ row.unsupported }}</td><td>{{ row.missed_evidence }}</td><td>{{ row.uncertain }}</td><td>{% if row.observed_error_pct != None %}{{ row.observed_error_pct }}٪ ({{ row.error_count }}/{{ row.decisive }}){% else %}—{% endif %}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  {% if assessments %}
+  <section class="module wi-ai-pick">
+    <h2>انتخاب تجربه برای بازبینی</h2>
+    <div class="wi-ai-chips">{% for item in assessments %}
+      <a {% if active.pk == item.pk %}class="current"{% endif %} href="{% url 'admin:assessments_aiassessment_feasibility_review' %}?assessment={{ item.pk }}">{{ item.experience.company.display_name }} · #{{ item.pk }}</a>
+    {% endfor %}</div>
+  </section>
+  {% if active %}
+  <section class="module wi-ai-source">
+    <h2>متن اصلی تجربه — {{ active.experience.company.display_name }} / ارزیابی #{{ active.pk }}</h2>
+    <p>منبع: <a href="{{ active.experience.source_url }}" target="_blank" rel="noopener noreferrer">{{ active.experience.source_site }} — مشاهده منبع اصلی</a> · تاریخ انتشار: {{ active.experience.published_jalali|default:'ثبت نشده' }}</p>
+    <p>مدل: {{ active.model_name }} · نسخه Prompt: {{ active.prompt_version }}</p>
+    <p>وضعیت انتساب: {{ active.experience.company_attribution_status }} · استقلال/تکرار: {{ active.experience.independence_status }} · مجوز استفاده: {{ active.experience.copyright_review }}</p>
+    <p class="wi-ai-warning">این سه وضعیت هنوز ممکن است تأیید نشده باشند؛ درست بودن یک امتیاز به‌معنی تأیید انتساب، استقلال یا مجوز استفاده نیست.</p>
+    <h3>{{ active.experience.title }}</h3>
+    <pre class="wi-ai-text">{{ active.experience.body }}</pre>
+    {% if active.experience.pros %}<h3>نکات مثبت ثبت‌شده</h3><pre class="wi-ai-text">{{ active.experience.pros }}</pre>{% endif %}
+    {% if active.experience.cons %}<h3>نکات منفی ثبت‌شده</h3><pre class="wi-ai-text">{{ active.experience.cons }}</pre>{% endif %}
+  </section>
+  <h2>۹ شاخص این تجربه</h2>
+  <div class="wi-ai-panels">
+    {% for p in panels %}
+    <section class="module wi-ai-dimension" id="dimension-{{ p.key }}">
+      <h3>{{ forloop.counter }}. {{ p.label }}</h3>
+      {% if p.dim %}
+      <div class="wi-ai-values"><span>امتیاز: <b>{% if p.dim.score != None %}{{ p.dim.score }} از ۱۰{% else %}فاقد ارزیابی{% endif %}</b></span><span>اطمینان AI: <b>{{ p.dim.confidence }} از ۱۰۰</b></span></div>
+      <p><b>توضیح مدل:</b> {{ p.dim.explanation|default:'ثبت نشده' }}</p>
+      <p><b>شواهد ثبت‌شده توسط مدل:</b></p>
+      <pre class="wi-ai-text">{{ p.dim.evidence }}</pre>
+      {% if p.latest %}
+        <p class="wi-ai-latest"><b>آخرین داوری انسانی:</b> {{ p.latest.get_verdict_display }} {% if p.latest.primary_error %}· {{ p.latest.get_primary_error_display }}{% endif %} · {{ p.latest.reviewer }} / {{ p.latest.created_at|date:'Y/m/d H:i' }}</p>
+        {% if p.latest.note %}<p class="wi-ai-latest">توضیح: {{ p.latest.note }}</p>{% endif %}
+      {% else %}<p class="wi-ai-pending">هنوز داوری انسانی ثبت نشده است.</p>{% endif %}
+      {% if can_write %}
+      <form method="post" action="{% url 'admin:assessments_aiassessment_feasibility_review' %}?assessment={{ active.pk }}#dimension-{{ p.key }}" class="wi-ai-form">
+        {% csrf_token %}
+        <input type="hidden" name="assessment_id" value="{{ active.pk }}">
+        <input type="hidden" name="dimension_id" value="{{ p.dim.pk }}">
+        {{ p.form.non_field_errors }}
+        <div>{{ p.form.verdict.label_tag }} {{ p.form.verdict }} {{ p.form.verdict.errors }}</div>
+        <div>{{ p.form.primary_error.label_tag }} {{ p.form.primary_error }} {{ p.form.primary_error.errors }}</div>
+        <div>{{ p.form.note.label_tag }} {{ p.form.note }} {{ p.form.note.errors }}</div>
+        <div class="wi-ai-ack">{{ p.form.acknowledged_source }} {{ p.form.acknowledged_source.label_tag }} {{ p.form.acknowledged_source.errors }}</div>
+        <button type="submit" class="button default">ثبت داوری جدید برای این شاخص</button>
+      </form>
+      {% endif %}
+      {% else %}<p class="wi-ai-warning">رکورد این شاخص در خروجی تاریخی وجود ندارد؛ برای داوری دستی ابتدا باید اشکال داده بررسی شود.</p>{% endif %}
+    </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% else %}<p class="wi-ai-warning">هنوز ارزیابی تاریخیِ مرتبط با تجربه کاری وجود ندارد.</p>{% endif %}
+</div>
+{% endblock %}

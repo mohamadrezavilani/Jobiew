@@ -1,0 +1,20 @@
+[Unit]
+Description=Jobiew authorized crawler and PostgreSQL sync
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=jobiew
+Group=jobiew
+WorkingDirectory=/opt/jobiew
+EnvironmentFile=/etc/jobiew/jobiew.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/jobiew/.venv/bin/python /opt/jobiew/scripts/run_ingest.py --mode crawl-and-sync
+TimeoutStartSec=3h
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/jobiew

@@ -1,0 +1,26 @@
+.wi-ai-review {max-width:1300px;margin:auto;line-height:1.8}
+.wi-ai-review .module {background:var(--body-bg,#fff);padding:17px;border:1px solid var(--border-color,#ccc);border-radius:8px;margin:15px 0;box-sizing:border-box}
+.wi-ai-review h2 {font-size:17px;margin:7px 0 10px}
+.wi-ai-review h3 {font-size:16px;margin:7px 0 10px}
+.wi-ai-warning {background:var(--darkened-bg,#f6f6f6);border-inline-start:3px solid #ba811b;padding:10px;border-radius:3px}
+.wi-ai-stats,.wi-ai-values {display:flex;flex-wrap:wrap;gap:14px;margin:16px 0}
+.wi-ai-stats span,.wi-ai-values span {padding:7px 12px;background:var(--darkened-bg,#f6f6f6);border-radius:6px}
+.wi-ai-overflow {overflow-x:auto}
+.wi-ai-review table {width:100%;border-collapse:collapse}
+.wi-ai-review table th,.wi-ai-review table td {padding:8px;border-bottom:1px solid var(--border-color,#ddd);text-align:right}
+.wi-ai-chips {display:flex;flex-wrap:wrap;gap:8px}
+.wi-ai-chips a {display:inline-block;padding:6px 10px;border:1px solid var(--border-color,#ddd);border-radius:6px}
+.wi-ai-chips a.current {background:var(--primary,#417690);color:white}
+.wi-ai-panels {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:12px}
+.wi-ai-panels .module {margin:0}
+.wi-ai-text {white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere;max-height:360px;overflow:auto;line-height:1.9;padding:10px;background:var(--darkened-bg,#f6f6f6);border-radius:5px;font:inherit}
+.wi-ai-source .wi-ai-text {max-height:480px}
+.wi-ai-pending {font-weight:bold;color:#b1780f}
+.wi-ai-latest {padding:5px 8px;border-inline-start:3px solid #2e8567;background:var(--darkened-bg,#f6f6f6)}
+.wi-ai-form {padding-top:12px;border-top:1px solid var(--border-color,#ccc)}
+.wi-ai-form>div {margin:10px 0}
+.wi-ai-form label {display:block;font-weight:bold}
+.wi-ai-form select,.wi-ai-form textarea {box-sizing:border-box;width:100%;max-width:100%}
+.wi-ai-form textarea {min-height:56px}
+.wi-ai-ack label {display:inline}
+.wi-ai-review .errorlist {color:#b42318}

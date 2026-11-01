@@ -1,0 +1,33 @@
+.wi-review-dashboard { max-width: 1350px; margin-inline:auto; line-height: 1.8; }
+.wi-review-dashboard h1 { margin:0 0 0.35rem; }
+.wi-review-top,.wi-review-card,.wi-review-location,.wi-review-history { padding:16px 18px; margin-bottom:18px; border-radius:7px; }
+.wi-review-top { background:var(--darkened-bg,#f7f7f7); }
+.wi-review-links { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:10px; }
+.wi-review-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(265px,1fr)); gap:14px; align-items:stretch; margin-bottom:18px; }
+.wi-review-card { margin:0; min-width:0; }
+.wi-review-card h2,.wi-review-location h2 { font-size:1.1rem; }
+.wi-review-pill { display:inline-block; padding:2px 11px; border:1px solid var(--hairline-color,#ddd); border-radius:22px; }
+.wi-state-verified { color:#216c38; background:#edf8ef; }
+.wi-state-unverified { color:#775e10; background:#fff7da; }
+.wi-state-rejected { color:#a62d32; background:#fff0f0; }
+.wi-review-small,.wi-review-note { font-size:0.88rem; color:var(--body-quiet-color,#777); }
+.wi-review-ready,.wi-review-unready { padding:10px 15px; border-radius:6px; border:1px solid var(--hairline-color,#ddd); }
+.wi-review-ready { border-inline-start:4px solid #2c8f57; }
+.wi-review-unready { border-inline-start:4px solid #e0ac45; }
+.wi-review-form,.wi-review-locationform { display:block; }
+.wi-review-formrow { margin:12px 0; }
+.wi-review-formrow label { display:block; margin-bottom:4px; font-weight:600; }
+.wi-review-formrow input,.wi-review-formrow select,.wi-review-formrow textarea { box-sizing:border-box; width:100%; max-width:100%; }
+.wi-review-formrow textarea { min-height:64px; }
+.wi-review-formrow .errorlist { color:#b82d32; padding-inline-start:14px; }
+.wi-review-locationform { max-width:1050px; }
+.wi-review-history { overflow-x:auto; }
+.wi-review-history table { width:100%; border-collapse:collapse; }
+.wi-review-history th,.wi-review-history td { padding:8px 12px; border-bottom:1px solid var(--hairline-color,#ddd); text-align:start; }
+@media(max-width:700px){ .wi-review-top,.wi-review-card,.wi-review-location,.wi-review-history{padding:12px;} .wi-review-cards{grid-template-columns:1fr;} }
+
+/* v49: saved evidence versus an editable new decision. */
+.wi-review-saved { background:var(--darkened-bg,#f7f7f7);border:1px solid var(--hairline-color,#d6d6d6);border-radius:6px;padding:10px 12px;margin:10px 0;overflow-wrap:anywhere; }
+.wi-review-saved p { margin:4px 0; }
+.wi-review-saved strong { display:block;margin-bottom:4px; }
+.wi-review-archived { border:1px solid #d6b977;background:#fff5d7;color:#583f07;padding:8px 12px;border-radius:6px; }

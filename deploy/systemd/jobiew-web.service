@@ -1,0 +1,23 @@
+[Unit]
+Description=Jobiew Django web (Gunicorn)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=jobiew
+Group=jobiew
+WorkingDirectory=/opt/jobiew/backend
+EnvironmentFile=/etc/jobiew/jobiew.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/jobiew/.venv/bin/gunicorn --bind 127.0.0.1:8001 --workers 3 --timeout 60 workplace_insights.wsgi:application
+Restart=on-failure
+RestartSec=5
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/jobiew
+
+[Install]
+WantedBy=multi-user.target

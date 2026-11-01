@@ -1,0 +1,116 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="پروفایل شرکت {{ company.display_name }}؛ داده‌های تجربه کاری و وضعیت پنج معیار محیط کار">
+  <meta name="color-scheme" content="light">
+  <title>{{ company.display_name }} | جابیو</title>
+  <link rel="stylesheet" href="{% static 'companies/css/company_profile_v23.css' %}">
+  <script defer src="{% static 'companies/js/company_profile_v23.js' %}"></script>
+  <script defer src="{% static "companies/js/persian_digits_v22.js" %}"></script>
+<link rel="stylesheet" href="{% static 'companies/css/company_images_v27.css' %}"><script defer src="{% static 'companies/js/company_images_v27.js' %}"></script>
+<!-- v27-company-imagery -->
+</head>
+<body class="wi-page" data-profile-kind="public">
+  <a class="wi-skip" href="#main-content">رفتن به محتوا</a>
+  <div class="wi-topline"></div>
+  <header class="wi-topbar">
+    <div class="wi-shell wi-topbar-inner">
+      <a class="wi-brand" href="{% url 'company-index' %}" aria-label="جابیو؛ صفحه شرکت‌ها">
+        <span class="wi-brand-symbol" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>جابیو</span>
+      </a>
+      <nav class="wi-top-nav" aria-label="ناوبری اصلی">
+        <a href="{% url 'company-index' %}">شرکت‌ها</a>
+        <a href="{% url 'company-map' %}">نقشه شرکت‌ها</a>
+        {% if user.is_authenticated and user.is_staff and perms.companies.view_company and perms.assessments.view_aiassessment %}
+          <a href="{% url 'company-five-criteria-private-compare' %}">مقایسه داخلی</a>
+        {% endif %}
+      </nav>
+      <form class="wi-search" method="get" action="{% url 'company-index' %}" role="search">
+        <label class="wi-sr" for="top-search">جست‌وجوی شرکت</label>
+        <input id="top-search" type="search" name="q" placeholder="جست‌وجوی شرکت‌ها..." maxlength="100">
+        <button type="submit" aria-label="جست‌وجو"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 5 5"/></svg></button>
+      </form>
+    </div>
+  </header>
+
+  <main class="wi-shell wi-main" id="main-content">
+    <nav class="wi-breadcrumb" aria-label="مسیر صفحه">
+      <a href="{% url 'company-index' %}">شرکت‌ها</a><span aria-hidden="true">/</span>
+      <span aria-current="page">{{ company.display_name }}</span>
+    </nav>
+
+    <section class="wi-hero wi-panel" aria-labelledby="company-name">
+      <div class="wi-hero-content">
+        <div class="wi-eyebrow"><span class="wi-mini-dot"></span> پروفایل شرکت</div>
+        <h1 id="company-name">{{ company.display_name }}</h1>
+        <p class="wi-hero-lead">نمای یکپارچه تجربه‌های کاری و مصاحبه‌های ثبت‌شده در منبع</p>
+        {% if company.identity_status == 'verified' %}
+          <span class="wi-tag wi-tag--green">هویت شرکت بررسی شده</span>
+        {% else %}
+          <span class="wi-tag wi-tag--amber">نام و انتساب شرکت در انتظار راستی‌آزمایی</span>
+        {% endif %}
+        <div class="wi-actions">
+          <a class="wi-button wi-button--primary" href="{% url 'company-map' %}">
+            <span aria-hidden="true">⌖</span> مشاهده نقشه شرکت‌ها
+          </a>
+          {% if user.is_authenticated and user.is_staff and perms.companies.view_company and perms.assessments.view_aiassessment %}
+          <a class="wi-button wi-button--subtle" href="{% url 'company-five-criteria-private-preview' company.pk %}">
+            پیش‌نمایش پژوهشی <span aria-hidden="true">←</span>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="wi-hero-art wi-company-cover wi-company-cover-v27" data-company-photo-id="{{ company.pk }}" data-photo-manifest="{% static 'companies/company_images_v27.json' %}" data-static-prefix="{% get_static_prefix %}" aria-label="تصویر نمایه شرکت">
+        <span class="wi-v27-initial" aria-hidden="true">{{ company.display_name|slice:":1" }}</span>
+        <span class="wi-v27-photo-credit" hidden></span>
+      </div>
+    </section>
+
+    <section class="wi-stats" aria-label="آمار تجربه‌های ثبت‌شده">
+      <div class="wi-stat wi-stat--blue"><span class="wi-stat-icon" aria-hidden="true">◉</span><div><strong>{{ company.source_work_count }}</strong><span>تجربه کاری ثبت‌شده</span></div></div>
+      <div class="wi-stat wi-stat--mint"><span class="wi-stat-icon" aria-hidden="true">♧</span><div><strong>{{ company.source_interview_count }}</strong><span>تجربه مصاحبه</span></div></div>
+      <div class="wi-stat wi-stat--lavender"><span class="wi-stat-icon" aria-hidden="true">▥</span><div><strong>۵</strong><span>معیار ارزیابی محیط کار</span></div></div>
+      <div class="wi-stat wi-stat--warm"><span class="wi-stat-icon" aria-hidden="true">◇</span><div><strong class="wi-stat-word">پژوهشی</strong><span>امتیاز عمومی تأیید نشده</span></div></div>
+    </section>
+
+    <div class="wi-main-grid">
+      <section class="wi-panel wi-chart-card" aria-labelledby="radar-heading">
+        <div class="wi-section-head"><div><span class="wi-overline">شناخت شرکت</span><h2 id="radar-heading">پروفایل پنج معیار محیط کار</h2></div><span class="wi-status-pill">بدون نمره منتشرشده</span></div>
+        <p class="wi-muted">نمودار این بخش، چارچوب پنج معیار را نشان می‌دهد. تا زمان تأیید داده‌ها، هیچ امتیازی به‌صورت عمومی نمایش داده نمی‌شود.</p>
+        <div class="wi-radar-wrap">
+          <svg class="wi-radar" data-chart-mode="empty" viewBox="0 0 520 480" role="img" aria-label="پنج محور ارزیابی؛ هیچ امتیاز عمومی قابل انتشار نیست">
+            <g class="wi-radar-grid" data-radar-grid></g><g class="wi-radar-plot" data-radar-plot></g>
+          </svg>
+          <div class="wi-chart-empty"><span aria-hidden="true">◈</span><strong>داده معتبر برای انتشار موجود نیست</strong><small>امتیاز ناموجود به معنی صفر نیست</small></div>
+        </div>
+        <div class="wi-chart-footer"><span class="wi-legend-swatch wi-legend-swatch--empty"></span> پنج محور ارزیابی، بدون امتیاز منتشرشده</div>
+      </section>
+
+      <section class="wi-panel wi-criteria-card" aria-labelledby="criteria-heading">
+        <div class="wi-section-head"><div><span class="wi-overline">پنج معیار اصلی</span><h2 id="criteria-heading">شاخص‌های تجربه کاری</h2></div></div>
+        <p class="wi-muted">در تمام معیارها، امتیاز بالاتر به معنی وضعیت بهتر است.</p>
+        <div class="wi-criterion-grid">
+          {% for key, label in five_criteria %}
+          <div class="wi-criterion-item">
+            <span class="wi-criterion-icon wi-axis-{{ forloop.counter }}" aria-hidden="true">{{ forloop.counter }}</span>
+            <span class="wi-criterion-copy"><strong>{{ label }}</strong><small>هنوز داده قابل انتشار ندارد</small></span>
+            <span class="wi-criterion-score">—</span>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="wi-help"><span class="wi-help-icon" aria-hidden="true">i</span><p>راهنمای خواندن امتیازها: <strong>۱۰ یعنی وضعیت بهتر</strong> و <strong>۱ یعنی وضعیت ضعیف‌تر</strong>. نبود امتیاز، نمره صفر نیست.</p></div>
+      </section>
+    </div>
+
+    <div class="wi-bottom-grid">
+      <section class="wi-panel wi-info-box" aria-labelledby="source-heading"><div class="wi-icon-round wi-icon-round--blue" aria-hidden="true">◎</div><h2 id="source-heading">این اطلاعات از کجا آمده‌اند؟</h2><p>آمار بالا تعداد تجربه‌های ثبت‌شده برای این شرکت در منبع را نشان می‌دهد. کیفیت و انتساب داده‌ها از امتیازدهی پژوهشی جدا بررسی می‌شود.</p></section>
+      <section class="wi-panel wi-info-box" aria-labelledby="verification-heading"><div class="wi-icon-round wi-icon-round--mint" aria-hidden="true">✓</div><h2 id="verification-heading">وضعیت بررسی و انتشار</h2><p>امتیازهای پیشنهادی هوش مصنوعی تا زمان تأیید مستقل منتشر نمی‌شوند. اطلاعات خصوصی و متن نظرات در این صفحه نمایش داده نشده‌اند.</p></section>
+      <section class="wi-panel wi-info-box" aria-labelledby="reading-heading"><div class="wi-icon-round wi-icon-round--violet" aria-hidden="true">◈</div><h2 id="reading-heading">نحوه تفسیر معیارها</h2><p>هر محور بخش متفاوتی از تجربه کار را می‌سنجد؛ برای نمونه فشار کاری بیشتر، نمره «تعادل کار و زندگی» را کمتر می‌کند.</p></section>
+    </div>
+    <footer class="wi-footer"><span>جابیو · نمای اطلاعات شرکت</span><a href="{% url 'company-index' %}">بازگشت به فهرست شرکت‌ها</a></footer>
+  </main>
+</body></html>
