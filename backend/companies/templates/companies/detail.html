@@ -8,6 +8,7 @@
   <meta name="color-scheme" content="light">
   <title>{{ company.display_name }} | جابیو</title>
   <link rel="stylesheet" href="{% static 'companies/css/company_profile_v23.css' %}">
+  <link rel="stylesheet" href="{% static 'companies/css/company_experiences_v108.css' %}">
   <script defer src="{% static 'companies/js/company_profile_v23.js' %}"></script>
   <script defer src="{% static "companies/js/persian_digits_v22.js" %}"></script>
 <link rel="stylesheet" href="{% static 'companies/css/company_images_v27.css' %}"><script defer src="{% static 'companies/js/company_images_v27.js' %}"></script>
@@ -77,6 +78,64 @@
       <div class="wi-stat wi-stat--warm"><span class="wi-stat-icon" aria-hidden="true">◇</span><div><strong class="wi-stat-word">{% if published_ai.approved_count %}{{ published_ai.approved_count }}{% else %}پژوهشی{% endif %}</strong><span>{% if published_ai.approved_count %}تجربه AI تأییدشده{% else %}امتیاز عمومی تأیید نشده{% endif %}</span></div></div>
     </section>
 
+
+<section class="jx-experiences" id="wi-experience-section" aria-label="تجربه‌های شرکت">
+  <nav class="jx-tabs" aria-label="دسته‌بندی محتوای شرکت">
+    <a href="?tab=work#wi-experience-section" {% if active_tab == 'work' %}class="is-active" aria-current="page"{% endif %}>تجربه‌های کاری <span>{{ work_count }}</span></a>
+    <a href="?tab=interview#wi-experience-section" {% if active_tab == 'interview' %}class="is-active" aria-current="page"{% endif %}>تجربه‌های مصاحبه <span>{{ interview_count }}</span></a>
+    <a href="?tab=ai#wi-experience-section" {% if active_tab == 'ai' %}class="is-active" aria-current="page"{% endif %}>امتیازهای AI</a>
+  </nav>
+
+  {% if active_tab == 'work' or active_tab == 'interview' %}
+  <section class="jx-panel" aria-labelledby="jx-list-heading">
+    <div class="jx-heading">
+      <div>
+        <span class="jx-eyebrow">بر اساس داده‌های واردشده در جابیو</span>
+        <h2 id="jx-list-heading">{% if active_tab == 'interview' %}تجربه‌های مصاحبه و استخدام{% else %}تجربه‌های کاری{% endif %}</h2>
+        <p>{% if active_tab == 'interview' %}روایت متقاضیان دربارهٔ فرایند مصاحبه را در سایت اصلی بخوانید. این تجربه‌ها در امتیاز پنج‌گانهٔ محیط کار لحاظ نمی‌شوند.{% else %}تجربه‌های ثبت‌شدهٔ کارکنان را در منبع اصلی مشاهده کنید. امتیازهای AI تنها در تب مستقل آن نمایش داده می‌شوند.{% endif %}</p>
+      </div>
+      <span class="jx-count">{% if active_tab == 'interview' %}{{ interview_count }}{% else %}{{ work_count }}{% endif %} مورد قابل مشاهده</span>
+    </div>
+    <form class="jx-search" method="get" role="search" action="">
+      <input type="hidden" name="tab" value="{{ active_tab }}">
+      <label for="jx-job-search">جست‌وجوی عنوان شغلی یا عنوان تجربه</label>
+      <div class="jx-search-row">
+        <input id="jx-job-search" type="search" name="q" value="{{ experience_query }}" maxlength="100" placeholder="مثلاً برنامه‌نویس، تحلیلگر، طراح محصول...">
+        <button type="submit">جست‌وجو</button>
+        {% if experience_query %}<a class="jx-clear" href="?tab={{ active_tab }}#wi-experience-section">حذف فیلتر</a>{% endif %}
+      </div>
+    </form>
+    <div class="jx-results" aria-live="polite">
+      {% for item in experience_cards %}
+      <article class="jx-item">
+        <div class="jx-item-info">
+          <span class="jx-type">{% if active_tab == 'interview' %}تجربه مصاحبه{% else %}تجربه کاری{% endif %}</span>
+          <h3>{{ item.job_title|default:'عنوان شغلی ثبت نشده' }}</h3>
+          <p> {% if item.date %}تاریخ منبع: {{ item.date }}{% else %}تاریخ در منبع مشخص نشده{% endif %}
+          {% if item.source_site %}<span aria-hidden="true">·</span> {{ item.source_site }}{% endif %}</p>
+        </div>
+        {% if item.source_url %}<a class="jx-source" href="{{ item.source_url }}" rel="nofollow noopener noreferrer" target="_blank" aria-label="مشاهده تجربه در سایت اصلی">مشاهده تجربه در منبع <span aria-hidden="true">↗</span></a>{% else %}<span class="jx-unavailable">لینک منبع در دسترس نیست</span>{% endif %}
+      </article>
+      {% empty %}
+      <div class="jx-empty">
+        <strong>{% if experience_query %}نتیجه‌ای برای این جست‌وجو پیدا نشد.{% else %}هنوز تجربه‌ای در این دسته برای نمایش موجود نیست.{% endif %}</strong>
+        <p>این صفحه فقط داده‌های واردشده و بدون منع صریح نمایش را فهرست می‌کند.</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% if experience_page.paginator.num_pages > 1 %}
+    <nav class="jx-pagination" aria-label="صفحه‌بندی تجربه‌ها">
+      {% if experience_page.has_previous %}<a href="?tab={{ active_tab }}&amp;q={{ experience_query|urlencode }}&amp;page={{ experience_page.previous_page_number }}#wi-experience-section">صفحهٔ قبل</a>{% endif %}
+      <span>صفحهٔ {{ experience_page.number }} از {{ experience_page.paginator.num_pages }}</span>
+      {% if experience_page.has_next %}<a href="?tab={{ active_tab }}&amp;q={{ experience_query|urlencode }}&amp;page={{ experience_page.next_page_number }}#wi-experience-section">صفحهٔ بعد</a>{% endif %}
+    </nav>
+    {% endif %}
+    <p class="jx-footnote">متن کامل و جزئیات تجربه در سایت منتشرکنندهٔ اصلی قابل مطالعه است. جابیو متن خام این نظرها را بازنشر نمی‌کند؛ صحت محتوای آن‌ها به‌طور مستقل تضمین نشده است.</p>
+  </section>
+  {% endif %}
+</section>
+
+{% if active_tab == 'ai' %}
     <div class="wi-main-grid">
       <section class="wi-panel wi-chart-card" aria-labelledby="radar-heading">
         <div class="wi-section-head"><div><span class="wi-overline">شناخت شرکت</span><h2 id="radar-heading">پروفایل پنج معیار محیط کار</h2></div><span class="wi-status-pill">{% if published_ai.has_summary %}بر اساس شواهد مستقل تأییدشده{% else %}بدون میانگین تأییدشده{% endif %}</span></div>
@@ -134,6 +193,8 @@
       <p class="wi-muted">میانگین هر شاخص تنها با حداقل سه تجربهٔ مستقل دارای نمرهٔ تأییدشده نمایش داده می‌شود.</p>
     </section>
     {% endif %}
+    {% endif %}
+
     <div class="wi-bottom-grid">
       <section class="wi-panel wi-info-box" aria-labelledby="source-heading"><div class="wi-icon-round wi-icon-round--blue" aria-hidden="true">◎</div><h2 id="source-heading">این اطلاعات از کجا آمده‌اند؟</h2><p>آمار بالا تعداد تجربه‌های ثبت‌شده برای این شرکت در منبع را نشان می‌دهد. کیفیت و انتساب داده‌ها از امتیازدهی پژوهشی جدا بررسی می‌شود.</p></section>
       <section class="wi-panel wi-info-box" aria-labelledby="verification-heading"><div class="wi-icon-round wi-icon-round--mint" aria-hidden="true">✓</div><h2 id="verification-heading">وضعیت بررسی و انتشار</h2><p>امتیازهای پیشنهادی هوش مصنوعی تا زمان تأیید مستقل منتشر نمی‌شوند. اطلاعات خصوصی و متن نظرات در این صفحه نمایش داده نشده‌اند.</p></section>

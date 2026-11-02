@@ -1,5 +1,7 @@
 """Public read-only views. No source bodies and no unapproved scores are exposed."""
 from django.core.paginator import Paginator
+from django.db.models import Q
+from urllib.parse import urlsplit
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from .models import Company
@@ -13,13 +15,72 @@ def index(request):
     return render(request,'companies/index.html',{'page':page,'q':q})
 
 
+
+def _public_experience_queryset(company):
+    """Only public *metadata and links*, never copied source body or unapproved AI.
+
+    A blocked source or rejected attribution is never included. Source titles, raw
+    comments and all pros/cons stay private even if the URL appears publicly.
+    """
+    from experiences.models import PublicExperience
+    return (PublicExperience.objects.filter(company=company)
+            .exclude(copyright_review='blocked')
+            .exclude(company_attribution_status='rejected')
+            .exclude(independence_status='duplicate')
+            .exclude(source_url=''))
+
+
+def _safe_source_url(value):
+    """Protect the public href from unexpected URL schemes."""
+    try:
+        url = urlsplit(value)
+        if url.scheme.lower() in ('http', 'https') and url.hostname:
+            return value
+    except (ValueError, TypeError):
+        pass
+    return None
+
+
+
 def detail(request, pk):
-    c=get_object_or_404(Company, pk=pk)
+    c = get_object_or_404(Company, pk=pk)
     from assessments.models import DIMENSIONS
     from assessments.publication_workflow_v104 import public_company_assessments
+
+    # Existing approved five-dimension AI display stays unchanged.
     published = public_company_assessments(c)
-    return render(request,'companies/detail.html',{'company':c, 'five_criteria': DIMENSIONS,
-                                                 'published_ai': published})
+    tab = request.GET.get('tab', 'ai')
+    if tab not in ('ai', 'work', 'interview'):
+        tab = 'ai'
+
+    available = _public_experience_queryset(c)
+    work_count = available.filter(source_kind='work').count()
+    interview_count = available.filter(source_kind='interview').count()
+    context = {'company': c, 'five_criteria': DIMENSIONS,
+               'published_ai': published, 'active_tab': tab,
+               'work_count': work_count, 'interview_count': interview_count}
+
+    if tab in ('work', 'interview'):
+        term = request.GET.get('q', '').strip()[:100]
+        experiences = available.filter(source_kind=tab)
+        if term:
+            experiences = experiences.filter(
+                Q(job_title__icontains=term) | Q(title__icontains=term))
+        # Import order is deterministic; the source Jalali date is not sortable.
+        experiences = experiences.order_by('-imported_at', '-pk').values(
+            'id', 'job_title', 'published_jalali', 'source_url', 'source_site')
+        page_obj = Paginator(experiences, 12).get_page(request.GET.get('page'))
+        public_cards = [
+            {'id': row['id'], 'job_title': row['job_title'],
+             'date': row['published_jalali'],
+             'source_site': row['source_site'],
+             'source_url': _safe_source_url(row['source_url'])}
+            for row in page_obj.object_list
+        ]
+        context.update({'experience_query': term, 'experience_page': page_obj,
+                        'experience_cards': public_cards})
+
+    return render(request, 'companies/detail.html', context)
 
 
 def company_map(request):
