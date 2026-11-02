@@ -91,6 +91,12 @@ def ai_feasibility_review(admin_view, request):
         raise PermissionDenied
     can_write = request.user.has_perm('assessments.add_aihumanreviewevent')
     selected = request.GET.get('assessment') or ''
+    # Five-dimension work uses the new single-decision screen, not the old
+    # per-axis feasibility review workflow. Legacy reviews remain accessible.
+    if selected and request.method == 'GET':
+        target = AiAssessment.objects.filter(pk=selected, experience__source_kind='work').only('criteria_version').first()
+        if target and target.criteria_version != LEGACY_CRITERIA_VERSION:
+            return HttpResponseRedirect(reverse('admin:assessments_aiassessment_publication_detail', args=[target.pk]))
     assessment_qs = AiAssessment.objects.filter(experience__source_kind='work').select_related(
         'experience', 'experience__company').prefetch_related(
             Prefetch('dimensions', queryset=AiDimension.objects.order_by('pk').prefetch_related(

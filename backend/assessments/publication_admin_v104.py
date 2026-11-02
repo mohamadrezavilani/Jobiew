@@ -14,6 +14,7 @@ from django.utils.cache import patch_cache_control
 
 from assessments.models import AiAssessment, AiDimension, AiHumanReviewEvent, DIMENSIONS, FIVE_CRITERIA_VERSION
 from assessments.publication_workflow_v104 import publication_blockers, latest_verdict, source_url, set_publication
+from assessments.publication_simple_v105 import preliminary_blockers, quick_decision
 from experiences.models import ExperienceReviewEvent
 
 
@@ -65,7 +66,15 @@ def publication_detail(admin_view,request,assessment_id):
     can_publish=request.user.has_perm('assessments.change_aiassessment')
     if request.method=='POST':
         action=request.POST.get('action')
-        if action=='reviews':
+        if action in {'quick_publish', 'quick_reject'}:
+            if not can_publish: raise PermissionDenied
+            try:
+                quick_decision(request, a.pk, approve=(action=='quick_publish'),
+                               rights_evidence_url=request.POST.get('rights_evidence_url',''))
+                messages.success(request, 'ارزیابی AI تأیید و منتشر شد.' if action=='quick_publish' else 'ارزیابی رد شد و انتشار آن غیرفعال است.')
+            except (ValidationError, ValueError) as exc:
+                messages.error(request, 'امکان ثبت تصمیم وجود ندارد: '+str(exc))
+        elif action=='reviews':
             if not can_review or a.publish_approved: raise PermissionDenied
             if request.POST.get('acknowledged_source')!='on':
                 messages.error(request,'ابتدا تأیید کنید متن اصلی را بررسی کرده‌اید.')
@@ -130,11 +139,14 @@ def publication_detail(admin_view,request,assessment_id):
         d=dims.get(key)
         latest=latest_verdict(d) if d else None
         panels.append({'key':key,'label':label,'dim':d,'latest':latest})
-    blockers=publication_blockers(a)
+    blockers=preliminary_blockers(a)
     ctx=_context(admin_view,request,f'بررسی و انتشار AI #{a.pk}')
     ctx.update({'assessment':a,'experience':exp,'company':exp.company,
         'panels':panels,'blockers':blockers,'ready':not blockers,
+        'needs_rights':exp.copyright_review=='pending',
+        'rights_blocked':exp.copyright_review=='blocked',
         'can_review':can_review,'can_source':can_source,'can_publish':can_publish,
+        'can_quick_publish':(can_publish and can_review and can_source),
         'source_url':source_url(exp.source_url),
         'verdicts':AiHumanReviewEvent.VERDICTS,'errors':AiHumanReviewEvent.ERROR_TYPES,
         'source_review_rows':[(field,label,[(value,dict(ExperienceReviewEvent.DECISIONS)[value]) for value in sorted(ExperienceReviewEvent.ALLOWED[field])]) for field,label in ExperienceReviewEvent.REVIEW_FIELDS],

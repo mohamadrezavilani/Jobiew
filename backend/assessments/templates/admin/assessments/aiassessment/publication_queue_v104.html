@@ -1,23 +1,16 @@
 {% extends 'admin/base_site.html' %}
 {% load static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/publication_v104.css' %}">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/publication_simple_v105.css' %}">{% endblock %}
 {% block content %}
-<main class="wi-pub" dir="rtl">
-<header><h1>صف بررسی و انتشار AI · پنج شاخص</h1>
-<p>متن کامل منبع و ارزیابی‌ها خصوصی‌اند. تنها خروجی‌های دارای تأیید نهایی می‌توانند در صفحه عمومی شرکت نمایش داده شوند.</p></header>
-<form method="get" class="wi-pub-filters">
-<label>جستجو در شرکت، عنوان و منبع <input type="search" name="q" value="{{ q }}" maxlength="120" placeholder="نام شرکت یا تجربه"></label>
-<label>وضعیت <select name="state"><option value="all">همه</option><option value="pending" {% if state == 'pending' %}selected{% endif %}>منتظر انتشار</option><option value="published" {% if state == 'published' %}selected{% endif %}>تأییدشده برای انتشار</option></select></label>
-<button class="button default" type="submit">اعمال فیلتر</button>
-</form>
-<div class="wi-pub-tablewrap"><table><thead><tr><th>شرکت</th><th>تجربه / AI</th><th>وضعیت</th><th>بررسی</th></tr></thead><tbody>
-{% for a in page_obj %}<tr><td>{{ a.experience.company.display_name }}</td><td><strong>{{ a.experience.title|truncatechars:100 }}</strong><small>AI #{{ a.pk }} | {{ a.model_name }} | {{ a.created_at|date:'Y/m/d' }}</small></td>
-<td>{% if a.publish_approved %}<span class="wi-pub-ok">تأیید انتشار</span>{% else %}<span class="wi-pub-warn">در انتظار بررسی</span>{% endif %}</td>
-<td><a class="button" href="{% url 'admin:assessments_aiassessment_publication_detail' a.pk %}">مشاهده متن، پنج شاخص و تصمیم</a></td></tr>
-{% empty %}<tr><td colspan="4">هیچ ارزیابی پنج‌شاخصی مطابق فیلتر پیدا نشد.</td></tr>{% endfor %}
-</tbody></table></div>
-{% if page_obj.paginator.num_pages > 1 %}<nav class="wi-pub-pages"><span>صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
-{% if page_obj.has_previous %}<a href="?{{ page_query }}page={{ page_obj.previous_page_number }}">قبلی</a>{% endif %}
-{% if page_obj.has_next %}<a href="?{{ page_query }}page={{ page_obj.next_page_number }}">بعدی</a>{% endif %}</nav>{% endif %}
+<main class="jr" dir="rtl">
+<header class="jr-head"><div><span class="jr-muted">مدیریت محتوای Jobiew</span><h1>تأیید ارزیابی‌های AI</h1><p>هر تجربه را باز کن، متن و پنج شاخص را ببین و یک تصمیم بگیر.</p></div></header>
+<form method="get" class="jr-filters"><input aria-label="جستجو" type="search" name="q" value="{{ q }}" maxlength="120" placeholder="نام شرکت یا عنوان نظر"><select name="state" aria-label="وضعیت"><option value="all">همه ارزیابی‌ها</option><option value="pending" {% if state == 'pending' %}selected{% endif %}>در انتظار بررسی</option><option value="published" {% if state == 'published' %}selected{% endif %}>منتشرشده‌ها</option></select><button class="jr-button jr-outline" type="submit">جستجو</button></form>
+<div class="jr-list">
+  {% for a in page_obj %}<a class="jr-listitem" href="{% url 'admin:assessments_aiassessment_publication_detail' a.pk %}">
+    <div><strong>{{ a.experience.company.display_name }}</strong><p>{{ a.experience.title|truncatechars:110 }}</p><small>شماره {{ a.pk }} · {{ a.created_at|date:'Y/m/d' }}</small></div>
+    {% if a.publish_approved %}<span class="jr-status good">منتشرشده</span>{% elif a.independent_review_status == 'rejected' %}<span class="jr-status bad">ردشده</span>{% else %}<span class="jr-status neutral">در انتظار تأیید</span>{% endif %}
+  </a>{% empty %}<p class="jr-card">هیچ ارزیابی مطابق جستجو پیدا نشد.</p>{% endfor %}
+</div>
+{% if page_obj.paginator.num_pages > 1 %}<nav class="jr-pages"><span>صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_previous %}<a href="?{{ page_query }}page={{ page_obj.previous_page_number }}">قبلی</a>{% endif %}{% if page_obj.has_next %}<a href="?{{ page_query }}page={{ page_obj.next_page_number }}">بعدی</a>{% endif %}</nav>{% endif %}
 </main>
 {% endblock %}

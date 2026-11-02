@@ -1,74 +1,74 @@
 {% extends 'admin/base_site.html' %}
 {% load static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/publication_v104.css' %}">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/publication_simple_v105.css' %}">{% endblock %}
 {% block content %}
-<main class="wi-pub" dir="rtl">
-  <nav class="wi-pub-nav"><a href="{{ queue_url }}">صف ارزیابی‌ها</a><a href="{{ experience_url }}">نمای کامل نظر شرکت</a><a href="{{ company_review_url }}">تأیید هویت شرکت</a><a href="{{ public_company_url }}" target="_blank" rel="noopener noreferrer">صفحه عمومی شرکت</a></nav>
-  <header><span>ارزیابی #{{ assessment.pk }} · {{ assessment.model_name }} / {{ assessment.prompt_version }}</span><h1>{{ company.display_name }} — {{ experience.title }}</h1>
-  <p>{% if assessment.publish_approved %}<strong class="wi-pub-ok">تأیید انتشار فعال است</strong>{% else %}<strong class="wi-pub-warn">هنوز منتشر نشده است</strong>{% endif %} · فقط برای مدل پنج‌شاخصی</p></header>
-  <div class="wi-pub-grid">
-    <section class="wi-pub-card"><h2>۱. متن اصلی تجربه (خصوصی)</h2>
-      <p><strong>{{ experience.get_source_kind_display }}</strong> · تاریخ: {{ experience.published_jalali|default:'نامشخص' }} · موقعیت: {{ experience.job_title|default:'ثبت نشده' }}</p>
-      {% if source_url %}<p><a href="{{ source_url }}" target="_blank" rel="noopener noreferrer">بررسی در سایت مبدأ</a></p>{% endif %}
-      <div class="wi-pub-body">{{ experience.body|default:'متن اصلی ثبت نشده'|linebreaks }}</div>
-      {% if experience.pros %}<h3>نکات مثبت</h3><div>{{ experience.pros }}</div>{% endif %}
-      {% if experience.cons %}<h3>نکات منفی</h3><div>{{ experience.cons }}</div>{% endif %}
-      <p class="wi-pub-hint">متن، شواهد خام و توضیحات مدل در صفحه عمومی منتشر نمی‌شوند.</p>
-    </section>
-    <aside class="wi-pub-card"><h2>۲. صحت منبع و انتساب</h2>
-      <dl class="wi-pub-dl"><dt>هویت شرکت</dt><dd>{{ company.identity_status }}</dd><dt>حوزه فناوری</dt><dd>{{ company.tech_status }}</dd>
-        <dt>حقوق انتشار</dt><dd>{{ experience.copyright_review }}</dd><dt>انتساب نظر</dt><dd>{{ experience.company_attribution_status }}</dd>
-        <dt>استقلال نظر</dt><dd>{{ experience.independence_status }}</dd></dl>
-      {% if can_source and not assessment.publish_approved %}
-      {% for field,label,choices in source_review_rows %}
-      <form method="post" class="wi-pub-form wi-pub-source-form">{% csrf_token %}<input type="hidden" name="action" value="source"><input type="hidden" name="review_field" value="{{ field }}">
-        <h3>{{ label }}</h3>
-        <label>تصمیم<select name="decision" required><option value="">انتخاب نتیجه</option>{% for value,name in choices %}<option value="{{ value }}">{{ name }}</option>{% endfor %}</select></label>
-        <label>لینک مدرک<input type="url" name="evidence_url" maxlength="1500" placeholder="https://..."></label>
-        <label>دلیل تصمیم<textarea name="rationale" rows="2" required minlength="10"></textarea></label>
-        <button class="button" type="submit">ثبت {{ label }}</button>
-      </form>{% endfor %}
-      <p class="wi-pub-hint">برای تصمیم‌های مثبت، لینک مدرک معتبر الزامی است. هر تصمیم در تاریخچه ذخیره می‌شود.</p>
-      {% else %}<p class="wi-pub-hint">تغییر بررسی منبع تنها با مجوز مربوطه و پیش از انتشار امکان دارد.</p>{% endif %}
-      {% if source_history %}<details><summary>تاریخچه بررسی منبع ({{ source_history|length }})</summary><ul>{% for e in source_history %}<li>{{ e.get_review_field_display }} · {{ e.get_decision_display }} · {{ e.reviewer }} · {{ e.created_at|date:'Y/m/d H:i' }}</li>{% endfor %}</ul></details>{% endif %}
+<main class="jr" dir="rtl">
+  <nav class="jr-links"><a href="{{ queue_url }}">← بازگشت به صف</a><a href="{{ experience_url }}">نمای کامل تجربه</a><a href="{{ public_company_url }}" target="_blank" rel="noopener">صفحه عمومی شرکت</a></nav>
+  <header class="jr-head">
+    <div><span class="jr-muted">بازبینی ارزیابی هوش مصنوعی · شماره {{ assessment.pk }}</span>
+      <h1>{{ company.display_name }}</h1><p>{{ experience.title }}</p></div>
+    {% if assessment.publish_approved %}<span class="jr-status good">منتشرشده</span>
+    {% elif assessment.independent_review_status == 'rejected' %}<span class="jr-status bad">ردشده</span>
+    {% else %}<span class="jr-status neutral">در انتظار تأیید</span>{% endif %}
+  </header>
+  <div class="jr-layout">
+    <div class="jr-main">
+      <section class="jr-card">
+        <div class="jr-section-head"><h2>متن نظر</h2><span class="jr-muted">فقط در پنل مدیر</span></div>
+        <div class="jr-meta"><span>{{ experience.get_source_kind_display }}</span><span>{{ experience.published_jalali|default:'تاریخ نامشخص' }}</span><span>{{ experience.job_title|default:'بدون عنوان شغلی' }}</span></div>
+        {% if source_url %}<p><a href="{{ source_url }}" rel="noopener noreferrer" target="_blank">بازکردن متن در سایت مبدأ</a></p>{% endif %}
+        <div class="jr-story">{{ experience.body|default:'متن اصلی این تجربه ذخیره نشده است.'|linebreaks }}</div>
+        {% if experience.pros %}<details class="jr-fold"><summary>نکات مثبت منبع</summary><div class="jr-story">{{ experience.pros }}</div></details>{% endif %}
+        {% if experience.cons %}<details class="jr-fold"><summary>نکات منفی منبع</summary><div class="jr-story">{{ experience.cons }}</div></details>{% endif %}
+      </section>
+      <section class="jr-card">
+        <div class="jr-section-head"><h2>پنج نتیجهٔ هوش مصنوعی</h2><span class="jr-muted">امتیاز بالاتر = وضعیت بهتر</span></div>
+        <div class="jr-rows">
+          {% for p in panels %}<article class="jr-axis">
+            <div class="jr-axis-top"><strong>{{ p.label }}</strong>
+              {% if p.dim %}{% if p.dim.score != None %}<b class="jr-score">{{ p.dim.score }} <small>از ۱۰</small></b>
+              {% else %}<span class="jr-empty">بدون امتیاز</span>{% endif %}
+              {% else %}<span class="jr-empty">دادهٔ ناقص</span>{% endif %}
+            </div>
+            {% if p.dim %}
+              {% if p.dim.score != None %}<div class="jr-confidence">اطمینان گزارش‌شده توسط مدل: {{ p.dim.confidence }}٪</div>{% else %}<div class="jr-confidence">مدل برای این شاخص امتیازی پیشنهاد نکرده است؛ این مورد نباید صفر حساب شود.</div>{% endif %}
+              {% if p.dim.explanation %}<p class="jr-explain">{{ p.dim.explanation }}</p>{% endif %}
+              {% if p.dim.evidence %}<details class="jr-fold"><summary>مشاهده شواهد AI</summary><div class="jr-evidence">{{ p.dim.evidence }}</div></details>{% endif %}
+              {% if p.latest %}<div class="jr-muted">بررسی قبلی: {{ p.latest.get_verdict_display }}</div>{% endif %}
+            {% endif %}
+          </article>{% endfor %}
+        </div>
+      </section>
+    </div>
+    <aside class="jr-side">
+      <section class="jr-card jr-decision">
+        <h2>تصمیم نهایی</h2>
+        <p class="jr-muted">متن و امتیازها را بررسی کن؛ سپس فقط یک تصمیم بگیر. شاخص بدون امتیاز به‌صورت «امتناع صحیح از امتیازدهی» ثبت می‌شود.</p>
+        {% if assessment.publish_approved %}
+          <p class="jr-pass">این نتیجه برای نمایش عمومی تأیید شده است.</p>
+          {% if can_publish %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="quick_reject"><button class="jr-button jr-outline" type="submit">لغو انتشار و ارجاع برای اصلاح</button></form>{% endif %}
+        {% else %}
+          {% if blockers %}<div class="jr-alert" role="alert"><strong>قبل از انتشار باید این موارد برطرف شوند:</strong><ul>{% for item in blockers %}<li>{{ item }}</li>{% endfor %}</ul></div>{% endif %}
+          <form method="post" class="jr-form">{% csrf_token %}<input type="hidden" name="action" value="quick_publish">
+            {% if needs_rights %}<div class="jr-rights"><strong>مجوز استفاده از منبع</strong><p>برای این نظر هنوز اجازهٔ استفاده و انتشار تأیید نشده است. اگر سند مستقل مجوز داری، نشانی آن را وارد کن. صرف عمومی‌بودن نظر مجوز نیست.</p><label for="jr-rights-url">نشانی سند مجوز</label><input id="jr-rights-url" type="url" name="rights_evidence_url" maxlength="1500" placeholder="https://..." autocomplete="off" required></div>{% endif %}
+            {% if can_quick_publish %}<button type="submit" class="jr-button jr-primary" {% if blockers %}disabled{% endif %}>تأیید و انتشار</button>
+            {% else %}<p class="jr-alert">حساب شما مجوز ثبت بررسی و انتشار را ندارد.</p>{% endif %}
+          </form>
+          {% if can_publish %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="quick_reject"><button type="submit" class="jr-button jr-outline">رد / نیازمند اصلاح</button></form>{% endif %}
+        {% endif %}
+        <div class="jr-info"><strong>وضعیت بررسی</strong><ul>
+          <li>شرکت: {% if company.identity_status == 'verified' and company.tech_status == 'verified' %}تأیید شده{% else %}<a href="{{ company_review_url }}">نیازمند بررسی شرکت</a>{% endif %}</li>
+          <li>حقوق منبع: {% if experience.copyright_review == 'approved' %}تأییدشده{% elif experience.copyright_review == 'blocked' %}غیرمجاز{% else %}تأیید نشده{% endif %}</li>
+          <li>انتساب و استقلال: با تصمیم نهایی مدیر (اگر از قبل رد نشده باشند) ثبت می‌شوند</li>
+        </ul></div>
+        <p class="jr-fine">انتشار امتیاز AI به معنی انتشار متن خام نظر نیست. میانگین شرکت فقط با حداقل سه تجربهٔ مستقل تأییدشده نمایش داده می‌شود.</p>
+      </section>
+      <details class="jr-card jr-history"><summary>سوابق و جزئیات فنی</summary>
+        <p>مدل: {{ assessment.model_name }} · نسخه: {{ assessment.prompt_version }}</p>
+        <p>وضعیت پردازش: {{ assessment.parse_status }} · نسخه شاخص‌ها: {{ assessment.criteria_version }}</p>
+        {% if latest_log %}<ul>{% for item in latest_log %}<li>{{ item.action_time|date:'Y/m/d H:i' }} · {{ item.user }} · {{ item.change_message }}</li>{% endfor %}</ul>{% endif %}
+      </details>
     </aside>
   </div>
-  <section class="wi-pub-card"><h2>۳. بررسی یک‌جای پنج شاخص AI</h2>
-    <p class="wi-pub-hint">برای هر شاخص متن، شواهد و جهت امتیاز را کنترل کن. امتیاز بالاتر همیشه یعنی وضعیت بهتر. «درست» بودن مدل لزوماً به معنی تأیید انتشار نیست.</p>
-    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reviews">
-      <div class="wi-pub-axis">
-      {% for p in panels %}<article>
-        <h3>{{ forloop.counter }}. {{ p.label }}</h3>
-        {% if p.dim %}
-          <div class="wi-pub-metrics"><strong>امتیاز AI: {% if p.dim.score != None %}{{ p.dim.score }} از ۱۰{% else %}بدون امتیاز{% endif %}</strong><span>اطمینان مدل: {{ p.dim.confidence }}٪</span></div>
-          <p><b>توضیح AI:</b> {{ p.dim.explanation|default:'ثبت نشده' }}</p><p><b>شواهد:</b></p><div class="wi-pub-evidence">{{ p.dim.evidence }}</div>
-          <p>آخرین داوری: {% if p.latest %}<strong>{{ p.latest.get_verdict_display }}</strong> ({{ p.latest.reviewer }}، {{ p.latest.created_at|date:'Y/m/d H:i' }}){% else %}ثبت نشده{% endif %}</p>
-          {% if can_review and not assessment.publish_approved %}
-            <label>نتیجه بررسی<select name="verdict_{{ p.key }}"><option value="">بدون تغییر</option>{% for value,label in verdicts %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
-            <div class="wi-pub-inline"><label>علت خطا (در صورت رد)<select name="error_{{ p.key }}">{% for value,label in errors %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
-            <label>توضیح تصمیم<textarea name="note_{{ p.key }}" rows="2" placeholder="برای رد کردن، حداقل ۱۲ حرف دلیل بنویس"></textarea></label></div>
-          {% endif %}
-        {% else %}<strong class="wi-pub-bad">شاخص در دیتابیس ثبت نشده؛ امکان انتشار وجود ندارد.</strong>{% endif %}
-      </article>{% endfor %}
-      </div>
-      {% if can_review and not assessment.publish_approved %}
-      <label class="wi-pub-check"><input type="checkbox" name="acknowledged_source" required> متن اصلی و شواهد هر شاخص انتخاب‌شده را شخصاً بررسی کردم.</label>
-      <button class="button default" type="submit">ذخیره تصمیم‌های انسانی (بدون انتشار)</button>{% endif %}
-    </form>
-  </section>
-  <section class="wi-pub-card"><h2>۴. تصمیم نهایی انتشار</h2>
-    {% if blockers %}<p class="wi-pub-warn">انتشار فعلاً مجاز نیست. موارد زیر را اصلاح کن:</p><ul class="wi-pub-blockers">{% for problem in blockers %}<li>{{ problem }}</li>{% endfor %}</ul>{% else %}<p class="wi-pub-ok">تمام شرط‌های فعلی انتشار برقرار است.</p>{% endif %}
-    {% if can_publish %}
-    <form method="post" class="wi-pub-form">{% csrf_token %}
-      <input type="hidden" name="action" value="{% if assessment.publish_approved %}revoke{% else %}publish{% endif %}">
-      <label>دلیل تصمیم نهایی<textarea name="rationale" rows="2" required minlength="12" placeholder="دلیل قابل‌ردیابی برای ثبت در تاریخچه"></textarea></label>
-      <label class="wi-pub-check"><input type="checkbox" name="confirmed" required> نتیجهٔ این تصمیم، متن عمومی قابل‌نمایش و مسئولیت بررسی مجوزها را تأیید می‌کنم.</label>
-      {% if assessment.publish_approved %}<button class="button" type="submit">لغو انتشار AI</button>
-      {% else %}<button class="button default" type="submit" {% if not ready %}disabled{% endif %}>تأیید نهایی و انتشار ارزیابی AI</button>{% endif %}
-    </form>
-    {% else %}<p>برای انتشار، مجوز <code>assessments.change_aiassessment</code> لازم است.</p>{% endif %}
-    <p class="wi-pub-hint">فقط امتیازهای پنج شاخص و لینک منبع نمایش داده می‌شوند؛ متن اصلی و شاهد خام خصوصی می‌مانند. میانگین شرکت تنها با حداقل ۳ تجربه مستقل و تأییدشده ظاهر می‌شود.</p>
-    {% if latest_log %}<details><summary>تاریخچه انتشار</summary><ul>{% for item in latest_log %}<li>{{ item.action_time|date:'Y/m/d H:i' }} · {{ item.user }} · {{ item.change_message }}</li>{% endfor %}</ul></details>{% endif %}
-  </section>
 </main>
 {% endblock %}
