@@ -24,6 +24,7 @@
     <div class="wi-review-links">
       <a href="{% url 'admin:companies_company_changelist' %}">بازگشت به لیست شرکت‌ها</a>
       <a href="{% url 'admin:companies_company_change' company.pk %}">مشاهده اطلاعات شرکت</a>
+      {% if can_see_experiences %}<a href="{% url 'admin:companies_company_experiences' company.pk %}">مشاهده تجربه‌ها و مصاحبه‌ها</a>{% endif %}
       {% if company.source_url %}<a href="{{ company.source_url }}" target="_blank" rel="noopener noreferrer">صفحه منبع گردآوری‌شده</a>{% endif %}
       <a href="{{ company_search_url }}" target="_blank" rel="noopener noreferrer">جست‌وجوی سایت رسمی / تماس با ما</a>
     </div>

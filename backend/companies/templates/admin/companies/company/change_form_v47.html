@@ -1,6 +1,13 @@
 {% extends "admin/change_form.html" %}
 {% block after_field_sets %}
   {{ block.super }}
+  {% if wi_can_see_experiences %}
+  <section class="module" dir="rtl" style="padding:16px;line-height:2;">
+    <h2>تجربه‌ها و مصاحبه‌های ثبت‌شده</h2>
+    <p>متن کامل نظرهای واردشده از منبع، جست‌وجو، وضعیت بررسی و نتایج آزمایشی AI را برای همین شرکت ببینید.</p>
+    <a class="button" href="{{ wi_experiences_url }}">مشاهده نظرهای این شرکت</a>
+  </section>
+  {% endif %}
   {% if wi_review_url %}
   <section class="module" dir="rtl" style="padding:16px;line-height:2;">
     <h2>بررسی و تأیید شرکت</h2>

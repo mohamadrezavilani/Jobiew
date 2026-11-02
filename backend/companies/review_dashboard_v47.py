@@ -175,6 +175,7 @@ def review_dashboard(admin_view, request, object_id):
         **admin_view.admin_site.each_context(request),
         'title': f'بررسی شرکت: {company.display_name}',
         'company': company, 'panels': panels, 'location_form': loc_form,
+        'can_see_experiences': request.user.has_perm('experiences.view_publicexperience'),
         'location': location, 'location_latest': loc_latest,
         'loc_status': loc_status,
         'loc_status_label': dict(CompanyLocationReviewEvent.DECISIONS).get(loc_status),
