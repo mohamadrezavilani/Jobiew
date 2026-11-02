@@ -22,7 +22,7 @@
       <section class="jr-card jr-approval">
         <h2>بررسی پنج شاخص</h2>
         <p class="jr-muted">برای هر شاخص فقط یکی را انتخاب کن. «تأیید» یعنی خروجی AI با متن اصلی سازگار است؛ اگر نمره‌ای ندارد، یعنی نبود نمره را درست می‌دانی.</p>
-        <form id="five-review" method="post" data-publish-ready="{{ ready|yesno:'true,false' }}">{% csrf_token %}
+        <form id="five-review" method="post">{% csrf_token %}
           <div class="jr-checklist">
           {% for p in panels %}
             <section class="jr-checkitem">
@@ -42,18 +42,15 @@
             </section>
           {% endfor %}
           </div>
-          {% if can_publish and can_review %}
+          {% if can_quick_publish %}
           <div class="jr-actions">
             <p id="jr-review-count" class="jr-progress" aria-live="polite">تصمیم‌های پنج شاخص را تکمیل کن.</p>
-            <button class="jr-button jr-outline" type="submit" name="action" value="review_dimensions">ذخیرهٔ تصمیم‌های پنج شاخص</button>
-            {% if not assessment.publish_approved and can_quick_publish %}
-              <button class="jr-button jr-primary" id="jr-publish-five" type="submit" name="action" value="publish_reviewed" disabled>تأیید پنج شاخص و انتشار</button>
-            {% else %}<p class="jr-pass">این ارزیابی اکنون منتشر شده است. تغییر هر تصمیم به «عدم تأیید»، انتشار را لغو می‌کند.</p>{% endif %}
+            <button class="jr-button jr-primary" id="jr-publish-five" type="submit" name="action" value="finish_review" disabled>تکمیل بررسی</button>
+            {% if assessment.publish_approved %}<p class="jr-pass">این ارزیابی منتشر است. با رد هر شاخص و ثبت تصمیم، انتشار لغو می‌شود.</p>{% endif %}
           </div>
           {% else %}<p class="jr-alert">حساب شما مجوز بررسی یا انتشار ندارد.</p>{% endif %}
         </form>
         {% if blockers %}<details class="jr-blocker"><summary>پیش‌شرط‌های مستقل انتشار ({{ blockers|length }})</summary><ul>{% for x in blockers %}<li>{{ x }}</li>{% endfor %}</ul>
-          {% if needs_rights %}<p>مجوز منبع یک موضوع حقوقیِ جدا از پنج امتیاز است. در این صفحه هیچ نشانی سندی لازم نیست.</p>{% if can_source %}<a href="{{ rights_review_url }}">مدیریت بررسی مجوز منبع</a>{% endif %}{% endif %}
           {% if company.identity_status != 'verified' or company.tech_status != 'verified' %}<p><a href="{{ company_review_url }}">بررسی مشخصات شرکت</a></p>{% endif %}
         </details>{% endif %}
         {% if assessment.publish_approved and can_publish %}<form method="post">{% csrf_token %}<input name="action" type="hidden" value="quick_reject"><button class="jr-button jr-outline jr-danger" type="submit">لغو انتشار</button></form>{% endif %}
@@ -73,7 +70,10 @@
     var values=fields.map(function(field){var el=form.querySelector('input[name="'+field+'"]:checked');return el?el.value:'';});
     var selected=values.filter(Boolean).length, approved=values.filter(function(v){return v==='yes';}).length;
     progress.textContent='بررسی‌شده: '+selected+' از ۵ · تأیید: '+approved+' از ۵';
-    if(publish) publish.disabled=!(values.length===5 && approved===5 && form.dataset.publishReady==='true');
+    if(publish){
+      publish.disabled=!(values.length===5 && selected===5);
+      publish.textContent=approved===5 ? 'تأیید و انتشار' : 'ثبت عدم تأیید';
+    }
   }
   form.addEventListener('change',update);update();
 })();

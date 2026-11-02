@@ -45,8 +45,8 @@ def publication_blockers(assessment, *, check_other=True):
         problems.append('مصاحبه در امتیازهای تجربه کاری وارد نمی‌شود.')
     if company.identity_status != 'verified' or company.tech_status != 'verified':
         problems.append('هویت و فناوری‌محور بودن شرکت باید در بررسی شرکت تأیید شود.')
-    if exp.copyright_review != 'approved':
-        problems.append('وضعیت حقوق استفاده از منبع باید تأیید شود.')
+    if exp.copyright_review == 'blocked':
+        problems.append('برای این منبع منع صریح انتشار ثبت شده است.')
     if exp.company_attribution_status != 'verified':
         problems.append('انتساب تجربه به شرکت باید تأیید شود.')
     if exp.independence_status != 'verified':

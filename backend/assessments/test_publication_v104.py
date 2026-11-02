@@ -56,6 +56,8 @@ class PublicationV104Tests(TestCase):
         self.assertTrue(publication_blockers(self.ai))
         self.company.identity_status='verified';self.company.save(update_fields=['identity_status'])
         self.exp.copyright_review='pending';self.exp.save(update_fields=['copyright_review'])
+        self.assertFalse(publication_blockers(self.ai))
+        self.exp.copyright_review='blocked';self.exp.save(update_fields=['copyright_review'])
         self.assertTrue(publication_blockers(self.ai))
         self.exp.copyright_review='approved';self.exp.save(update_fields=['copyright_review'])
         first=AiDimension.objects.get(assessment=self.ai,key=DIMENSIONS[0][0])

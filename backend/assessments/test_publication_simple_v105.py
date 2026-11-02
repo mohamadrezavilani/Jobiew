@@ -47,7 +47,9 @@ class SimplePublicationTests(TestCase):
     def test_one_click_approval_creates_correct_abstention_and_publishes(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'تأیید پنج شاخص و انتشار')
+        # The v107 button text is selected client-side after all five votes.
+        self.assertContains(response, 'name="action" value="finish_review"')
+        self.assertContains(response, "'تأیید و انتشار'")
         self.assertNotContains(response, 'verdict_')
         response = self.client.post(self.url, {'action': 'publish_reviewed', **self._five_yes()})
         self.assertEqual(response.status_code, 302)
@@ -63,25 +65,15 @@ class SimplePublicationTests(TestCase):
         self.assertEqual(LogEntry.objects.filter(object_id=str(self.ai.pk),
             change_message__contains='PUBLISH_APPROVED').count(), 1)
 
-    def test_rights_pending_requires_separate_evidence_not_source_link(self):
+    def test_pending_rights_no_longer_gates_derived_scores(self):
         self.exp.copyright_review = 'pending'
         self.exp.save(update_fields=['copyright_review'])
-        self.client.post(self.url, {'action': 'publish_reviewed', **self._five_yes()})
-        self.ai.refresh_from_db()
-        self.assertFalse(self.ai.publish_approved)
-        self.assertFalse(ExperienceReviewEvent.objects.exists())
-        self.client.post(self.url, {'action':'publish_reviewed',
-            **self._five_yes(), 'rights_evidence_url': self.exp.source_url})
-        self.ai.refresh_from_db()
-        self.assertFalse(self.ai.publish_approved)
-        self.client.post(self.url, {'action':'publish_reviewed',
-            **self._five_yes(), 'rights_evidence_url':'https://license.example.org/documented-permission'})
-        self.exp.refresh_from_db()
-        self.ai.refresh_from_db()
-        self.assertFalse(self.ai.publish_approved)
+        self.client.post(self.url, {'action': 'finish_review', **self._five_yes()})
+        self.ai.refresh_from_db(); self.exp.refresh_from_db()
+        self.assertTrue(self.ai.publish_approved)
         self.assertEqual(self.exp.copyright_review, 'pending')
-        self.assertEqual(ExperienceReviewEvent.objects.filter(
-            experience=self.exp, review_field='copyright').count(), 0)
+        self.assertFalse(ExperienceReviewEvent.objects.filter(review_field='copyright').exists())
+        self.assertNotContains(self.client.get(reverse('company-detail', args=[self.company.pk])), self.exp.body)
 
     def test_company_not_verified_is_blocked(self):
         self.company.tech_status = 'unverified'

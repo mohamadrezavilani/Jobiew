@@ -42,7 +42,11 @@ class FiveDecisionTests(TestCase):
         for key,_ in DIMENSIONS:
             self.assertIn('name="decision_'+key+'"',content)
         self.assertNotIn('name="rights_evidence_url"',content)
-        self.assertIn('تأیید پنج شاخص و انتشار',content)
+        # v107 uses one finish_review submit; JS chooses its title after the
+        # reviewer selects five decisions (publish or record rejection).
+        self.assertIn('name="action" value="finish_review"', content)
+        self.assertIn("'تأیید و انتشار'", content)
+        self.assertIn("'ثبت عدم تأیید'", content)
         self.assertEqual(content.count('value="yes"'),5)
         self.assertEqual(content.count('value="no"'),5)
 
@@ -86,13 +90,13 @@ class FiveDecisionTests(TestCase):
         self.assertFalse(self.assessment.publish_approved)
         self.assertEqual(public_company_assessments(self.company)['approved_count'],0)
 
-    def test_copyright_pending_approval_saved_but_no_publication(self):
+    def test_copyright_pending_does_not_block_derived_scores(self):
         self.experience.copyright_review='pending'
         self.experience.save(update_fields=['copyright_review'])
-        self.client.post(self.url, {'action':'publish_reviewed',**self.votes()})
+        self.client.post(self.url, {'action':'finish_review',**self.votes()})
         self.assessment.refresh_from_db()
         self.experience.refresh_from_db()
-        self.assertFalse(self.assessment.publish_approved)
+        self.assertTrue(self.assessment.publish_approved)
         self.assertEqual(self.experience.copyright_review,'pending')
         self.assertFalse(ExperienceReviewEvent.objects.filter(review_field='copyright').exists())
         self.assertEqual(AiHumanReviewEvent.objects.filter(dimension__assessment=self.assessment).count(),5)

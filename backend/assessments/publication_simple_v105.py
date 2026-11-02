@@ -1,8 +1,9 @@
-"""One-decision review for five_v1. Safe gates stay in place.
+"""Human review and publication of derived five_v1 scores.
 
-Source copyright needs evidence of permission, never assumed from public visibility.
-Company verification is separate and cannot be fabricated from AI scores.
-Creates audit records atomically and preserves all historical review events.
+No verbatim source text is published by the public AI score views.
+An unreviewed license status is tracked separately rather than becoming a
+per-review admin chore; an explicit rights block still prevents publication.
+Review and publication actions remain permission-checked and audited.
 """
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -25,8 +26,8 @@ def preliminary_blockers(a):
         problems.append('فقط تجربهٔ کاری با مدل پنج‌شاخصی قابلیت انتشار دارد.')
     if company.identity_status != 'verified' or company.tech_status != 'verified':
         problems.append('هویت و فناوری‌بودن شرکت هنوز تأیید نشده است.')
-    if exp.copyright_review != 'approved':
-        problems.append('مجوز استفاده از منبع تأیید نشده است؛ این مورد جدا از بررسی پنج شاخص مدیریت می‌شود.')
+    if exp.copyright_review == 'blocked':
+        problems.append('برای این منبع منع صریح انتشار ثبت شده است.')
     if exp.company_attribution_status not in {'verified', 'unverified'} or exp.independence_status not in {'verified', 'unknown'}:
         problems.append('انتساب یا مستقل‌بودن این نظر قبلاً رد شده یا وضعیت نامعتبری دارد.')
     if not source_url(exp.source_url):
@@ -94,10 +95,10 @@ def quick_decision(request, assessment_pk, *, approve, rights_evidence_url=''):
         blockers = preliminary_blockers(a)
         if blockers:
             raise ValueError('؛ '.join(blockers))
-        # Copyright permission is managed separately by a source review event,
-        # never inferred from the five dimension votes or the public URL.
-        if exp.copyright_review != 'approved':
-            raise ValueError('اجازهٔ استفاده از منبع هنوز تأیید نشده است.')
+        # A 'pending' rights review is not a per-experience publish gate for
+        # non-verbatim AI scores. A recorded explicit rights block is still a gate.
+        if exp.copyright_review == 'blocked':
+            raise ValueError('برای این منبع منع صریح انتشار ثبت شده است.')
         evidence_link = source_url(exp.source_url)
         if exp.company_attribution_status == 'unverified':
             ExperienceReviewEvent.objects.create(
@@ -120,7 +121,7 @@ def quick_decision(request, assessment_pk, *, approve, rights_evidence_url=''):
         a.independent_review_status = 'approved'
         a.save(update_fields=['publish_approved','independent_review_status'])
         log_publication(request, a, 'PUBLISH_APPROVED',
-                        'تأیید انسانی پنج شاخص و اجازهٔ مستقل استفاده از منبع پیش از انتشار بررسی شدند')
+                        'پنج شاخص با تصمیم انسانی تأیید شدند؛ نتیجهٔ تحلیلی بدون متن خام انتشار یافت')
     return a
 
 

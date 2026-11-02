@@ -66,17 +66,20 @@ def publication_detail(admin_view,request,assessment_id):
     can_publish=request.user.has_perm('assessments.change_aiassessment')
     if request.method=='POST':
         action=request.POST.get('action')
-        if action in {'review_dimensions', 'publish_reviewed'}:
+        if action in {'review_dimensions', 'publish_reviewed', 'finish_review'}:
             if not (can_publish and can_review): raise PermissionDenied
             try:
                 decisions = {key: request.POST.get('decision_' + key, '') for key, _ in DIMENSIONS}
                 updated = save_dimension_decisions(request, a.pk, decisions)
-                if action == 'publish_reviewed':
-                    if not all(x == 'yes' for x in decisions.values()):
-                        messages.warning(request, 'تصمیم‌ها ذخیره شدند؛ برای انتشار، تأیید همهٔ پنج شاخص لازم است.')
+                if action in {'publish_reviewed', 'finish_review'}:
+                    if all(x == 'yes' for x in decisions.values()):
+                        if a.publish_approved:
+                            messages.success(request, 'این ارزیابی از قبل منتشر است و پنج شاخص آن تأیید شده‌اند.')
+                        else:
+                            quick_decision(request, a.pk, approve=True)
+                            messages.success(request, 'پنج شاخص تأیید و ارزیابی AI منتشر شد.')
                     else:
-                        quick_decision(request, a.pk, approve=True)
-                        messages.success(request, 'پنج شاخص تأیید شدند و ارزیابی AI منتشر شد.')
+                        messages.success(request, f'عدم تأیید ثبت شد ({updated} تغییر). این ارزیابی منتشر نیست.')
                 else:
                     messages.success(request, f'بررسی هر پنج شاخص ذخیره شد ({updated} تصمیم جدید).')
             except (ValidationError, ValueError) as exc:
@@ -162,9 +165,6 @@ def publication_detail(admin_view,request,assessment_id):
     ctx=_context(admin_view,request,f'بررسی و انتشار AI #{a.pk}')
     ctx.update({'assessment':a,'experience':exp,'company':exp.company,
         'panels':panels,'blockers':blockers,'ready':not blockers,
-        'needs_rights':exp.copyright_review=='pending',
-        'rights_review_url':reverse('admin:experiences_experiencereviewevent_add') + f'?experience={exp.pk}&review_field=copyright',
-        'rights_blocked':exp.copyright_review=='blocked',
         'can_review':can_review,'can_source':can_source,'can_publish':can_publish,
         'can_quick_publish':(can_publish and can_review and can_source),
         'source_url':source_url(exp.source_url),
