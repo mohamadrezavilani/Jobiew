@@ -1,8 +1,10 @@
 """Read-only AI audit data; admin cannot approve unreviewed AI ratings for publication."""
 from django.contrib import admin
-from django.urls import path
+from django.utils.html import format_html
+from django.urls import path, reverse
 from .review_workspace_v53 import ai_feasibility_review
 from .publication_admin_v104 import publication_queue, publication_detail
+from .claude_admin_v111 import dashboard as claude_dashboard, detail as claude_detail, run as claude_run
 from .models import AiAssessment, AiDimension, RatingSnapshot, AiHumanReviewEvent
 
 
@@ -24,13 +26,26 @@ class _ReadOnlyAuditAdmin(admin.ModelAdmin):
 class AiAssessmentAdmin(_ReadOnlyAuditAdmin):
     change_list_template = 'admin/assessments/aiassessment/change_list_v53.html'
     list_display = ('experience', 'criteria_version', 'model_name', 'prompt_version', 'parse_status',
-                    'independent_review_status', 'publish_approved')
+                    'independent_review_status', 'publish_approved', 'claude_check_link')
     list_filter = ('criteria_version', 'parse_status', 'independent_review_status', 'publish_approved')
     search_fields = ('experience__source_url', 'experience__company__display_name', 'run_id')
     list_select_related = ('experience', 'experience__company')
 
+    @admin.display(description="صحت‌سنجی Claude")
+    def claude_check_link(self, obj):
+        if obj.criteria_version != "five_v1" or obj.experience.source_kind != "work":
+            return "—"
+        return format_html('<a href="{}">بررسی Claude</a>',
+                           reverse("admin:assessments_aiassessment_claude_detail", args=[obj.pk]))
+
     def get_urls(self):
         return [
+            path('claude/', self.admin_site.admin_view(self.claude_dashboard_view),
+                 name='assessments_aiassessment_claude_dashboard'),
+            path('claude/run/<int:assessment_id>/', self.admin_site.admin_view(self.claude_run_view),
+                 name='assessments_aiassessment_claude_run'),
+            path('claude/<int:assessment_id>/', self.admin_site.admin_view(self.claude_detail_view),
+                 name='assessments_aiassessment_claude_detail'),
             path('publication/', self.admin_site.admin_view(self.publication_queue_view),
                  name='assessments_aiassessment_publication_queue'),
             path('publication/<int:assessment_id>/', self.admin_site.admin_view(self.publication_detail_view),
@@ -38,6 +53,15 @@ class AiAssessmentAdmin(_ReadOnlyAuditAdmin):
             path('feasibility-review/', self.admin_site.admin_view(self.feasibility_view),
                  name='assessments_aiassessment_feasibility_review'),
         ] + super().get_urls()
+
+    def claude_dashboard_view(self, request):
+        return claude_dashboard(self, request)
+
+    def claude_detail_view(self, request, assessment_id):
+        return claude_detail(self, request, assessment_id)
+
+    def claude_run_view(self, request, assessment_id):
+        return claude_run(self, request, assessment_id)
 
     def publication_queue_view(self, request):
         return publication_queue(self, request)

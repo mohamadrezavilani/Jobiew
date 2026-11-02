@@ -1,0 +1,78 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<style>
+.jcv{direction:rtl;max-width:1380px;margin:auto;font-family:Vazir,"Vazirmatn",Tahoma,sans-serif;line-height:1.8}
+.jcv .panel{background:var(--body-bg,#fff);border:1px solid var(--border-color,#ddd);border-radius:12px;margin:12px 0;padding:16px}
+.jcv h1,.jcv h2{margin:0 0 8px}.jcv table{width:100%;border-collapse:collapse}
+.jcv th,.jcv td{padding:10px;text-align:right;border-bottom:1px solid var(--border-color,#ddd);vertical-align:top}
+.jcv th{white-space:nowrap}.jcv button{background:#177e8b;color:white;padding:10px 16px;border:0;border-radius:8px;cursor:pointer}
+.jcv button:disabled{opacity:.5;cursor:not-allowed}.jcv .muted{opacity:.7}.jcv .alert{color:#9b4f08}
+.jcv .badge{padding:3px 8px;border-radius:8px;background:var(--darkened-bg,#eee)}
+.jcv .evidence{font-size:.89em;opacity:.85}.jcv .scroll{overflow-x:auto}.jcv .status{padding:8px;border-radius:8px;background:var(--darkened-bg,#eee)}
+</style>
+<div class="jcv">
+ <p><a href="{% url 'admin:assessments_aiassessment_claude_dashboard' %}">← برگشت به فهرست صحت‌سنجی Claude</a> · <a href="{% url 'admin:assessments_aiassessment_publication_detail' assessment.pk %}">بررسی و انتشار انسانی</a></p>
+ <header class="panel">
+  <p class="muted">صحت‌سنجی مستقل Claude · ارزیابی #{{ assessment.pk }}</p>
+  <h1>{{ experience.company.display_name }}</h1><p>عنوان شغلی: {{ experience.job_title|default:"نامشخص" }} · مدل بررسی: {{ model_id }}</p>
+  <p class="muted">این صفحه فقط برای بررسی تفاوت دو مدل است؛ تأیید یا انتشار انجام نمی‌دهد.</p>
+ </header>
+ <div class="panel">
+  <h2>درخواست بررسی مستقل</h2>
+  <p>Claude متن کامل تجربه را پس از حذف برخی نشانه‌های شخصی دریافت می‌کند؛ دادهٔ ورودی ممکن است همچنان اطلاعات شخصی داشته باشد. امتیازهای قبلی به Claude فرستاده نمی‌شوند تا مقایسه مستقل‌تر باشد. این درخواست پولی است.</p>
+  <p>ظرفیت باقی‌مانده آزمایشی: <strong>{{ remaining }}</strong> درخواست</p>
+  {% if not key_ready %}<p class="alert">کلید ANTHROPIC_API_KEY در محیط سرور تنظیم نیست.</p>{% endif %}
+  <form id="one-claude" method="post">{% csrf_token %}
+   {% if last %}<label><input type="checkbox" id="force-revalidate"> این مورد قبلاً بررسی شده است؛ با هزینهٔ جدید دوباره بررسی شود.</label><br>{% endif %}
+   <button type="submit" id="send-claude" {% if not can_run or not key_ready or remaining == 0 or last %}disabled{% endif %}>درخواست صحت‌سنجی توسط Claude</button>
+  </form>
+  <p id="run-status" class="status" aria-live="polite">{{ last|yesno:"مقایسهٔ آخرین بررسی در پایین نمایش داده شده است.,هنوز بررسی Claude انجام نشده است." }}</p>
+ </div>
+ <div class="panel scroll">
+  <h2>مقایسهٔ پنج شاخص</h2>
+  {% if last %}<p class="muted">مدل اجراشده: {{ last.model_id }} · ورودی {{ last.input_tokens }} توکن، خروجی {{ last.output_tokens }} توکن · هزینه تخمینی ${{ last.estimated_cost_usd }}</p>{% endif %}
+  <table><thead><tr><th>معیار</th><th>AI فعلی</th><th>Claude</th><th>تفاوت</th><th>دلایل و شواهد</th></tr></thead>
+   <tbody>{% for row in rows %}
+    <tr>
+     <td><strong>{{ row.label }}</strong></td>
+     <td>{% if row.original %}{% if row.original.score == None %}بدون نمره{% else %}{{ row.original.score }} از ۱۰{% endif %}{% else %}ندارد{% endif %}</td>
+     <td>{% if last %}{% if row.comparison.claude == None %}بدون نمره{% else %}{{ row.comparison.claude }} از ۱۰{% endif %}{% else %}هنوز بررسی نشده{% endif %}</td>
+     <td>{% if last %}{% if row.comparison.needs_attention %}<span class="alert">نیازمند بررسی</span>{% else %}—{% endif %}
+      {% if row.comparison.delta != None %}<br>تفاوت {{ row.comparison.delta }}{% endif %}{% endif %}</td>
+     <td><strong>دلیل AI فعلی:</strong> {{ row.comparison.original_explanation|default:row.original.explanation|default:"—" }}
+      {% if last %}<br><strong>دلیل Claude:</strong> {{ row.comparison.claude_reason }}
+      {% if row.comparison.evidence %}<br><span class="evidence">شاهد پیشنهادی Claude: «{{ row.comparison.evidence }}»</span>
+       {% if not row.comparison.evidence_exact %}<br><span class="alert">این نقل‌قول دقیقاً در متن ارسالی یافت نشد؛ نیازمند بررسی انسانی است.</span>{% endif %}
+      {% endif %}{% endif %}
+     </td>
+    </tr>
+   {% endfor %}</tbody>
+  </table>
+  <p class="muted">«تفاوت» اختلاف عددی Claude منهای امتیاز فعلی است؛ نمرهٔ بدون شاهد یا تغییر دو نمره و بیشتر برای توجه مدیر مشخص می‌شود. Claude داور قطعی حقیقت نیست.</p>
+ </div>
+ <details class="panel"><summary>متن تجربه (فقط مدیر)</summary><p style="white-space:pre-wrap">{{ experience.body }}</p></details>
+ <details class="panel"><summary>تاریخچه درخواست‌ها</summary>
+  <table><tr><th>شناسه</th><th>وضعیت</th><th>مدل</th><th>زمان</th><th>خطا</th></tr>
+   {% for run in history %}<tr><td>{{ run.pk }}</td><td>{{ run.get_status_display }}</td><td>{{ run.model_id }}</td><td>{{ run.created_at }}</td><td>{{ run.error_type|default:"—" }}</td></tr>{% empty %}<tr><td colspan="5">هنوز درخواستی وجود ندارد.</td></tr>{% endfor %}
+  </table>
+ </details>
+</div>
+<script>
+(function(){
+ const f=document.getElementById('one-claude'),btn=document.getElementById('send-claude'),st=document.getElementById('run-status'),force=document.getElementById('force-revalidate');
+ if(force)force.addEventListener('change',()=>btn.disabled=!force.checked);
+ f.addEventListener('submit',async e=>{
+  e.preventDefault();if(!confirm('درخواست پولی Claude برای این تجربه اجرا شود؟'))return;
+  btn.disabled=true;st.textContent='در حال دریافت نتیجه Claude...';
+  try{
+   const r=await fetch('{% url "admin:assessments_aiassessment_claude_run" assessment.pk %}',{
+    method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':f.querySelector('input[name="csrfmiddlewaretoken"]').value,
+    'Content-Type':'application/x-www-form-urlencoded'},body:'force='+(force && force.checked?'true':'false')});
+   const data=await r.json();
+   if(!r.ok||!data.ok){st.textContent=data.message||data.error||'ارتباط یا بررسی ناموفق بود';return;}
+   location.reload();
+  }catch(err){st.textContent='اتصال قطع شد؛ پیش از ارسال دوباره تاریخچه را بررسی کن.';}
+ });
+})();
+</script>
+{% endblock %}

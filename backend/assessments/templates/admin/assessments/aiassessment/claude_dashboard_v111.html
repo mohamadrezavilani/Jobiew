@@ -1,0 +1,65 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<style>
+.claude-wrap{direction:rtl;max-width:1400px;margin:auto;font-family:Vazir,"Vazirmatn",Tahoma,sans-serif;line-height:1.8}
+.claude-wrap .panel{border:1px solid var(--border-color,#ddd);background:var(--body-bg,#fff);border-radius:12px;padding:16px;margin:12px 0}
+.claude-wrap h1,.claude-wrap h2{margin:0 0 10px}.claude-wrap table{width:100%;border-collapse:collapse}
+.claude-wrap th,.claude-wrap td{padding:9px;text-align:right;border-bottom:1px solid var(--border-color,#ddd)}
+.claude-wrap .muted{opacity:.75}.claude-wrap button{background:#176c85;color:white;border:0;padding:10px 16px;border-radius:8px;cursor:pointer}
+.claude-wrap .danger{color:#b45309}.claude-wrap .status{padding:8px;background:var(--darkened-bg,#f3f3f3);border-radius:8px}
+.claude-wrap input[type=search]{min-width:260px;padding:9px}.claude-wrap a{white-space:normal}
+</style>
+<div class="claude-wrap">
+ <h1>صحت‌سنجی اختیاری با Claude</h1>
+ <p>Claude پنج شاخص را مستقل از نمره‌های فعلی از روی متن کاری بررسی می‌کند. نتیجه فقط برای مقایسهٔ مدیر است و هیچ امتیاز، تأیید انسانی یا وضعیت انتشار را تغییر نمی‌دهد.</p>
+ <div class="panel"><strong>مدل: {{ model_id }}</strong> · درخواست‌های آزمایشی: {{ used }} از {{ limit }}
+  {% if not key_ready %}<p class="danger">کلید ANTHROPIC_API_KEY روی سرور تنظیم نشده است؛ هیچ درخواست پولی اجرا نمی‌شود.</p>{% endif %}
+  <p class="muted">با کلیک روی اجرا، متن تجربه پس از حذف بعضی شناسه‌های فردی به ارائه‌دهندهٔ Claude ارسال می‌شود. این پاک‌سازی تضمین ناشناس‌سازی کامل نیست. هر درخواست می‌تواند هزینه داشته باشد. سقف پیش‌فرض کل آزمایش ۵ تماس است.</p>
+ </div>
+ <form method="get" class="panel"><label>جست‌وجو بر اساس شرکت، شغل یا شماره ارزیابی <input type="search" name="q" value="{{ q }}"></label> <button type="submit">جست‌وجو</button></form>
+ <div class="panel">
+ <h2>انتخاب تا پنج ارزیابی برای مقایسه</h2>
+ <form id="claude-batch" method="post">{% csrf_token %}
+  <table><thead><tr><th>انتخاب</th><th>شماره</th><th>شرکت / شغل</th><th>آخرین نتیجه Claude</th><th>جزئیات</th></tr></thead><tbody>
+  {% for item in items %}
+   <tr><td><input type="checkbox" name="ids" value="{{ item.assessment.pk }}" {% if item.last %}disabled title="قبلاً درخواست شده؛ از صفحه جزئیات برای تکرار آگاهانه استفاده کن"{% endif %}></td>
+   <td>#{{ item.assessment.pk }}</td><td>{{ item.assessment.experience.company.display_name }}<br><span class="muted">{{ item.assessment.experience.job_title|default:"عنوان نامشخص" }}</span></td>
+   <td>{% if item.last %}{{ item.last.get_status_display }}{% else %}بررسی‌نشده{% endif %}</td>
+   <td><a href="{% url 'admin:assessments_aiassessment_claude_detail' item.assessment.pk %}">مقایسه و بررسی</a></td></tr>
+  {% empty %}<tr><td colspan="5">موردی یافت نشد.</td></tr>{% endfor %}
+  </tbody></table>
+  <p><button type="submit" {% if not can_run or not key_ready or used >= limit %}disabled{% endif %}>اجرای Claude برای موارد انتخاب‌شده</button></p>
+  <div class="status" id="claude-progress" aria-live="polite">تا پنج موردِ دلخواه را انتخاب کن؛ فراخوانی‌ها یکی‌یکی انجام می‌شوند.</div>
+ </form>
+ {% if page.has_previous %}<a href="?{{ page_query }}page={{ page.previous_page_number }}">صفحه قبل</a>{% endif %}
+ <span>صفحه {{ page.number }} از {{ page.paginator.num_pages }}</span>
+ {% if page.has_next %}<a href="?{{ page_query }}page={{ page.next_page_number }}">صفحه بعد</a>{% endif %}
+ </div>
+ <div class="panel"><h2>آخرین مقایسه‌ها</h2><table><tr><th>ارزیابی</th><th>شرکت</th><th>وضعیت</th><th>تفاوت نمره‌ها</th><th>نیازمند توجه</th><th>توکن ورودی/خروجی</th><th>هزینهٔ تخمینی (USD)</th></tr>
+ {% for item in history_rows %}{% with run=item.run %}<tr><td><a href="{% url 'admin:assessments_aiassessment_claude_detail' run.assessment_id %}">#{{ run.assessment_id }}</a></td><td>{{ run.assessment.experience.company.display_name }}</td><td>{{ run.get_status_display }}</td><td>{{ item.changed }} از ۵</td><td>{{ item.attention }}</td><td>{{ run.input_tokens }} / {{ run.output_tokens }}</td><td>{{ run.estimated_cost_usd }}</td></tr>{% endwith %}{% empty %}<tr><td colspan="7">هنوز آزمایشی انجام نشده است.</td></tr>{% endfor %}
+ </table></div>
+</div>
+<script>
+(function(){
+ const form=document.getElementById('claude-batch'), status=document.getElementById('claude-progress');
+ if(!form)return;
+ form.addEventListener('submit',async function(ev){
+  ev.preventDefault();const ids=Array.from(form.querySelectorAll('input[name="ids"]:checked')).map(x=>x.value);
+  if(!ids.length || ids.length>Math.min(5,{{ remaining }})){status.textContent='تعداد انتخاب‌ها نباید از ظرفیت باقی‌مانده ({{ remaining }}) بیشتر باشد.';return;}
+  if(!confirm('اجرای '+ids.length+' درخواست پولی Claude؟ این نتایج عمومی نمی‌شوند.'))return;
+  const token=form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+  const btn=form.querySelector('button[type="submit"]');btn.disabled=true;
+  for(let i=0;i<ids.length;i++){
+   status.textContent='درحال بررسی '+(i+1)+' از '+ids.length+' — #'+ids[i];
+   try{
+    const response=await fetch('{% url "admin:assessments_aiassessment_claude_dashboard" %}run/'+ids[i]+'/',
+     {method:'POST',credentials:'same-origin',headers:{'X-CSRFToken':token,'Content-Type':'application/x-www-form-urlencoded'},body:'force=false'});
+    const data=await response.json();
+    if(!response.ok || !data.ok){status.textContent='درخواست #'+ids[i]+' ناموفق: '+(data.message||data.error||response.status)+'؛ ادامه متوقف شد.';return;}
+   }catch(e){status.textContent='ارتباط با سرور قطع شد. وضعیت درخواست را پیش از تکرار بررسی کن.';return;}
+  }
+  status.textContent='درخواست‌ها تکمیل شد. در حال به‌روزرسانی مقایسه‌ها...';location.reload();
+ });
+})();
+</script>
+{% endblock %}

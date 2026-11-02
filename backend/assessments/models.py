@@ -144,3 +144,4 @@ class AiHumanReviewEvent(models.Model):
     def delete(self, *args, **kwargs):
         raise ValueError('Human review events are append-only')
 from .semantic_models_v17 import SemanticScoreOverride
+from .claude_validation_models_v111 import ClaudeValidationRun

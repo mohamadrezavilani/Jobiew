@@ -3,7 +3,7 @@
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/publication_simple_v105.css' %}"><link rel="stylesheet" href="{% static 'assessments/css/publication_five_v106.css' %}">{% endblock %}
 {% block content %}
 <main class="jr jr-v106" dir="rtl">
-  <nav class="jr-links"><a href="{{ queue_url }}">← فهرست نظرها</a><a href="{{ experience_url }}">جزئیات تجربه</a><a href="{{ public_company_url }}" target="_blank" rel="noopener">صفحهٔ عمومی شرکت</a></nav>
+  <nav class="jr-links"><a href="{% url 'admin:assessments_aiassessment_claude_detail' assessment.pk %}">صحت‌سنجی با Claude</a><a href="{{ queue_url }}">← فهرست نظرها</a><a href="{{ experience_url }}">جزئیات تجربه</a><a href="{{ public_company_url }}" target="_blank" rel="noopener">صفحهٔ عمومی شرکت</a></nav>
   <header class="jr-head">
     <div><span class="jr-muted">تأیید انسانی نتیجهٔ AI · شماره {{ assessment.pk }}</span><h1>{{ company.display_name }}</h1><p>{{ experience.title }}</p></div>
     {% if assessment.publish_approved %}<span class="jr-status good">منتشرشده</span>{% elif assessment.independent_review_status == 'rejected' %}<span class="jr-status bad">منتشرنشده</span>{% else %}<span class="jr-status neutral">در انتظار بررسی</span>{% endif %}
