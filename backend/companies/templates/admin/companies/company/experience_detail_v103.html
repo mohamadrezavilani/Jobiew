@@ -1,0 +1,35 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'companies/css/company_experiences_v103.css' %}">{% endblock %}
+{% block content %}
+<main class="wi-x" dir="rtl">
+  <div class="wi-x-bar"><div><p class="wi-x-over">متن کامل محتوای واردشده · فقط مدیران</p><h1>{{ experience.title }}</h1><p>{{ company.display_name }} · {{ experience.get_source_kind_display }}{% if experience.job_title %} · {{ experience.job_title }}{% endif %}</p></div>
+    <div class="wi-x-nav"><a href="{{ company_experiences_url }}">بازگشت به نظرهای شرکت</a><a href="{{ company_change_url }}">مشخصات شرکت</a>{% if experience.safe_source_url %}<a href="{{ experience.safe_source_url }}" target="_blank" rel="noopener noreferrer">منبع اصلی ↗</a>{% endif %}</div></div>
+  <div class="wi-x-detail-grid">
+    <section class="wi-x-panel"><h2>متن تجربه / مصاحبه</h2>
+      <dl class="wi-x-meta"><div><dt>تاریخ انتشار در منبع</dt><dd>{{ experience.published_jalali|default:'نامشخص' }}</dd></div><div><dt>دوره اشتغال</dt><dd>{{ experience.employment_period_jalali|default:'نامشخص' }}</dd></div><div><dt>امتیاز منبع (از ۵)</dt><dd>{{ experience.source_rating_5|default_if_none:'ثبت نشده' }}</dd></div><div><dt>زمان ورود به Jobiew</dt><dd>{{ experience.imported_at|date:'Y/m/d H:i' }}</dd></div></dl>
+      <div class="wi-x-body">{{ experience.body|default:'متن مستقلی برای این رکورد ثبت نشده است.'|linebreaks }}</div>
+      {% if experience.pros %}<h3>نکات مثبت منبع</h3><div class="wi-x-body"><ul>{% for item in experience.pros %}<li>{{ item }}</li>{% endfor %}</ul></div>{% endif %}
+      {% if experience.cons %}<h3>نکات منفی منبع</h3><div class="wi-x-body"><ul>{% for item in experience.cons %}<li>{{ item }}</li>{% endfor %}</ul></div>{% endif %}
+      <div class="wi-x-note">متن اصلی صرفاً برای بررسی داخلی است؛ وضعیت انتشار عمومی این رکورد به‌صورت مستقل کنترل می‌شود.</div>
+    </section>
+    <aside class="wi-x-panel"><h2>وضعیت بررسی</h2><dl class="wi-x-side">
+      <dt>انتساب به شرکت</dt><dd>{{ experience.company_attribution_status }}</dd>
+      <dt>استقلال و تکرار</dt><dd>{{ experience.independence_status }}</dd>
+      <dt>وضعیت حقوقی</dt><dd>{{ experience.copyright_review }}</dd>
+      <dt>انتشار عمومی</dt><dd>{% if experience.published_publicly %}فعال{% else %}غیرفعال{% endif %}</dd>
+      <dt>شناسه</dt><dd>{{ experience.pk }}</dd>
+      <dt>منبع</dt><dd>{% if experience.safe_source_url %}<a href="{{ experience.safe_source_url }}" target="_blank" rel="noopener noreferrer">مشاهده تجربه در سایت مبدأ</a>{% else %}بدون لینک معتبر{% endif %}</dd>
+    </dl></aside>
+  </div>
+  {% if can_see_ai %}
+  <section class="wi-x-panel wi-x-ai"><h2>ارزیابی‌های AI با نسخهٔ five_v1</h2><p class="wi-x-note">این ارزیابی‌ها آزمایشی‌اند. امتیازهای سایت مبدأ با امتیازهای AI یکی نیستند و نمایش در این بخش مجوز انتشار عمومی محسوب نمی‌شود.</p>
+    {% for assessment in assessments %}<article class="wi-x-assessment"><h3>مدل: {{ assessment.model_name }} · {{ assessment.created_at|date:'Y/m/d H:i' }}</h3><p>وضعیت پردازش: {{ assessment.parse_status }} | بازبینی مستقل: {{ assessment.independent_review_status }} | تأیید انتشار: {% if assessment.publish_approved %}بله{% else %}خیر{% endif %}</p>
+      <table class="wi-x-table"><thead><tr><th>شاخص</th><th>امتیاز از ۱۰</th><th>اطمینان</th><th>وضعیت معنایی</th><th>توضیح مدل</th></tr></thead><tbody>
+      {% for dim in assessment.display_dimensions %}<tr><td>{{ dim.display_label }}</td><td>{{ dim.score|default_if_none:'فاقد امتیاز' }}</td><td>{{ dim.confidence }}٪</td><td>{{ dim.semantic_status }}</td><td>{{ dim.explanation|default:'—'|linebreaksbr }}</td></tr>{% empty %}<tr><td colspan="5">برای این اجرا شاخصی ذخیره نشده است.</td></tr>{% endfor %}
+      </tbody></table>
+    </article>{% empty %}<p>برای این تجربه هنوز ارزیابی پنج‌شاخصی ثبت نشده است.</p>{% endfor %}
+  </section>
+  {% endif %}
+</main>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'companies/css/company_experiences_v103.css' %}">{% endblock %}
+{% block content %}
+<main class="wi-x" dir="rtl">
+  <div class="wi-x-bar">
+    <div><p class="wi-x-over">مدیریت محتوای گردآوری‌شده · دسترسی فقط برای مدیران</p><h1>{{ company.display_name }}</h1><p>تجربه‌های کاری و مصاحبه‌های واردشده به پایگاه دادهٔ Jobiew</p></div>
+    <div class="wi-x-nav"><a href="{{ company_change_url }}">مشخصات شرکت</a><a href="{{ company_review_url }}">بررسی و تأیید شرکت</a><a href="{% url 'admin:companies_company_changelist' %}">فهرست شرکت‌ها</a></div>
+  </div>
+  <div class="wi-x-stats">
+    <div><strong>{{ totals.total }}</strong><span>کل مطالب واردشده</span></div>
+    <div><strong>{{ totals.work }}</strong><span>تجربه کاری</span></div>
+    <div><strong>{{ totals.interview }}</strong><span>تجربه مصاحبه</span></div>
+    <div><strong>{{ page_obj.paginator.count }}</strong><span>نتیجه مطابق فیلتر</span></div>
+  </div>
+  <div class="wi-x-note">این شمارش فقط از دیتابیس فعلی Jobiew است و لزوماً برابر شمارش سایت مبدأ یا SQLite ویندوز نیست. متن اصلی و اطلاعات پژوهشی در این پنل خصوصی‌اند.</div>
+  <form method="get" class="wi-x-filter" aria-label="جست‌وجو و فیلتر مطالب">
+    <label>جست‌وجو در عنوان، متن، عنوان شغلی و لینک منبع<input type="search" name="q" value="{{ q }}" maxlength="120" placeholder="مثلاً: پشتیبانی، حقوق، مهندس نرم‌افزار"></label>
+    <label>نوع محتوا<select name="kind">{% for value,label in kind_filters.items %}<option value="{{ value }}" {% if kind == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label>انتساب به شرکت<select name="attribution">{% for value,label in attribution_filters.items %}<option value="{{ value }}" {% if attribution == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label>استقلال نظر<select name="independence">{% for value,label in independence_filters.items %}<option value="{{ value }}" {% if independence == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label>وضعیت حقوقی<select name="copyright">{% for value,label in copyright_filters.items %}<option value="{{ value }}" {% if copyright_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <div class="wi-x-actions"><button type="submit" class="button default">اعمال فیلتر</button><a href="{{ company_experiences_url }}">پاک‌کردن فیلترها</a></div>
+  </form>
+  {% if page_obj.object_list %}
+  <div class="wi-x-table-wrap"><table class="wi-x-table">
+    <thead><tr><th>عنوان و متن</th><th>نوع / تاریخ منبع</th><th>وضعیت بررسی</th><th>منبع</th><th>جزئیات</th></tr></thead>
+    <tbody>{% for exp in page_obj.object_list %}<tr>
+      <td><strong>{{ exp.title|truncatechars:120 }}</strong>{% if exp.job_title %}<small>عنوان شغلی: {{ exp.job_title }}</small>{% endif %}<p>{{ exp.body|default:'بدون متن'|truncatechars:220 }}</p></td>
+      <td>{{ exp.get_source_kind_display }}<small>{{ exp.published_jalali|default:'تاریخ نامشخص' }}</small></td>
+      <td><small>انتساب: {{ exp.company_attribution_status }}</small><small>استقلال: {{ exp.independence_status }}</small><small>حقوقی: {{ exp.copyright_review }}</small></td>
+      <td>{% if exp.safe_source_url %}<a href="{{ exp.safe_source_url }}" target="_blank" rel="noopener noreferrer">صفحهٔ اصلی ↗</a>{% else %}بدون لینک معتبر{% endif %}</td>
+      <td><a class="button" href="{% url 'admin:companies_company_experience_detail' company.pk exp.pk %}">متن کامل و AI</a></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="wi-x-empty">در این شرکت نتیجه‌ای با فیلترهای انتخاب‌شده پیدا نشد.</p>{% endif %}
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav class="wi-x-pages" aria-label="صفحه‌بندی"><span>صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_previous %}<a href="?{{ page_query }}page=1">ابتدا</a><a href="?{{ page_query }}page={{ page_obj.previous_page_number }}">قبلی</a>{% endif %}
+    {% if page_obj.has_next %}<a href="?{{ page_query }}page={{ page_obj.next_page_number }}">بعدی</a><a href="?{{ page_query }}page={{ page_obj.paginator.num_pages }}">انتها</a>{% endif %}
+  </nav>{% endif %}
+</main>
+{% endblock %}
