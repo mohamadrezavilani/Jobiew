@@ -48,7 +48,7 @@
       <div class="wi-hero-content">
         <div class="wi-eyebrow"><span class="wi-mini-dot"></span> پروفایل شرکت</div>
         <h1 id="company-name">{{ company.display_name }}</h1>
-        <p class="wi-hero-lead">نمای یکپارچه تجربه‌های کاری و مصاحبه‌های ثبت‌شده در منبع</p>
+        <p class="wi-hero-lead">شناخت شرکت بر پایه تحلیل مستقل داده‌های عمومی و ارزیابی‌های بررسی‌شده</p>
         {% if company.identity_status == 'verified' %}
           <span class="wi-tag wi-tag--green">هویت شرکت بررسی شده</span>
         {% else %}
@@ -72,18 +72,80 @@
     </section>
 
     <section class="wi-stats" aria-label="آمار تجربه‌های ثبت‌شده">
-      <div class="wi-stat wi-stat--blue"><span class="wi-stat-icon" aria-hidden="true">◉</span><div><strong>{{ company.source_work_count }}</strong><span>تجربه کاری ثبت‌شده</span></div></div>
-      <div class="wi-stat wi-stat--mint"><span class="wi-stat-icon" aria-hidden="true">♧</span><div><strong>{{ company.source_interview_count }}</strong><span>تجربه مصاحبه</span></div></div>
+      <div class="wi-stat wi-stat--blue"><span class="wi-stat-icon" aria-hidden="true">◉</span><div><strong>{{ work_count }}</strong><span>تجربه کاری فهرست‌شده</span></div></div>
+      <div class="wi-stat wi-stat--mint"><span class="wi-stat-icon" aria-hidden="true">♧</span><div><strong>{{ interview_count }}</strong><span>تجربه مصاحبه فهرست‌شده</span></div></div>
       <div class="wi-stat wi-stat--lavender"><span class="wi-stat-icon" aria-hidden="true">▥</span><div><strong>۵</strong><span>معیار ارزیابی محیط کار</span></div></div>
       <div class="wi-stat wi-stat--warm"><span class="wi-stat-icon" aria-hidden="true">◇</span><div><strong class="wi-stat-word">{% if published_ai.approved_count %}{{ published_ai.approved_count }}{% else %}پژوهشی{% endif %}</strong><span>{% if published_ai.approved_count %}تجربه AI تأییدشده{% else %}امتیاز عمومی تأیید نشده{% endif %}</span></div></div>
     </section>
 
 
-<section class="jx-experiences" id="wi-experience-section" aria-label="تجربه‌های شرکت">
-  <nav class="jx-tabs" aria-label="دسته‌بندی محتوای شرکت">
+<section class="jx-experiences" id="wi-experience-section" aria-label="بررسی اطلاعات شرکت">
+  <nav class="jx-tabs" aria-label="بخش‌های مستقل پروفایل شرکت">
+    <a href="?tab=ai#wi-experience-section" {% if active_tab == 'ai' %}class="is-active" aria-current="page"{% endif %}>تحلیل محیط کار <span>AI</span></a>
     <a href="?tab=work#wi-experience-section" {% if active_tab == 'work' %}class="is-active" aria-current="page"{% endif %}>تجربه‌های کاری <span>{{ work_count }}</span></a>
     <a href="?tab=interview#wi-experience-section" {% if active_tab == 'interview' %}class="is-active" aria-current="page"{% endif %}>تجربه‌های مصاحبه <span>{{ interview_count }}</span></a>
-    <a href="?tab=ai#wi-experience-section" {% if active_tab == 'ai' %}class="is-active" aria-current="page"{% endif %}>امتیازهای AI</a>
+  </nav>
+  <p class="jx-principle-note">جابیو تحلیل و امتیازهای تأییدشده را مستقل ارائه می‌کند. فهرست تجربه‌های گردآوری‌شده، نظر کاربران جابیو نیست و به‌تنهایی معادل ارزیابی معتبر شرکت محسوب نمی‌شود.</p>
+
+  {% if active_tab == 'work' or active_tab == 'interview' %}
+  <section class="jx-panel" aria-labelledby="jx-list-heading">
+    <div class="jx-heading">
+      <div>
+        <span class="jx-eyebrow">راهنمای مطالعه · اطلاعات شناسنامه‌ای بدون بازنشر متن</span>
+        <h2 id="jx-list-heading">{% if active_tab == 'interview' %}روایت‌های مصاحبه و فرایند استخدام{% else %}روایت‌های محیط کار{% endif %}</h2>
+        <p>{% if active_tab == 'interview' %}این بخش برای آشنایی با تجربهٔ متقاضیان استخدام است. از آن برای محاسبهٔ امتیاز پنج‌گانهٔ محیط کار استفاده نمی‌شود.{% else %}این فهرست مسیر دسترسی به روایت‌های مستقل دربارهٔ محیط کار را نشان می‌دهد؛ امتیاز معتبر شرکت را در بخش «تحلیل محیط کار» ببینید.{% endif %}</p>
+      </div>
+      <span class="jx-count">{% if active_tab == 'interview' %}{{ interview_count }}{% else %}{{ work_count }}{% endif %} مورد در آرشیو قابل نمایش</span>
+    </div>
+    {% if company.identity_status != 'verified' %}
+    <p class="jx-warning" role="note">انتساب نهایی این نام تجاری به شرکت هنوز راستی‌آزمایی نشده است. هنگام استفاده از روایت‌ها این محدودیت را در نظر بگیرید.</p>
+    {% endif %}
+    <form class="jx-search" method="get" role="search" action="">
+      <input type="hidden" name="tab" value="{{ active_tab }}">
+      <label for="jx-job-search">فیلتر بر اساس عنوان شغلی</label>
+      <div class="jx-search-row">
+        <input id="jx-job-search" type="search" name="q" value="{{ experience_query }}" maxlength="100" placeholder="مثلاً برنامه‌نویس یا طراح محصول">
+        <button type="submit">جست‌وجو</button>
+        {% if experience_query %}<a class="jx-clear" href="?tab={{ active_tab }}#wi-experience-section">حذف فیلتر</a>{% endif %}
+      </div>
+    </form>
+    <div class="jx-results" aria-live="polite">
+      {% for item in experience_cards %}
+      <article class="jx-item">
+        <div class="jx-item-info">
+          <span class="jx-type">{% if active_tab == 'interview' %}مصاحبه استخدامی{% else %}محیط کار{% endif %} · منبع مستقل</span>
+          <h3>{{ item.job_title }}</h3>
+          <p>{% if item.date %}تاریخ انتشار گزارش‌شده: {{ item.date }}{% else %}تاریخ انتشار نامشخص{% endif %}</p>
+          <details class="jx-provenance">
+            <summary>مشاهده منشأ و دسترسی به روایت</summary>
+            <div class="jx-provenance-body">
+              <p>این روایت توسط کاربر جابیو نوشته یا راستی‌آزمایی نشده است. اطلاعات این کارت صرفاً از داده‌های شناسنامه‌ای منبع عمومی گردآوری شده‌اند.</p>
+              {% if item.source_site %}<p>ناشر اصلی: <strong>{{ item.source_site }}</strong></p>{% endif %}
+              {% if item.source_url %}<a class="jx-source" href="{{ item.source_url }}" rel="nofollow noopener noreferrer" target="_blank">مطالعه روایت در وب‌سایت منتشرکننده <span aria-hidden="true">↗</span></a>{% endif %}
+            </div>
+          </details>
+        </div>
+      </article>
+      {% empty %}
+      <div class="jx-empty">
+        <strong>{% if experience_query %}برای این عنوان شغلی موردی پیدا نشد.{% else %}فعلاً روایتی در این بخش برای نمایش نداریم.{% endif %}</strong>
+        <p>نبود تجربه در فهرست به معنای نبود تجربه واقعی دربارهٔ شرکت نیست.</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% if experience_page.paginator.num_pages > 1 %}
+    <nav class="jx-pagination" aria-label="صفحه‌بندی تجربه‌ها">
+      {% if experience_page.has_previous %}<a href="?tab={{ active_tab }}&amp;q={{ experience_query|urlencode }}&amp;page={{ experience_page.previous_page_number }}#wi-experience-section">صفحهٔ قبل</a>{% endif %}
+      <span>صفحهٔ {{ experience_page.number }} از {{ experience_page.paginator.num_pages }}</span>
+      {% if experience_page.has_next %}<a href="?tab={{ active_tab }}&amp;q={{ experience_query|urlencode }}&amp;page={{ experience_page.next_page_number }}#wi-experience-section">صفحهٔ بعد</a>{% endif %}
+    </nav>
+    {% endif %}
+    <p class="jx-footnote">جابیو در این بخش متن خام، نظر مثبت و منفی یا امتیازهای ثبت‌شده نزد ناشر را بازنشر نمی‌کند. روایت‌های بیرونی ممکن است قدیمی، ناقص یا جانبدارانه باشند؛ متن کامل در وب‌سایت منتشرکننده قابل مشاهده است.</p>
+  </section>
+  {% endif %}
+</section>
+
+{% if active_tab == 'ai' %}class="is-active" aria-current="page"{% endif %}>امتیازهای AI</a>
   </nav>
 
   {% if active_tab == 'work' or active_tab == 'interview' %}
@@ -186,7 +248,7 @@
         <div class="wi-panel" style="padding:16px;">
           <p>ارزیابی تأییدشده #{{ entry.id }} · {{ entry.date|default:'تاریخ نامشخص' }}</p>
           <ul>{% for dim in entry.dimensions %}<li>{{ dim.label }}: {% if dim.score != None %}{{ dim.score }} از ۱۰{% else %}بدون شاهد کافی{% endif %}</li>{% endfor %}</ul>
-          {% if entry.source %}<a href="{{ entry.source }}" rel="nofollow noopener noreferrer" target="_blank">مشاهده منبع اصلی</a>{% endif %}
+          {% if entry.source %}<details class="jx-ai-provenance"><summary>منشأ ارزیابی تأییدشده</summary><p>این امتیاز تحلیل جابیو از یک روایت عمومی است و به معنی رأی مستقیم کاربر جابیو نیست.</p><a href="{{ entry.source }}" rel="nofollow noopener noreferrer" target="_blank">بررسی روایت در وب‌سایت منتشرکننده</a></details>{% endif %}
         </div>
         {% endfor %}
       </div>
@@ -196,9 +258,9 @@
     {% endif %}
 
     <div class="wi-bottom-grid">
-      <section class="wi-panel wi-info-box" aria-labelledby="source-heading"><div class="wi-icon-round wi-icon-round--blue" aria-hidden="true">◎</div><h2 id="source-heading">این اطلاعات از کجا آمده‌اند؟</h2><p>آمار بالا تعداد تجربه‌های ثبت‌شده برای این شرکت در منبع را نشان می‌دهد. کیفیت و انتساب داده‌ها از امتیازدهی پژوهشی جدا بررسی می‌شود.</p></section>
-      <section class="wi-panel wi-info-box" aria-labelledby="verification-heading"><div class="wi-icon-round wi-icon-round--mint" aria-hidden="true">✓</div><h2 id="verification-heading">وضعیت بررسی و انتشار</h2><p>امتیازهای پیشنهادی هوش مصنوعی تا زمان تأیید مستقل منتشر نمی‌شوند. اطلاعات خصوصی و متن نظرات در این صفحه نمایش داده نشده‌اند.</p></section>
-      <section class="wi-panel wi-info-box" aria-labelledby="reading-heading"><div class="wi-icon-round wi-icon-round--violet" aria-hidden="true">◈</div><h2 id="reading-heading">نحوه تفسیر معیارها</h2><p>هر محور بخش متفاوتی از تجربه کار را می‌سنجد؛ برای نمونه فشار کاری بیشتر، نمره «تعادل کار و زندگی» را کمتر می‌کند.</p></section>
+      <section class="wi-panel wi-info-box" aria-labelledby="source-heading"><div class="wi-icon-round wi-icon-round--blue" aria-hidden="true">◎</div><h2 id="source-heading">این اطلاعات از کجا آمده‌اند؟</h2><p>شمارنده‌ها مربوط به رکوردهای قابل نمایشِ واردشده به آرشیو جابیو هستند، نه کل نظرات موجود در اینترنت یا ناشر. نام و لینک ناشر برای هر روایت در بخش منشأ در دسترس است.</p></section>
+      <section class="wi-panel wi-info-box" aria-labelledby="verification-heading"><div class="wi-icon-round wi-icon-round--mint" aria-hidden="true">✓</div><h2 id="verification-heading">تمایز سه نوع داده</h2><p>تجربه‌های کاری و مصاحبه‌ایِ سایت‌های مستقل، رأی مستقیم کاربران جابیو نیستند. فقط تحلیل‌های AI تأییدشدهٔ تجربه‌های کاری می‌توانند وارد نمای امتیازهای محیط کار شوند.</p></section>
+      <section class="wi-panel wi-info-box" aria-labelledby="reading-heading"><div class="wi-icon-round wi-icon-round--violet" aria-hidden="true">◈</div><h2 id="reading-heading">محدودیت و اعتمادپذیری</h2><p>یک روایت منفرد، نمایندهٔ کل شرکت نیست. نبود امتیاز به معنی صفر نیست و گزارش‌های مصاحبه به هیچ‌یک از پنج محور ارزیابی محیط کار اضافه نمی‌شوند.</p></section>
     </div>
     <footer class="wi-footer"><span>جابیو · نمای اطلاعات شرکت</span><a href="{% url 'company-index' %}">بازگشت به فهرست شرکت‌ها</a></footer>
   </main>
