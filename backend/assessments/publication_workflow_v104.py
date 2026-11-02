@@ -73,8 +73,11 @@ def publication_blockers(assessment, *, check_other=True):
         if d.score is not None:
             if not 1 <= d.score <= 10 or not 0 <= d.confidence <= 100:
                 problems.append('نمره یا اطمینان خارج از دامنهٔ مجاز است.')
-            if not d.evidence or not d.explanation.strip():
-                problems.append('شاخص «{}» باید شاهد و توضیح معتبر داشته باشد.'.format(dict(DIMENSIONS)[d.key]))
+            # When the machine failed to extract a separate quote, a specifically
+            # recorded positive HUMAN review against the preserved original text
+            # can substantiate the decision. Never invent AI evidence.
+            if (not d.evidence or not d.explanation.strip()) and not (exp.body or '').strip():
+                problems.append('متن منبع برای بازبینی دستی شاخص «{}» وجود ندارد.'.format(dict(DIMENSIONS)[d.key]))
             if d.semantic_overrides.filter(status='active_provisional').exists():
                 problems.append('اصلاح معنایی فعالِ پژوهشی باید پیش از انتشار حل‌وفصل شود.')
         elif d.confidence != 0:

@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from assessments.models import AiAssessment, AiDimension, AiHumanReviewEvent, DIMENSIONS
 from assessments.publication_simple_v105 import preliminary_blockers
-from assessments.publication_workflow_v104 import public_company_assessments
+from assessments.publication_workflow_v104 import public_company_assessments, publication_blockers
 from companies.models import Company
 from experiences.models import PublicExperience, ExperienceReviewEvent
 
@@ -40,12 +40,16 @@ class SimplePublicationTests(TestCase):
         self.client.force_login(self.staff)
         self.url = reverse('admin:assessments_aiassessment_publication_detail', args=[self.ai.pk])
 
+    @staticmethod
+    def _five_yes():
+        return {'decision_' + key: 'yes' for key, _ in DIMENSIONS}
+
     def test_one_click_approval_creates_correct_abstention_and_publishes(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'تأیید و انتشار')
+        self.assertContains(response, 'تأیید پنج شاخص و انتشار')
         self.assertNotContains(response, 'verdict_')
-        response = self.client.post(self.url, {'action': 'quick_publish'})
+        response = self.client.post(self.url, {'action': 'publish_reviewed', **self._five_yes()})
         self.assertEqual(response.status_code, 302)
         self.ai.refresh_from_db()
         self.exp.refresh_from_db()
@@ -62,44 +66,45 @@ class SimplePublicationTests(TestCase):
     def test_rights_pending_requires_separate_evidence_not_source_link(self):
         self.exp.copyright_review = 'pending'
         self.exp.save(update_fields=['copyright_review'])
-        self.client.post(self.url, {'action': 'quick_publish'})
+        self.client.post(self.url, {'action': 'publish_reviewed', **self._five_yes()})
         self.ai.refresh_from_db()
         self.assertFalse(self.ai.publish_approved)
         self.assertFalse(ExperienceReviewEvent.objects.exists())
-        self.client.post(self.url, {'action':'quick_publish',
-            'rights_evidence_url': self.exp.source_url})
+        self.client.post(self.url, {'action':'publish_reviewed',
+            **self._five_yes(), 'rights_evidence_url': self.exp.source_url})
         self.ai.refresh_from_db()
         self.assertFalse(self.ai.publish_approved)
-        self.client.post(self.url, {'action':'quick_publish',
-            'rights_evidence_url':'https://license.example.org/documented-permission'})
+        self.client.post(self.url, {'action':'publish_reviewed',
+            **self._five_yes(), 'rights_evidence_url':'https://license.example.org/documented-permission'})
         self.exp.refresh_from_db()
         self.ai.refresh_from_db()
-        self.assertTrue(self.ai.publish_approved)
-        self.assertEqual(self.exp.copyright_review, 'approved')
+        self.assertFalse(self.ai.publish_approved)
+        self.assertEqual(self.exp.copyright_review, 'pending')
         self.assertEqual(ExperienceReviewEvent.objects.filter(
-            experience=self.exp, review_field='copyright').count(), 1)
+            experience=self.exp, review_field='copyright').count(), 0)
 
     def test_company_not_verified_is_blocked(self):
         self.company.tech_status = 'unverified'
         self.company.save(update_fields=['tech_status'])
-        self.client.post(self.url, {'action':'quick_publish'})
+        self.client.post(self.url, {'action':'publish_reviewed', **self._five_yes()})
         self.ai.refresh_from_db()
         self.assertFalse(self.ai.publish_approved)
-        self.assertFalse(AiHumanReviewEvent.objects.exists())
+        self.assertEqual(AiHumanReviewEvent.objects.filter(dimension__assessment=self.ai).count(), 5)
 
-    def test_prior_negative_verdict_not_overwritten(self):
+    def test_prior_negative_verdict_kept_as_audited_history(self):
         first = AiDimension.objects.get(assessment=self.ai, key=DIMENSIONS[0][0])
         AiHumanReviewEvent.objects.create(dimension=first, reviewer=self.staff,
             verdict='unsupported', primary_error='wrong_dimension',
             note='شاهد به موضوع دیگری مربوط بوده است')
-        self.assertTrue(preliminary_blockers(self.ai))
-        self.client.post(self.url, {'action': 'quick_publish'})
+        self.assertTrue(publication_blockers(self.ai))
+        self.client.post(self.url, {'action': 'publish_reviewed', **self._five_yes()})
         self.ai.refresh_from_db()
-        self.assertFalse(self.ai.publish_approved)
-        self.assertEqual(first.human_review_events.count(), 1)
+        self.assertTrue(self.ai.publish_approved)
+        self.assertEqual(first.human_review_events.count(), 2)
+        self.assertEqual(first.human_review_events.last().verdict, 'unsupported')
 
     def test_reject_is_atomic_and_public_safe(self):
-        self.client.post(self.url, {'action': 'quick_publish'})
+        self.client.post(self.url, {'action': 'publish_reviewed', **self._five_yes()})
         self.client.post(self.url, {'action': 'quick_reject'})
         self.ai.refresh_from_db()
         self.assertFalse(self.ai.publish_approved)
@@ -113,7 +118,7 @@ class SimplePublicationTests(TestCase):
         person = get_user_model().objects.create_user(username='v105viewer', password='t', is_staff=True)
         self.client.force_login(person)
         self.assertEqual(self.client.get(self.url).status_code, 403)
-        self.assertEqual(self.client.post(self.url, {'action': 'quick_publish'}).status_code, 403)
+        self.assertEqual(self.client.post(self.url, {'action': 'publish_reviewed', **self._five_yes()}).status_code, 403)
         self.ai.refresh_from_db()
         self.assertFalse(self.ai.publish_approved)
 

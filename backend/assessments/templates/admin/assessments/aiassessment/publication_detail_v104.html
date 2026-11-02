@@ -1,74 +1,81 @@
 {% extends 'admin/base_site.html' %}
 {% load static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/publication_simple_v105.css' %}">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/publication_simple_v105.css' %}"><link rel="stylesheet" href="{% static 'assessments/css/publication_five_v106.css' %}">{% endblock %}
 {% block content %}
-<main class="jr" dir="rtl">
-  <nav class="jr-links"><a href="{{ queue_url }}">← بازگشت به صف</a><a href="{{ experience_url }}">نمای کامل تجربه</a><a href="{{ public_company_url }}" target="_blank" rel="noopener">صفحه عمومی شرکت</a></nav>
+<main class="jr jr-v106" dir="rtl">
+  <nav class="jr-links"><a href="{{ queue_url }}">← فهرست نظرها</a><a href="{{ experience_url }}">جزئیات تجربه</a><a href="{{ public_company_url }}" target="_blank" rel="noopener">صفحهٔ عمومی شرکت</a></nav>
   <header class="jr-head">
-    <div><span class="jr-muted">بازبینی ارزیابی هوش مصنوعی · شماره {{ assessment.pk }}</span>
-      <h1>{{ company.display_name }}</h1><p>{{ experience.title }}</p></div>
-    {% if assessment.publish_approved %}<span class="jr-status good">منتشرشده</span>
-    {% elif assessment.independent_review_status == 'rejected' %}<span class="jr-status bad">ردشده</span>
-    {% else %}<span class="jr-status neutral">در انتظار تأیید</span>{% endif %}
+    <div><span class="jr-muted">تأیید انسانی نتیجهٔ AI · شماره {{ assessment.pk }}</span><h1>{{ company.display_name }}</h1><p>{{ experience.title }}</p></div>
+    {% if assessment.publish_approved %}<span class="jr-status good">منتشرشده</span>{% elif assessment.independent_review_status == 'rejected' %}<span class="jr-status bad">منتشرنشده</span>{% else %}<span class="jr-status neutral">در انتظار بررسی</span>{% endif %}
   </header>
   <div class="jr-layout">
     <div class="jr-main">
-      <section class="jr-card">
-        <div class="jr-section-head"><h2>متن نظر</h2><span class="jr-muted">فقط در پنل مدیر</span></div>
-        <div class="jr-meta"><span>{{ experience.get_source_kind_display }}</span><span>{{ experience.published_jalali|default:'تاریخ نامشخص' }}</span><span>{{ experience.job_title|default:'بدون عنوان شغلی' }}</span></div>
-        {% if source_url %}<p><a href="{{ source_url }}" rel="noopener noreferrer" target="_blank">بازکردن متن در سایت مبدأ</a></p>{% endif %}
-        <div class="jr-story">{{ experience.body|default:'متن اصلی این تجربه ذخیره نشده است.'|linebreaks }}</div>
-        {% if experience.pros %}<details class="jr-fold"><summary>نکات مثبت منبع</summary><div class="jr-story">{{ experience.pros }}</div></details>{% endif %}
-        {% if experience.cons %}<details class="jr-fold"><summary>نکات منفی منبع</summary><div class="jr-story">{{ experience.cons }}</div></details>{% endif %}
-      </section>
-      <section class="jr-card">
-        <div class="jr-section-head"><h2>پنج نتیجهٔ هوش مصنوعی</h2><span class="jr-muted">امتیاز بالاتر = وضعیت بهتر</span></div>
-        <div class="jr-rows">
-          {% for p in panels %}<article class="jr-axis">
-            <div class="jr-axis-top"><strong>{{ p.label }}</strong>
-              {% if p.dim %}{% if p.dim.score != None %}<b class="jr-score">{{ p.dim.score }} <small>از ۱۰</small></b>
-              {% else %}<span class="jr-empty">بدون امتیاز</span>{% endif %}
-              {% else %}<span class="jr-empty">دادهٔ ناقص</span>{% endif %}
-            </div>
-            {% if p.dim %}
-              {% if p.dim.score != None %}<div class="jr-confidence">اطمینان گزارش‌شده توسط مدل: {{ p.dim.confidence }}٪</div>{% else %}<div class="jr-confidence">مدل برای این شاخص امتیازی پیشنهاد نکرده است؛ این مورد نباید صفر حساب شود.</div>{% endif %}
-              {% if p.dim.explanation %}<p class="jr-explain">{{ p.dim.explanation }}</p>{% endif %}
-              {% if p.dim.evidence %}<details class="jr-fold"><summary>مشاهده شواهد AI</summary><div class="jr-evidence">{{ p.dim.evidence }}</div></details>{% endif %}
-              {% if p.latest %}<div class="jr-muted">بررسی قبلی: {{ p.latest.get_verdict_display }}</div>{% endif %}
-            {% endif %}
-          </article>{% endfor %}
-        </div>
+      <section class="jr-card"><div class="jr-section-head"><h2>متن اصلی تجربه</h2><span class="jr-muted">فقط در ادمین</span></div>
+        <div class="jr-meta"><span>{{ experience.get_source_kind_display }}</span><span>{{ experience.published_jalali|default:'تاریخ نامشخص' }}</span><span>{{ experience.job_title|default:'عنوان شغلی نامشخص' }}</span></div>
+        {% if source_url %}<p><a href="{{ source_url }}" target="_blank" rel="noopener noreferrer">مشاهده در سایت منبع</a></p>{% endif %}
+        <div class="jr-story">{{ experience.body|default:'متن اصلی ذخیره نشده است.'|linebreaks }}</div>
+        {% if experience.pros %}<details class="jr-fold"><summary>نکات مثبت</summary>{{ experience.pros }}</details>{% endif %}
+        {% if experience.cons %}<details class="jr-fold"><summary>نکات منفی</summary>{{ experience.cons }}</details>{% endif %}
       </section>
     </div>
     <aside class="jr-side">
-      <section class="jr-card jr-decision">
-        <h2>تصمیم نهایی</h2>
-        <p class="jr-muted">متن و امتیازها را بررسی کن؛ سپس فقط یک تصمیم بگیر. شاخص بدون امتیاز به‌صورت «امتناع صحیح از امتیازدهی» ثبت می‌شود.</p>
-        {% if assessment.publish_approved %}
-          <p class="jr-pass">این نتیجه برای نمایش عمومی تأیید شده است.</p>
-          {% if can_publish %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="quick_reject"><button class="jr-button jr-outline" type="submit">لغو انتشار و ارجاع برای اصلاح</button></form>{% endif %}
-        {% else %}
-          {% if blockers %}<div class="jr-alert" role="alert"><strong>قبل از انتشار باید این موارد برطرف شوند:</strong><ul>{% for item in blockers %}<li>{{ item }}</li>{% endfor %}</ul></div>{% endif %}
-          <form method="post" class="jr-form">{% csrf_token %}<input type="hidden" name="action" value="quick_publish">
-            {% if needs_rights %}<div class="jr-rights"><strong>مجوز استفاده از منبع</strong><p>برای این نظر هنوز اجازهٔ استفاده و انتشار تأیید نشده است. اگر سند مستقل مجوز داری، نشانی آن را وارد کن. صرف عمومی‌بودن نظر مجوز نیست.</p><label for="jr-rights-url">نشانی سند مجوز</label><input id="jr-rights-url" type="url" name="rights_evidence_url" maxlength="1500" placeholder="https://..." autocomplete="off" required></div>{% endif %}
-            {% if can_quick_publish %}<button type="submit" class="jr-button jr-primary" {% if blockers %}disabled{% endif %}>تأیید و انتشار</button>
-            {% else %}<p class="jr-alert">حساب شما مجوز ثبت بررسی و انتشار را ندارد.</p>{% endif %}
-          </form>
-          {% if can_publish %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="quick_reject"><button type="submit" class="jr-button jr-outline">رد / نیازمند اصلاح</button></form>{% endif %}
-        {% endif %}
-        <div class="jr-info"><strong>وضعیت بررسی</strong><ul>
-          <li>شرکت: {% if company.identity_status == 'verified' and company.tech_status == 'verified' %}تأیید شده{% else %}<a href="{{ company_review_url }}">نیازمند بررسی شرکت</a>{% endif %}</li>
-          <li>حقوق منبع: {% if experience.copyright_review == 'approved' %}تأییدشده{% elif experience.copyright_review == 'blocked' %}غیرمجاز{% else %}تأیید نشده{% endif %}</li>
-          <li>انتساب و استقلال: با تصمیم نهایی مدیر (اگر از قبل رد نشده باشند) ثبت می‌شوند</li>
-        </ul></div>
-        <p class="jr-fine">انتشار امتیاز AI به معنی انتشار متن خام نظر نیست. میانگین شرکت فقط با حداقل سه تجربهٔ مستقل تأییدشده نمایش داده می‌شود.</p>
+      <section class="jr-card jr-approval">
+        <h2>بررسی پنج شاخص</h2>
+        <p class="jr-muted">برای هر شاخص فقط یکی را انتخاب کن. «تأیید» یعنی خروجی AI با متن اصلی سازگار است؛ اگر نمره‌ای ندارد، یعنی نبود نمره را درست می‌دانی.</p>
+        <form id="five-review" method="post" data-publish-ready="{{ ready|yesno:'true,false' }}">{% csrf_token %}
+          <div class="jr-checklist">
+          {% for p in panels %}
+            <section class="jr-checkitem">
+              <div class="jr-checkhead"><strong>{{ forloop.counter }}. {{ p.label }}</strong>
+                {% if p.dim %}{% if p.dim.score != None %}<span class="jr-score-small">{{ p.dim.score }} از ۱۰</span>{% else %}<span class="jr-empty">بدون نمره</span>{% endif %}{% else %}<span class="jr-empty">بدون داده</span>{% endif %}
+              </div>
+              {% if p.dim %}
+                {% if p.dim.explanation %}<p class="jr-description">{{ p.dim.explanation }}</p>{% endif %}
+                {% if p.dim.evidence %}<details class="jr-fold"><summary>شاهد AI</summary><div class="jr-evidence">{{ p.dim.evidence }}</div></details>{% endif %}
+                {% if p.needs_manual_source %}<p class="jr-soft-alert">شاهد تفکیک‌شدهٔ AI ناقص است؛ فقط اگر متن اصلی این امتیاز را واقعاً پشتیبانی می‌کند، تأیید کن.</p>{% endif %}
+                {% if p.dim.score == None %}<p class="jr-muted">AI دربارهٔ این موضوع نمره‌ای نداده است.</p>{% endif %}
+                <div class="jr-two-choices" role="group" aria-label="تصمیم درباره {{ p.label }}">
+                  <label class="jr-choice"><input type="radio" name="decision_{{ p.key }}" value="yes" {% if p.approved_value == 'yes' %}checked{% endif %} required><span>✓ تأیید</span></label>
+                  <label class="jr-choice"><input type="radio" name="decision_{{ p.key }}" value="no" {% if p.approved_value == 'no' %}checked{% endif %} required><span>✕ عدم تأیید</span></label>
+                </div>
+              {% else %}<p class="jr-soft-alert">دادهٔ این شاخص ناقص است؛ انتشار ممکن نیست.</p>{% endif %}
+            </section>
+          {% endfor %}
+          </div>
+          {% if can_publish and can_review %}
+          <div class="jr-actions">
+            <p id="jr-review-count" class="jr-progress" aria-live="polite">تصمیم‌های پنج شاخص را تکمیل کن.</p>
+            <button class="jr-button jr-outline" type="submit" name="action" value="review_dimensions">ذخیرهٔ تصمیم‌های پنج شاخص</button>
+            {% if not assessment.publish_approved and can_quick_publish %}
+              <button class="jr-button jr-primary" id="jr-publish-five" type="submit" name="action" value="publish_reviewed" disabled>تأیید پنج شاخص و انتشار</button>
+            {% else %}<p class="jr-pass">این ارزیابی اکنون منتشر شده است. تغییر هر تصمیم به «عدم تأیید»، انتشار را لغو می‌کند.</p>{% endif %}
+          </div>
+          {% else %}<p class="jr-alert">حساب شما مجوز بررسی یا انتشار ندارد.</p>{% endif %}
+        </form>
+        {% if blockers %}<details class="jr-blocker"><summary>پیش‌شرط‌های مستقل انتشار ({{ blockers|length }})</summary><ul>{% for x in blockers %}<li>{{ x }}</li>{% endfor %}</ul>
+          {% if needs_rights %}<p>مجوز منبع یک موضوع حقوقیِ جدا از پنج امتیاز است. در این صفحه هیچ نشانی سندی لازم نیست.</p>{% if can_source %}<a href="{{ rights_review_url }}">مدیریت بررسی مجوز منبع</a>{% endif %}{% endif %}
+          {% if company.identity_status != 'verified' or company.tech_status != 'verified' %}<p><a href="{{ company_review_url }}">بررسی مشخصات شرکت</a></p>{% endif %}
+        </details>{% endif %}
+        {% if assessment.publish_approved and can_publish %}<form method="post">{% csrf_token %}<input name="action" type="hidden" value="quick_reject"><button class="jr-button jr-outline jr-danger" type="submit">لغو انتشار</button></form>{% endif %}
       </section>
-      <details class="jr-card jr-history"><summary>سوابق و جزئیات فنی</summary>
-        <p>مدل: {{ assessment.model_name }} · نسخه: {{ assessment.prompt_version }}</p>
-        <p>وضعیت پردازش: {{ assessment.parse_status }} · نسخه شاخص‌ها: {{ assessment.criteria_version }}</p>
-        {% if latest_log %}<ul>{% for item in latest_log %}<li>{{ item.action_time|date:'Y/m/d H:i' }} · {{ item.user }} · {{ item.change_message }}</li>{% endfor %}</ul>{% endif %}
+      <details class="jr-card jr-history"><summary>سوابق و مشخصات فنی</summary><p>نسخه مدل: {{ assessment.model_name }} · {{ assessment.prompt_version }}</p>
+        {% if latest_log %}<ul>{% for x in latest_log %}<li>{{ x.action_time|date:'Y/m/d H:i' }} · {{ x.user }} · {{ x.change_message }}</li>{% endfor %}</ul>{% endif %}
       </details>
     </aside>
   </div>
 </main>
+<script>
+(function(){
+  var form=document.getElementById('five-review'), publish=document.getElementById('jr-publish-five'), progress=document.getElementById('jr-review-count');
+  if(!form || !progress) return;
+  var fields=[{% for p in panels %}'decision_{{ p.key }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+  function update(){
+    var values=fields.map(function(field){var el=form.querySelector('input[name="'+field+'"]:checked');return el?el.value:'';});
+    var selected=values.filter(Boolean).length, approved=values.filter(function(v){return v==='yes';}).length;
+    progress.textContent='بررسی‌شده: '+selected+' از ۵ · تأیید: '+approved+' از ۵';
+    if(publish) publish.disabled=!(values.length===5 && approved===5 && form.dataset.publishReady==='true');
+  }
+  form.addEventListener('change',update);update();
+})();
+</script>
 {% endblock %}

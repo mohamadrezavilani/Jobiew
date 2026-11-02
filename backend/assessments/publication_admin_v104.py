@@ -14,7 +14,7 @@ from django.utils.cache import patch_cache_control
 
 from assessments.models import AiAssessment, AiDimension, AiHumanReviewEvent, DIMENSIONS, FIVE_CRITERIA_VERSION
 from assessments.publication_workflow_v104 import publication_blockers, latest_verdict, source_url, set_publication
-from assessments.publication_simple_v105 import preliminary_blockers, quick_decision
+from assessments.publication_simple_v105 import preliminary_blockers, quick_decision, save_dimension_decisions
 from experiences.models import ExperienceReviewEvent
 
 
@@ -66,12 +66,26 @@ def publication_detail(admin_view,request,assessment_id):
     can_publish=request.user.has_perm('assessments.change_aiassessment')
     if request.method=='POST':
         action=request.POST.get('action')
-        if action in {'quick_publish', 'quick_reject'}:
+        if action in {'review_dimensions', 'publish_reviewed'}:
+            if not (can_publish and can_review): raise PermissionDenied
+            try:
+                decisions = {key: request.POST.get('decision_' + key, '') for key, _ in DIMENSIONS}
+                updated = save_dimension_decisions(request, a.pk, decisions)
+                if action == 'publish_reviewed':
+                    if not all(x == 'yes' for x in decisions.values()):
+                        messages.warning(request, 'تصمیم‌ها ذخیره شدند؛ برای انتشار، تأیید همهٔ پنج شاخص لازم است.')
+                    else:
+                        quick_decision(request, a.pk, approve=True)
+                        messages.success(request, 'پنج شاخص تأیید شدند و ارزیابی AI منتشر شد.')
+                else:
+                    messages.success(request, f'بررسی هر پنج شاخص ذخیره شد ({updated} تصمیم جدید).')
+            except (ValidationError, ValueError) as exc:
+                messages.error(request, 'بررسی یا انتشار انجام نشد: ' + str(exc))
+        elif action == 'quick_reject':
             if not can_publish: raise PermissionDenied
             try:
-                quick_decision(request, a.pk, approve=(action=='quick_publish'),
-                               rights_evidence_url=request.POST.get('rights_evidence_url',''))
-                messages.success(request, 'ارزیابی AI تأیید و منتشر شد.' if action=='quick_publish' else 'ارزیابی رد شد و انتشار آن غیرفعال است.')
+                quick_decision(request, a.pk, approve=False)
+                messages.success(request, 'ارزیابی رد شد و انتشار آن غیرفعال است.')
             except (ValidationError, ValueError) as exc:
                 messages.error(request, 'امکان ثبت تصمیم وجود ندارد: '+str(exc))
         elif action=='reviews':
@@ -138,12 +152,18 @@ def publication_detail(admin_view,request,assessment_id):
     for key,label in DIMENSIONS:
         d=dims.get(key)
         latest=latest_verdict(d) if d else None
-        panels.append({'key':key,'label':label,'dim':d,'latest':latest})
+        approved_value = ('yes' if latest and latest.verdict in ('supported', 'correct_abstention')
+                          else 'no' if latest else '')
+        panels.append({'key':key,'label':label,'dim':d,'latest':latest,
+                       'approved_value':approved_value,
+                       'needs_manual_source': bool(d and d.score is not None and
+                                                   (not d.evidence or not d.explanation.strip()))})
     blockers=preliminary_blockers(a)
     ctx=_context(admin_view,request,f'بررسی و انتشار AI #{a.pk}')
     ctx.update({'assessment':a,'experience':exp,'company':exp.company,
         'panels':panels,'blockers':blockers,'ready':not blockers,
         'needs_rights':exp.copyright_review=='pending',
+        'rights_review_url':reverse('admin:experiences_experiencereviewevent_add') + f'?experience={exp.pk}&review_field=copyright',
         'rights_blocked':exp.copyright_review=='blocked',
         'can_review':can_review,'can_source':can_source,'can_publish':can_publish,
         'can_quick_publish':(can_publish and can_review and can_source),

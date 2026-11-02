@@ -5,8 +5,6 @@ Company verification is separate and cannot be fabricated from AI scores.
 Creates audit records atomically and preserves all historical review events.
 """
 from django.core.exceptions import PermissionDenied
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from assessments.models import AiAssessment, AiDimension, AiHumanReviewEvent, DIMENSIONS, FIVE_CRITERIA_VERSION
@@ -19,7 +17,7 @@ LABELS = dict(DIMENSIONS)
 
 
 def preliminary_blockers(a):
-    """Only irreparable-on-this-button problems. Rights proof can be supplied inline."""
+    """Safety prerequisites independent of the five human decisions."""
     exp = a.experience
     company = exp.company
     problems = []
@@ -27,8 +25,8 @@ def preliminary_blockers(a):
         problems.append('فقط تجربهٔ کاری با مدل پنج‌شاخصی قابلیت انتشار دارد.')
     if company.identity_status != 'verified' or company.tech_status != 'verified':
         problems.append('هویت و فناوری‌بودن شرکت هنوز تأیید نشده است.')
-    if exp.copyright_review not in {'approved', 'pending'}:
-        problems.append('حقوق انتشار این تجربه رد شده یا نامعتبر است.')
+    if exp.copyright_review != 'approved':
+        problems.append('مجوز استفاده از منبع تأیید نشده است؛ این مورد جدا از بررسی پنج شاخص مدیریت می‌شود.')
     if exp.company_attribution_status not in {'verified', 'unverified'} or exp.independence_status not in {'verified', 'unknown'}:
         problems.append('انتساب یا مستقل‌بودن این نظر قبلاً رد شده یا وضعیت نامعتبری دارد.')
     if not source_url(exp.source_url):
@@ -50,14 +48,12 @@ def preliminary_blockers(a):
         if dim.score is None:
             if dim.confidence != 0:
                 problems.append(f'اطمینان شاخص بدون امتیاز «{LABELS[dim.key]}» باید صفر باشد.')
-        elif not 1 <= dim.score <= 10 or not 0 <= dim.confidence <= 100 or not dim.evidence or not dim.explanation.strip():
-            problems.append(f'شاهد یا دادهٔ معتبر برای «{LABELS[dim.key]}» ناقص است.')
+        elif not 1 <= dim.score <= 10 or not 0 <= dim.confidence <= 100:
+            problems.append(f'امتیاز یا اطمینان «{LABELS[dim.key]}» نامعتبر است.')
+        elif (not dim.evidence or not dim.explanation.strip()) and not (exp.body or '').strip():
+            problems.append(f'متن اصلی برای تأیید دستی «{LABELS[dim.key]}» در دسترس نیست.')
         if dim.semantic_overrides.filter(status='active_provisional').exists():
             problems.append(f'اصلاح معنایی حل‌نشده برای «{LABELS[dim.key]}» وجود دارد.')
-        old = latest_verdict(dim)
-        expected = 'supported' if dim.score is not None else 'correct_abstention'
-        if old and old.verdict != expected:
-            problems.append(f'برای «{LABELS[dim.key]}» قبلاً ایراد یا ابهام ثبت شده است؛ ابتدا آن را بررسی کن.')
     if (exp.content_sha256 and PublicExperience.objects.filter(
             content_sha256=exp.content_sha256).exclude(pk=exp.pk).exists()):
         problems.append('متن یکسانی در رکورد دیگری وجود دارد؛ استقلال این تجربه باید بررسی شود.')
@@ -98,20 +94,10 @@ def quick_decision(request, assessment_pk, *, approve, rights_evidence_url=''):
         blockers = preliminary_blockers(a)
         if blockers:
             raise ValueError('؛ '.join(blockers))
-        if exp.copyright_review == 'pending':
-            url = (rights_evidence_url or '').strip()
-            if not url or url == exp.source_url:
-                raise ValueError('برای منبع فاقد مجوز تأییدشده، نشانی سند مستقلِ اجازهٔ استفاده لازم است؛ لینک خود نظر کافی نیست.')
-            try:
-                URLValidator(schemes=['https', 'http'])(url)
-            except ValidationError:
-                raise ValueError('نشانی سند مجوز معتبر نیست.') from None
-            ExperienceReviewEvent.objects.create(
-                experience=exp, review_field='copyright', decision='approved',
-                evidence_url=url, reviewer=request.user,
-                rationale='مدیر مستند اجازهٔ استفاده و انتشار امتیازهای مبتنی بر این تجربه را بررسی و تأیید کرد.')
-        exp.refresh_from_db()
-        a.experience = exp
+        # Copyright permission is managed separately by a source review event,
+        # never inferred from the five dimension votes or the public URL.
+        if exp.copyright_review != 'approved':
+            raise ValueError('اجازهٔ استفاده از منبع هنوز تأیید نشده است.')
         evidence_link = source_url(exp.source_url)
         if exp.company_attribution_status == 'unverified':
             ExperienceReviewEvent.objects.create(
@@ -125,11 +111,8 @@ def quick_decision(request, assessment_pk, *, approve, rights_evidence_url=''):
                 rationale='مدیر تجربه را بررسی و پس از کنترل تکرار آشکار و تطبیق با منبع، آن را مستقل تأیید کرد.')
         exp.refresh_from_db()
         a.experience = exp
-        for dim in a.dimensions.all():
-            wanted = 'supported' if dim.score is not None else 'correct_abstention'
-            old = latest_verdict(dim)
-            if not old:
-                AiHumanReviewEvent.objects.create(dimension=dim, reviewer=request.user, verdict=wanted)
+        # The reviewer must have explicitly decided on each dimension first.
+        # No automatic verdicts are created as a side effect of publishing.
         remaining = publication_blockers(a)
         if remaining:
             raise ValueError('؛ '.join(remaining))
@@ -137,5 +120,48 @@ def quick_decision(request, assessment_pk, *, approve, rights_evidence_url=''):
         a.independent_review_status = 'approved'
         a.save(update_fields=['publish_approved','independent_review_status'])
         log_publication(request, a, 'PUBLISH_APPROVED',
-                        'یک تصمیم انسانی: بررسی متن، پنج شاخص، انتساب و استقلال؛ مجوز منبع ثبت شده است')
+                        'تأیید انسانی پنج شاخص و اجازهٔ مستقل استفاده از منبع پیش از انتشار بررسی شدند')
     return a
+
+
+def save_dimension_decisions(request, assessment_pk, decisions):
+    """Store five simple human yes/no choices; append-only, never fake a score.
+
+    A 'no' is deliberately recorded as uncertain, because rejecting a suggestion
+    without giving a reason is not proof that it is false or that evidence exists.
+    """
+    if not (request.user.is_staff and all(request.user.has_perm(p) for p in (
+        'assessments.change_aiassessment', 'assessments.add_aihumanreviewevent',
+        'experiences.view_publicexperience'))):
+        raise PermissionDenied
+    if set(decisions) != set(LABELS) or any(v not in {'yes', 'no'} for v in decisions.values()):
+        raise ValueError('برای هر پنج شاخص فقط تأیید یا عدم تأیید انتخاب کن.')
+    with transaction.atomic():
+        a = (AiAssessment.objects.select_for_update().select_related('experience')
+             .get(pk=assessment_pk))
+        if a.criteria_version != FIVE_CRITERIA_VERSION or a.experience.source_kind != 'work':
+            raise ValueError('فقط ارزیابی تجربهٔ کاری پنج‌شاخصی قابل بررسی است.')
+        dims = list(a.dimensions.select_related('assessment').order_by('pk'))
+        if len(dims) != 5 or {d.key for d in dims} != set(LABELS):
+            raise ValueError('داده‌های پنج شاخص ناقص هستند؛ تصمیم ذخیره نشد.')
+        changed = 0
+        for dim in dims:
+            decision = decisions[dim.key]
+            wanted = ('supported' if dim.score is not None else 'correct_abstention') if decision == 'yes' else 'uncertain'
+            prior = latest_verdict(dim)
+            if prior and prior.verdict == wanted:
+                continue
+            note = ('متن اصلی تجربه و خروجی AI برای این شاخص توسط مدیر بررسی و تأیید شد؛ '
+                    'در صورت فقدان شاهد ماشینی، تأیید فقط بر اساس مشاهده متن اصلی بوده است.'
+                    if decision == 'yes' else 'این شاخص در بررسی مدیر برای انتشار تأیید نشد.')
+            AiHumanReviewEvent.objects.create(
+                dimension=dim, reviewer=request.user, verdict=wanted, note=note,
+            )
+            changed += 1
+        if 'no' in decisions.values() and a.publish_approved:
+            a.publish_approved = False
+            a.independent_review_status = 'revoked'
+            a.save(update_fields=['publish_approved', 'independent_review_status'])
+            log_publication(request, a, 'PUBLICATION_REVOKED',
+                            'مدیر یک یا چند شاخص را در بررسی مجدد تأیید نکرد')
+    return changed
