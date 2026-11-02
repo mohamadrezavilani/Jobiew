@@ -42,3 +42,96 @@ body :is(button,input,textarea,select) { line-height: 1.75; }
 body :is(pre,code,kbd,samp), body :is(pre,code,kbd,samp) * {
   font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace !important;
 }
+
+/* JOBIEW_ADMIN_CONTRAST_V1122_BEGIN
+ * Accessible color pairs for Django Admin action surfaces, light/dark themes.
+ * Do not set link color without matching background on button surfaces.
+ */
+#container #content a.button,
+#container #content a.button:link,
+#container #content a.button:visited,
+#container #content button.button,
+#container #content input.button,
+#container #content button[type="submit"],
+#container #content input[type="submit"],
+#container #content .jr .jr-button.jr-primary,
+#container #content .jcv button,
+#container #content .claude-wrap button {
+  background-color: #14566f !important;
+  background-image: none !important;
+  border: 1px solid #14566f !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-shadow: none !important;
+  text-decoration: none !important;
+  box-shadow: none;
+}
+/* A higher-specificity fix for the exact reported `.wi-x a` / `.button` clash. */
+#container #content .wi-x .wi-x-claude-shortcut a.button,
+#container #content .wi-x .wi-x-claude-shortcut a.button:visited,
+#container #content .wi-x .wi-x-assessment a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  padding: 9px 15px;
+  border-radius: 8px;
+  line-height: 1.65;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+  background: #14566f !important;
+  border: 1px solid #14566f !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-decoration: none !important;
+}
+#container #content a.button:hover,
+#container #content a.button:focus,
+#container #content button[type="submit"]:hover:not(:disabled),
+#container #content input[type="submit"]:hover:not(:disabled),
+#container #content .jr .jr-button.jr-primary:hover:not(:disabled),
+#container #content .wi-x .wi-x-claude-shortcut a.button:hover {
+  background: #103f55 !important;
+  border-color: #103f55 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+#container #content .jr .jr-choice input:checked + span {
+  background: #14566f !important;
+  border-color: #14566f !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+/* Keep negative/destructive actions visually distinct. */
+#container #content .jr .jr-button.jr-danger,
+#container #content .jr .jr-button.jr-danger:hover,
+#container #content .deletelink,
+#container #content .deletelink:hover,
+#container #content input[type="submit"].deletelink {
+  background: #9f2636 !important;
+  border-color: #9f2636 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+/* Disabled buttons should remain legible, including in Django Admin dark mode. */
+#container #content button:disabled,
+#container #content input[type="submit"]:disabled,
+#container #content .jr .jr-button:disabled,
+#container #content .claude-wrap button:disabled,
+#container #content .jcv button:disabled {
+  background: #526273 !important;
+  border-color: #526273 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+}
+#container #content a.button:focus-visible,
+#container #content button:focus-visible,
+#container #content input[type="submit"]:focus-visible,
+#container #content .jr .jr-choice input:focus-visible + span {
+  outline: 3px solid #fbbf24 !important;
+  outline-offset: 2px !important;
+}
+/* JOBIEW_ADMIN_CONTRAST_V1122_END */
