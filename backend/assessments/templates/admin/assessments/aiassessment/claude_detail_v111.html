@@ -11,6 +11,8 @@
 .jcv .evidence{font-size:.89em;opacity:.85}.jcv .scroll{overflow-x:auto}.jcv .status{padding:8px;border-radius:8px;background:var(--darkened-bg,#eee)}
 </style>
 <div class="jcv">
+ <p><a href="{% url 'admin:companies_company_experience_detail' experience.company_id experience.pk %}">← بازگشت به همین تجربه</a></p>
+
  <p><a href="{% url 'admin:assessments_aiassessment_claude_dashboard' %}">← برگشت به فهرست صحت‌سنجی Claude</a> · <a href="{% url 'admin:assessments_aiassessment_publication_detail' assessment.pk %}">بررسی و انتشار انسانی</a></p>
  <header class="panel">
   <p class="muted">صحت‌سنجی مستقل Claude · ارزیابی #{{ assessment.pk }}</p>
