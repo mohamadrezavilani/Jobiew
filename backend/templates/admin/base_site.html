@@ -1,0 +1,11 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'companies/css/jobiew_vazir_v110.css' %}">
+{% endblock %}
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></div>
+{% endblock %}
+{% block nav-global %}{% endblock %}

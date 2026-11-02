@@ -1,0 +1,44 @@
+/* Jobiew v1.0.10 - site-wide Vazir typography.
+   The font files are loaded from the public CDN at render time; the patch
+   does not redistribute font binaries.
+   Original font: Saber Rastikerdar, v30.1.0, OFL.
+   https://github.com/rastikerdar/vazir-font
+*/
+@font-face {
+  font-family: 'Vazir';
+  src: local('Vazir'), local('Vazir-Regular'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/vazir-font/30.1.0/Vazir-Regular.woff2') format('woff2');
+  font-style: normal; font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazir';
+  src: local('Vazir-Medium'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/vazir-font/30.1.0/Vazir-Medium.woff2') format('woff2');
+  font-style: normal; font-weight: 500; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazir';
+  src: local('Vazir-Bold'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/vazir-font/30.1.0/Vazir-Bold.woff2') format('woff2');
+  font-style: normal; font-weight: 600 800; font-display: swap;
+}
+@font-face {
+  font-family: 'Vazir';
+  src: local('Vazir-Black'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/vazir-font/30.1.0/Vazir-Black.woff2') format('woff2');
+  font-style: normal; font-weight: 900; font-display: swap;
+}
+:root {
+  --jobiew-persian-font: 'Vazir', 'Segoe UI', 'Noto Sans Arabic', Arial, sans-serif;
+  --font-family-primary: var(--jobiew-persian-font);
+}
+html, body,
+body :is(h1,h2,h3,h4,h5,h6,p,small,strong,b,em,a,span,label,button,input,select,textarea,option,optgroup,th,td,caption,li,ul,ol,table,section,article,div,nav,header,footer,details,summary,blockquote,legend,fieldset,form),
+body :is(.maplibregl-popup-content,.maplibregl-ctrl,.maplibregl-ctrl-attrib) {
+  font-family: var(--jobiew-persian-font) !important;
+}
+body :is(button,input,textarea,select) { line-height: 1.75; }
+/* Keep machine-readable code/JSON and code blocks monospaced. */
+body :is(pre,code,kbd,samp), body :is(pre,code,kbd,samp) * {
+  font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace !important;
+}

@@ -1,5 +1,6 @@
 {% load static %}
 <!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>فهرست شرکت‌ها</title>
+<link rel="stylesheet" href="{% static 'companies/css/jobiew_vazir_v110.css' %}">
 <style>body{font:15px Tahoma,Arial,sans-serif;background:#f6f8fc;color:#273347;max-width:1050px;margin:30px auto;padding:12px;line-height:1.9}a{color:#15539d}section{background:white;border:1px solid #dbe2eb;border-radius:12px;margin:12px 0;padding:16px}small{color:#6a7586}input{padding:10px;width:65%}</style>
 <h1>تجربه کاری شرکت‌ها — نسخه آزمایشی</h1><p><a href="{% url 'company-map' %}">نقشه مکان‌های تأییدشده تهران</a></p><p>تا زمان تأیید هویت و صنعت شرکت‌ها، فهرست صرفاً بر اساس نام شرکت ثبت‌شده در منبع نمایش داده می‌شود. هیچ امتیاز شرکت منتشر نمی‌شود.</p>
 <form><input type="search" name="q" value="{{q}}" placeholder="جست‌وجوی شرکت"><button type="submit">جست‌وجو</button></form>
