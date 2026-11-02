@@ -2,6 +2,7 @@
 from django.contrib import admin
 from django.urls import path
 from .review_workspace_v53 import ai_feasibility_review
+from .publication_admin_v104 import publication_queue, publication_detail
 from .models import AiAssessment, AiDimension, RatingSnapshot, AiHumanReviewEvent
 
 
@@ -29,8 +30,20 @@ class AiAssessmentAdmin(_ReadOnlyAuditAdmin):
     list_select_related = ('experience', 'experience__company')
 
     def get_urls(self):
-        return [path('feasibility-review/', self.admin_site.admin_view(self.feasibility_view),
-                     name='assessments_aiassessment_feasibility_review')] + super().get_urls()
+        return [
+            path('publication/', self.admin_site.admin_view(self.publication_queue_view),
+                 name='assessments_aiassessment_publication_queue'),
+            path('publication/<int:assessment_id>/', self.admin_site.admin_view(self.publication_detail_view),
+                 name='assessments_aiassessment_publication_detail'),
+            path('feasibility-review/', self.admin_site.admin_view(self.feasibility_view),
+                 name='assessments_aiassessment_feasibility_review'),
+        ] + super().get_urls()
+
+    def publication_queue_view(self, request):
+        return publication_queue(self, request)
+
+    def publication_detail_view(self, request, assessment_id):
+        return publication_detail(self, request, assessment_id)
 
     def feasibility_view(self, request):
         return ai_feasibility_review(self, request)

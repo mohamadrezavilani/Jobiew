@@ -1,0 +1,74 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'assessments/css/publication_v104.css' %}">{% endblock %}
+{% block content %}
+<main class="wi-pub" dir="rtl">
+  <nav class="wi-pub-nav"><a href="{{ queue_url }}">صف ارزیابی‌ها</a><a href="{{ experience_url }}">نمای کامل نظر شرکت</a><a href="{{ company_review_url }}">تأیید هویت شرکت</a><a href="{{ public_company_url }}" target="_blank" rel="noopener noreferrer">صفحه عمومی شرکت</a></nav>
+  <header><span>ارزیابی #{{ assessment.pk }} · {{ assessment.model_name }} / {{ assessment.prompt_version }}</span><h1>{{ company.display_name }} — {{ experience.title }}</h1>
+  <p>{% if assessment.publish_approved %}<strong class="wi-pub-ok">تأیید انتشار فعال است</strong>{% else %}<strong class="wi-pub-warn">هنوز منتشر نشده است</strong>{% endif %} · فقط برای مدل پنج‌شاخصی</p></header>
+  <div class="wi-pub-grid">
+    <section class="wi-pub-card"><h2>۱. متن اصلی تجربه (خصوصی)</h2>
+      <p><strong>{{ experience.get_source_kind_display }}</strong> · تاریخ: {{ experience.published_jalali|default:'نامشخص' }} · موقعیت: {{ experience.job_title|default:'ثبت نشده' }}</p>
+      {% if source_url %}<p><a href="{{ source_url }}" target="_blank" rel="noopener noreferrer">بررسی در سایت مبدأ</a></p>{% endif %}
+      <div class="wi-pub-body">{{ experience.body|default:'متن اصلی ثبت نشده'|linebreaks }}</div>
+      {% if experience.pros %}<h3>نکات مثبت</h3><div>{{ experience.pros }}</div>{% endif %}
+      {% if experience.cons %}<h3>نکات منفی</h3><div>{{ experience.cons }}</div>{% endif %}
+      <p class="wi-pub-hint">متن، شواهد خام و توضیحات مدل در صفحه عمومی منتشر نمی‌شوند.</p>
+    </section>
+    <aside class="wi-pub-card"><h2>۲. صحت منبع و انتساب</h2>
+      <dl class="wi-pub-dl"><dt>هویت شرکت</dt><dd>{{ company.identity_status }}</dd><dt>حوزه فناوری</dt><dd>{{ company.tech_status }}</dd>
+        <dt>حقوق انتشار</dt><dd>{{ experience.copyright_review }}</dd><dt>انتساب نظر</dt><dd>{{ experience.company_attribution_status }}</dd>
+        <dt>استقلال نظر</dt><dd>{{ experience.independence_status }}</dd></dl>
+      {% if can_source and not assessment.publish_approved %}
+      {% for field,label,choices in source_review_rows %}
+      <form method="post" class="wi-pub-form wi-pub-source-form">{% csrf_token %}<input type="hidden" name="action" value="source"><input type="hidden" name="review_field" value="{{ field }}">
+        <h3>{{ label }}</h3>
+        <label>تصمیم<select name="decision" required><option value="">انتخاب نتیجه</option>{% for value,name in choices %}<option value="{{ value }}">{{ name }}</option>{% endfor %}</select></label>
+        <label>لینک مدرک<input type="url" name="evidence_url" maxlength="1500" placeholder="https://..."></label>
+        <label>دلیل تصمیم<textarea name="rationale" rows="2" required minlength="10"></textarea></label>
+        <button class="button" type="submit">ثبت {{ label }}</button>
+      </form>{% endfor %}
+      <p class="wi-pub-hint">برای تصمیم‌های مثبت، لینک مدرک معتبر الزامی است. هر تصمیم در تاریخچه ذخیره می‌شود.</p>
+      {% else %}<p class="wi-pub-hint">تغییر بررسی منبع تنها با مجوز مربوطه و پیش از انتشار امکان دارد.</p>{% endif %}
+      {% if source_history %}<details><summary>تاریخچه بررسی منبع ({{ source_history|length }})</summary><ul>{% for e in source_history %}<li>{{ e.get_review_field_display }} · {{ e.get_decision_display }} · {{ e.reviewer }} · {{ e.created_at|date:'Y/m/d H:i' }}</li>{% endfor %}</ul></details>{% endif %}
+    </aside>
+  </div>
+  <section class="wi-pub-card"><h2>۳. بررسی یک‌جای پنج شاخص AI</h2>
+    <p class="wi-pub-hint">برای هر شاخص متن، شواهد و جهت امتیاز را کنترل کن. امتیاز بالاتر همیشه یعنی وضعیت بهتر. «درست» بودن مدل لزوماً به معنی تأیید انتشار نیست.</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reviews">
+      <div class="wi-pub-axis">
+      {% for p in panels %}<article>
+        <h3>{{ forloop.counter }}. {{ p.label }}</h3>
+        {% if p.dim %}
+          <div class="wi-pub-metrics"><strong>امتیاز AI: {% if p.dim.score != None %}{{ p.dim.score }} از ۱۰{% else %}بدون امتیاز{% endif %}</strong><span>اطمینان مدل: {{ p.dim.confidence }}٪</span></div>
+          <p><b>توضیح AI:</b> {{ p.dim.explanation|default:'ثبت نشده' }}</p><p><b>شواهد:</b></p><div class="wi-pub-evidence">{{ p.dim.evidence }}</div>
+          <p>آخرین داوری: {% if p.latest %}<strong>{{ p.latest.get_verdict_display }}</strong> ({{ p.latest.reviewer }}، {{ p.latest.created_at|date:'Y/m/d H:i' }}){% else %}ثبت نشده{% endif %}</p>
+          {% if can_review and not assessment.publish_approved %}
+            <label>نتیجه بررسی<select name="verdict_{{ p.key }}"><option value="">بدون تغییر</option>{% for value,label in verdicts %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+            <div class="wi-pub-inline"><label>علت خطا (در صورت رد)<select name="error_{{ p.key }}">{% for value,label in errors %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+            <label>توضیح تصمیم<textarea name="note_{{ p.key }}" rows="2" placeholder="برای رد کردن، حداقل ۱۲ حرف دلیل بنویس"></textarea></label></div>
+          {% endif %}
+        {% else %}<strong class="wi-pub-bad">شاخص در دیتابیس ثبت نشده؛ امکان انتشار وجود ندارد.</strong>{% endif %}
+      </article>{% endfor %}
+      </div>
+      {% if can_review and not assessment.publish_approved %}
+      <label class="wi-pub-check"><input type="checkbox" name="acknowledged_source" required> متن اصلی و شواهد هر شاخص انتخاب‌شده را شخصاً بررسی کردم.</label>
+      <button class="button default" type="submit">ذخیره تصمیم‌های انسانی (بدون انتشار)</button>{% endif %}
+    </form>
+  </section>
+  <section class="wi-pub-card"><h2>۴. تصمیم نهایی انتشار</h2>
+    {% if blockers %}<p class="wi-pub-warn">انتشار فعلاً مجاز نیست. موارد زیر را اصلاح کن:</p><ul class="wi-pub-blockers">{% for problem in blockers %}<li>{{ problem }}</li>{% endfor %}</ul>{% else %}<p class="wi-pub-ok">تمام شرط‌های فعلی انتشار برقرار است.</p>{% endif %}
+    {% if can_publish %}
+    <form method="post" class="wi-pub-form">{% csrf_token %}
+      <input type="hidden" name="action" value="{% if assessment.publish_approved %}revoke{% else %}publish{% endif %}">
+      <label>دلیل تصمیم نهایی<textarea name="rationale" rows="2" required minlength="12" placeholder="دلیل قابل‌ردیابی برای ثبت در تاریخچه"></textarea></label>
+      <label class="wi-pub-check"><input type="checkbox" name="confirmed" required> نتیجهٔ این تصمیم، متن عمومی قابل‌نمایش و مسئولیت بررسی مجوزها را تأیید می‌کنم.</label>
+      {% if assessment.publish_approved %}<button class="button" type="submit">لغو انتشار AI</button>
+      {% else %}<button class="button default" type="submit" {% if not ready %}disabled{% endif %}>تأیید نهایی و انتشار ارزیابی AI</button>{% endif %}
+    </form>
+    {% else %}<p>برای انتشار، مجوز <code>assessments.change_aiassessment</code> لازم است.</p>{% endif %}
+    <p class="wi-pub-hint">فقط امتیازهای پنج شاخص و لینک منبع نمایش داده می‌شوند؛ متن اصلی و شاهد خام خصوصی می‌مانند. میانگین شرکت تنها با حداقل ۳ تجربه مستقل و تأییدشده ظاهر می‌شود.</p>
+    {% if latest_log %}<details><summary>تاریخچه انتشار</summary><ul>{% for item in latest_log %}<li>{{ item.action_time|date:'Y/m/d H:i' }} · {{ item.user }} · {{ item.change_message }}</li>{% endfor %}</ul></details>{% endif %}
+  </section>
+</main>
+{% endblock %}

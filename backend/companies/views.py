@@ -16,9 +16,10 @@ def index(request):
 def detail(request, pk):
     c=get_object_or_404(Company, pk=pk)
     from assessments.models import DIMENSIONS
-    # Deliberately no experimental AI score is leaked into public HTML.
-    # A separate independently-approved publication endpoint is required.
-    return render(request,'companies/detail.html',{'company':c, 'five_criteria': DIMENSIONS})
+    from assessments.publication_workflow_v104 import public_company_assessments
+    published = public_company_assessments(c)
+    return render(request,'companies/detail.html',{'company':c, 'five_criteria': DIMENSIONS,
+                                                 'published_ai': published})
 
 
 def company_map(request):

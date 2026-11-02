@@ -24,7 +24,7 @@
   </div>
   {% if can_see_ai %}
   <section class="wi-x-panel wi-x-ai"><h2>ارزیابی‌های AI با نسخهٔ five_v1</h2><p class="wi-x-note">این ارزیابی‌ها آزمایشی‌اند. امتیازهای سایت مبدأ با امتیازهای AI یکی نیستند و نمایش در این بخش مجوز انتشار عمومی محسوب نمی‌شود.</p>
-    {% for assessment in assessments %}<article class="wi-x-assessment"><h3>مدل: {{ assessment.model_name }} · {{ assessment.created_at|date:'Y/m/d H:i' }}</h3><p>وضعیت پردازش: {{ assessment.parse_status }} | بازبینی مستقل: {{ assessment.independent_review_status }} | تأیید انتشار: {% if assessment.publish_approved %}بله{% else %}خیر{% endif %}</p>
+    {% for assessment in assessments %}<article class="wi-x-assessment"><p><a class="button" href="{% url 'admin:assessments_aiassessment_publication_detail' assessment.pk %}">بررسی پنج معیار و انتشار AI</a></p><h3>مدل: {{ assessment.model_name }} · {{ assessment.created_at|date:'Y/m/d H:i' }}</h3><p>وضعیت پردازش: {{ assessment.parse_status }} | بازبینی مستقل: {{ assessment.independent_review_status }} | تأیید انتشار: {% if assessment.publish_approved %}بله{% else %}خیر{% endif %}</p>
       <table class="wi-x-table"><thead><tr><th>شاخص</th><th>امتیاز از ۱۰</th><th>اطمینان</th><th>وضعیت معنایی</th><th>توضیح مدل</th></tr></thead><tbody>
       {% for dim in assessment.display_dimensions %}<tr><td>{{ dim.display_label }}</td><td>{{ dim.score|default_if_none:'فاقد امتیاز' }}</td><td>{{ dim.confidence }}٪</td><td>{{ dim.semantic_status }}</td><td>{{ dim.explanation|default:'—'|linebreaksbr }}</td></tr>{% empty %}<tr><td colspan="5">برای این اجرا شاخصی ذخیره نشده است.</td></tr>{% endfor %}
       </tbody></table>

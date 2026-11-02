@@ -101,8 +101,8 @@
       circle.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();select();}});
     }
   }
-  if (chart.dataset.chartMode === 'provisional' && source) {
-    drawSeries('mean_provisional', false);
+  if (source && (chart.dataset.chartMode === 'provisional' || chart.dataset.chartMode === 'published')) {
+    if (chart.dataset.chartMode === 'provisional') drawSeries('mean_provisional', false);
     drawSeries('score', true);
   }
   const controls=[...document.querySelectorAll('[data-criterion-index]')];

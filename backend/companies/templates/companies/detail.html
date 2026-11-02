@@ -74,31 +74,32 @@
       <div class="wi-stat wi-stat--blue"><span class="wi-stat-icon" aria-hidden="true">◉</span><div><strong>{{ company.source_work_count }}</strong><span>تجربه کاری ثبت‌شده</span></div></div>
       <div class="wi-stat wi-stat--mint"><span class="wi-stat-icon" aria-hidden="true">♧</span><div><strong>{{ company.source_interview_count }}</strong><span>تجربه مصاحبه</span></div></div>
       <div class="wi-stat wi-stat--lavender"><span class="wi-stat-icon" aria-hidden="true">▥</span><div><strong>۵</strong><span>معیار ارزیابی محیط کار</span></div></div>
-      <div class="wi-stat wi-stat--warm"><span class="wi-stat-icon" aria-hidden="true">◇</span><div><strong class="wi-stat-word">پژوهشی</strong><span>امتیاز عمومی تأیید نشده</span></div></div>
+      <div class="wi-stat wi-stat--warm"><span class="wi-stat-icon" aria-hidden="true">◇</span><div><strong class="wi-stat-word">{% if published_ai.approved_count %}{{ published_ai.approved_count }}{% else %}پژوهشی{% endif %}</strong><span>{% if published_ai.approved_count %}تجربه AI تأییدشده{% else %}امتیاز عمومی تأیید نشده{% endif %}</span></div></div>
     </section>
 
     <div class="wi-main-grid">
       <section class="wi-panel wi-chart-card" aria-labelledby="radar-heading">
-        <div class="wi-section-head"><div><span class="wi-overline">شناخت شرکت</span><h2 id="radar-heading">پروفایل پنج معیار محیط کار</h2></div><span class="wi-status-pill">بدون نمره منتشرشده</span></div>
-        <p class="wi-muted">نمودار این بخش، چارچوب پنج معیار را نشان می‌دهد. تا زمان تأیید داده‌ها، هیچ امتیازی به‌صورت عمومی نمایش داده نمی‌شود.</p>
+        <div class="wi-section-head"><div><span class="wi-overline">شناخت شرکت</span><h2 id="radar-heading">پروفایل پنج معیار محیط کار</h2></div><span class="wi-status-pill">{% if published_ai.has_summary %}بر اساس شواهد مستقل تأییدشده{% else %}بدون میانگین تأییدشده{% endif %}</span></div>
+        <p class="wi-muted">{% if published_ai.has_summary %}نمودار تنها شاخص‌های دارای حداقل سه تجربه مستقل تأییدشده را نشان می‌دهد.{% else %}تا زمان وجود حداقل سه تجربه مستقل تأییدشده برای هر معیار، میانگین آن معیار نمایش داده نمی‌شود.{% endif %}</p>
+        {{ published_ai.summary|json_script:"wi-criteria-v23-data" }}
         <div class="wi-radar-wrap">
-          <svg class="wi-radar" data-chart-mode="empty" viewBox="0 0 520 480" role="img" aria-label="پنج محور ارزیابی؛ هیچ امتیاز عمومی قابل انتشار نیست">
+          <svg class="wi-radar" data-chart-mode="{% if published_ai.has_summary %}published{% else %}empty{% endif %}" viewBox="0 0 520 480" role="img" aria-label="پنج محور ارزیابی عمومی شرکت">
             <g class="wi-radar-grid" data-radar-grid></g><g class="wi-radar-plot" data-radar-plot></g>
           </svg>
-          <div class="wi-chart-empty"><span aria-hidden="true">◈</span><strong>داده معتبر برای انتشار موجود نیست</strong><small>امتیاز ناموجود به معنی صفر نیست</small></div>
+          {% if not published_ai.has_summary %}<div class="wi-chart-empty"><span aria-hidden="true">◈</span><strong>میانگین قابل اتکا برای انتشار موجود نیست</strong><small>امتیاز ناموجود به معنی صفر نیست</small></div>{% endif %}
         </div>
-        <div class="wi-chart-footer"><span class="wi-legend-swatch wi-legend-swatch--empty"></span> پنج محور ارزیابی، بدون امتیاز منتشرشده</div>
+        <div class="wi-chart-footer"><span class="wi-legend-swatch wi-legend-swatch--empty"></span> {% if published_ai.has_summary %}میانگین‌های تأییدشده با حداقل سه تجربه مستقل{% else %}پنج محور ارزیابی، بدون میانگین منتشرشده{% endif %}</div>
       </section>
 
       <section class="wi-panel wi-criteria-card" aria-labelledby="criteria-heading">
         <div class="wi-section-head"><div><span class="wi-overline">پنج معیار اصلی</span><h2 id="criteria-heading">شاخص‌های تجربه کاری</h2></div></div>
         <p class="wi-muted">در تمام معیارها، امتیاز بالاتر به معنی وضعیت بهتر است.</p>
         <div class="wi-criterion-grid">
-          {% for key, label in five_criteria %}
+          {% for row in published_ai.summary %}
           <div class="wi-criterion-item">
             <span class="wi-criterion-icon wi-axis-{{ forloop.counter }}" aria-hidden="true">{{ forloop.counter }}</span>
-            <span class="wi-criterion-copy"><strong>{{ label }}</strong><small>هنوز داده قابل انتشار ندارد</small></span>
-            <span class="wi-criterion-score">—</span>
+            <span class="wi-criterion-copy"><strong>{{ row.label }}</strong><small>{% if row.score != None %}بر پایهٔ {{ row.count }} تجربهٔ تأییدشده{% else %}داده مستقل کافی نیست{% endif %}</small></span>
+            <span class="wi-criterion-score">{% if row.score != None %}{{ row.score }}{% else %}—{% endif %}</span>
           </div>
           {% endfor %}
         </div>
@@ -106,6 +107,33 @@
       </section>
     </div>
 
+    {% if published_ai.approved_count %}
+    <section class="wi-panel" aria-labelledby="public-ai-heading" style="margin:24px 0;padding:24px;">
+      <h2 id="public-ai-heading">ارزیابی‌های تأییدشده از تجربه‌های کاری</h2>
+      <p class="wi-muted">{{ published_ai.approved_count }} تجربهٔ یکتای بررسی‌شده. ارزیابی AI برآوردی مبتنی بر روایت افراد است، نه حقیقت قطعی دربارهٔ شرکت. متن اصلی منتشر نمی‌شود.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:16px 0;">
+        {% for row in published_ai.summary %}
+        <div class="wi-panel" style="padding:14px;">
+          <strong>{{ row.label }}</strong>
+          {% if row.score != None %}
+            <p><strong>{{ row.score }} از ۱۰</strong></p><small>میانگین {{ row.count }} تجربهٔ مستقل تأییدشده</small>
+          {% else %}<p class="wi-muted">داده کافی نیست ({{ row.count }} از حداقل ۳ تجربه)</p>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <h3>نمونه ارزیابی‌های منتشرشده</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;">
+        {% for entry in published_ai.cards %}
+        <div class="wi-panel" style="padding:16px;">
+          <p>ارزیابی تأییدشده #{{ entry.id }} · {{ entry.date|default:'تاریخ نامشخص' }}</p>
+          <ul>{% for dim in entry.dimensions %}<li>{{ dim.label }}: {% if dim.score != None %}{{ dim.score }} از ۱۰{% else %}بدون شاهد کافی{% endif %}</li>{% endfor %}</ul>
+          {% if entry.source %}<a href="{{ entry.source }}" rel="nofollow noopener noreferrer" target="_blank">مشاهده منبع اصلی</a>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <p class="wi-muted">میانگین هر شاخص تنها با حداقل سه تجربهٔ مستقل دارای نمرهٔ تأییدشده نمایش داده می‌شود.</p>
+    </section>
+    {% endif %}
     <div class="wi-bottom-grid">
       <section class="wi-panel wi-info-box" aria-labelledby="source-heading"><div class="wi-icon-round wi-icon-round--blue" aria-hidden="true">◎</div><h2 id="source-heading">این اطلاعات از کجا آمده‌اند؟</h2><p>آمار بالا تعداد تجربه‌های ثبت‌شده برای این شرکت در منبع را نشان می‌دهد. کیفیت و انتساب داده‌ها از امتیازدهی پژوهشی جدا بررسی می‌شود.</p></section>
       <section class="wi-panel wi-info-box" aria-labelledby="verification-heading"><div class="wi-icon-round wi-icon-round--mint" aria-hidden="true">✓</div><h2 id="verification-heading">وضعیت بررسی و انتشار</h2><p>امتیازهای پیشنهادی هوش مصنوعی تا زمان تأیید مستقل منتشر نمی‌شوند. اطلاعات خصوصی و متن نظرات در این صفحه نمایش داده نشده‌اند.</p></section>
