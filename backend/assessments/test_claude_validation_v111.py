@@ -40,41 +40,38 @@ class ClaudeValidationTests(TestCase):
 
     @patch.dict('os.environ',{'ANTHROPIC_API_KEY':'test-not-real','JOBIEW_CLAUDE_VALIDATION_LIMIT':'5'})
     @patch('assessments.claude_validation_v111.call_claude')
-    def test_one_paid_request_is_separate_and_idempotent(self,api):
-        api.return_value=self.fake
-        r=self.client.post(self.url,{'force':'false'})
-        self.assertEqual(r.status_code,200,r.content[:300]);self.assertTrue(r.json()['ok'])
-        run=ClaudeValidationRun.objects.get()
-        self.assertEqual(run.input_tokens,1024)
-        self.assertEqual(set(run.claude_results),{key for key,_ in DIMENSIONS})
-        self.assessment.refresh_from_db();self.assertFalse(self.assessment.publish_approved)
-        self.assertFalse(self.assessment.dimensions.filter(semantic_status='approved').exists())
-        self.assertEqual(AiDimension.objects.get(assessment=self.assessment,key=DIMENSIONS[0][0]).score,5)
-        self.assertEqual(run.comparison[DIMENSIONS[0][0]]['delta'],2)
-        again=self.client.post(self.url,{'force':'false'})
-        self.assertEqual(again.status_code,200);self.assertFalse(again.json()['called'])
-        self.assertEqual(api.call_count,1)
-        self.assertEqual(ClaudeValidationRun.objects.count(),1)
+    def test_legacy_paid_request_blocked_before_any_api_call(self,api):
+        for force in ('false', 'true'):
+            r=self.client.post(self.url,{'force':force})
+            self.assertEqual(r.status_code,409,r.content[:300])
+            self.assertEqual(r.json()['error'],'legacy_scoring_suspended')
+        api.assert_not_called()
+        self.assertFalse(ClaudeValidationRun.objects.exists())
+        self.assessment.refresh_from_db()
+        self.assertFalse(self.assessment.publish_approved)
+        self.assertEqual(AiDimension.objects.get(
+            assessment=self.assessment,key=DIMENSIONS[0][0]).score,5)
 
     @patch.dict('os.environ',{'ANTHROPIC_API_KEY':'test-not-real','JOBIEW_CLAUDE_VALIDATION_LIMIT':'1'})
     @patch('assessments.claude_validation_v111.call_claude')
-    def test_quota_prevents_unexpected_second_bill(self,api):
-        api.return_value=self.fake
-        self.client.post(self.url,{'force':'false'})
-        second=self.client.post(self.url,{'force':'true'})
-        self.assertEqual(second.status_code,400)
-        self.assertIn('سقف',second.json()['message'])
-        self.assertEqual(api.call_count,1)
+    def test_legacy_quota_or_force_cannot_restart_paid_analysis(self,api):
+        for force in ('false','true'):
+            second=self.client.post(self.url,{'force':force})
+            self.assertEqual(second.status_code,409)
+            self.assertEqual(second.json()['error'],'legacy_scoring_suspended')
+        api.assert_not_called()
+        self.assertEqual(ClaudeValidationRun.objects.count(),0)
 
     @patch.dict('os.environ',{'ANTHROPIC_API_KEY':'test-not-real'})
     @patch('assessments.claude_validation_v111.call_claude')
-    def test_malformed_response_records_failure_not_score(self,api):
+    def test_legacy_malformed_data_not_sent_to_paid_api(self,api):
         api.return_value={'stop_reason':'end_turn','content':[{'type':'text','text':'bad json'}]}
         r=self.client.post(self.url,{'force':'false'})
-        self.assertEqual(r.status_code,502)
-        run=ClaudeValidationRun.objects.get();self.assertEqual(run.status,'failed')
-        self.assessment.refresh_from_db();self.assertFalse(self.assessment.publish_approved)
-        self.assertEqual(run.claude_results,{})
+        self.assertEqual(r.status_code,409)
+        api.assert_not_called()
+        self.assertFalse(ClaudeValidationRun.objects.exists())
+        self.assessment.refresh_from_db()
+        self.assertFalse(self.assessment.publish_approved)
 
     def test_public_or_nonstaff_cannot_run(self):
         self.client.force_login(get_user_model().objects.create_user('regular111','regular@example.org','pwd'))

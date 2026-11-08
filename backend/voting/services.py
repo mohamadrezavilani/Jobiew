@@ -20,6 +20,8 @@ def after_three_calendar_months(value):
 
 
 def validate_scores(scores):
+    # New independent vote contracts will be designed alongside scoring phase.
+    raise VoteDenied('Legacy five-axis voting is suspended during the dual-six redesign')  # jobiew_dual_framework_v200
     known={x[0] for x in DIMENSIONS}
     if not isinstance(scores,dict) or not scores or set(scores)-known:
         raise VoteDenied('Invalid voting dimensions')

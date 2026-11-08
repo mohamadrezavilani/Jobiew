@@ -50,18 +50,18 @@ class FiveDecisionTests(TestCase):
         self.assertEqual(content.count('value="yes"'),5)
         self.assertEqual(content.count('value="no"'),5)
 
-    def test_manual_acceptance_without_extracted_machine_quote(self):
+    def test_legacy_human_decisions_do_not_activate_publication(self):
         response=self.client.post(self.url, {'action':'publish_reviewed', **self.votes()})
         self.assertEqual(response.status_code,302)
         self.assessment.refresh_from_db();self.experience.refresh_from_db()
-        self.assertTrue(self.assessment.publish_approved)
+        self.assertFalse(self.assessment.publish_approved)
         self.assertEqual(AiHumanReviewEvent.objects.filter(
             dimension__assessment=self.assessment).count(),5)
         null_dimension=AiDimension.objects.get(assessment=self.assessment,key=DIMENSIONS[-1][0])
         self.assertEqual(null_dimension.human_review_events.first().verdict,'correct_abstention')
-        self.assertEqual(public_company_assessments(self.company)['approved_count'],1)
+        self.assertEqual(public_company_assessments(self.company)['approved_count'],0)
         self.assertEqual(LogEntry.objects.filter(object_id=str(self.assessment.pk),
-            change_message__contains='PUBLISH_APPROVED').count(),1)
+            change_message__contains='PUBLISH_APPROVED').count(),0)
 
     def test_missing_one_vote_does_not_save_anything(self):
         v=self.votes();del v['decision_'+DIMENSIONS[0][0]]
@@ -80,7 +80,7 @@ class FiveDecisionTests(TestCase):
         self.assertFalse(self.assessment.publish_approved)
         self.client.post(self.url, {'action':'publish_reviewed',**self.votes()})
         self.assessment.refresh_from_db()
-        self.assertTrue(self.assessment.publish_approved)
+        self.assertFalse(self.assessment.publish_approved)
         self.assertEqual(dim.human_review_events.count(),2)
 
     def test_negative_later_revokes_public_visibility(self):
@@ -90,13 +90,13 @@ class FiveDecisionTests(TestCase):
         self.assertFalse(self.assessment.publish_approved)
         self.assertEqual(public_company_assessments(self.company)['approved_count'],0)
 
-    def test_copyright_pending_does_not_block_derived_scores(self):
+    def test_legacy_publication_frozen_independent_of_pending_rights(self):
         self.experience.copyright_review='pending'
         self.experience.save(update_fields=['copyright_review'])
         self.client.post(self.url, {'action':'finish_review',**self.votes()})
         self.assessment.refresh_from_db()
         self.experience.refresh_from_db()
-        self.assertTrue(self.assessment.publish_approved)
+        self.assertFalse(self.assessment.publish_approved)
         self.assertEqual(self.experience.copyright_review,'pending')
         self.assertFalse(ExperienceReviewEvent.objects.filter(review_field='copyright').exists())
         self.assertEqual(AiHumanReviewEvent.objects.filter(dimension__assessment=self.assessment).count(),5)

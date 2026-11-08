@@ -71,18 +71,23 @@ class FiveCriteriaTests(TestCase):
         self.assertEqual(self.run_import([row])['invalid'],1)
         self.assertFalse(AiAssessment.objects.exists())
 
-    def test_new_votes_legacy_rejected(self):
-        self.assertEqual(validate_scores({'work_conditions_pressure':8}), {'work_conditions_pressure':8})
+    def test_all_legacy_voting_axes_are_suspended(self):
+        with self.assertRaises(VoteDenied):
+            validate_scores({'work_conditions_pressure':8})
         with self.assertRaises(VoteDenied):
             validate_scores({'workload':8})
 
-    def test_public_company_shows_criteria_but_no_scores_or_review_text(self):
+    def test_public_company_shows_both_six_axis_frameworks_not_legacy_scores(self):
         response=self.client.get(reverse('company-detail',args=[self.exp.company_id]))
         self.assertEqual(response.status_code,200)
-        for key,label in DIMENSIONS:
-            self.assertContains(response,label)
-        self.assertNotContains(response,'شرایط کاری مناسب است.')
-        self.assertContains(response,'اطلاعات تأییدشده')
+        from criteria_v2.registry import AXES
+        for scope in ('work', 'interview'):
+            for axis in AXES[scope]:
+                self.assertContains(response, axis.label)
+        self.assertContains(response, 'work6_v2')
+        self.assertContains(response, 'interview6_v2')
+        self.assertNotContains(response, 'شرایط کاری مناسب است.')
+        self.assertNotContains(response, 'data-chart-mode="published"')
 
     def test_import_legacy_explicitly_versioned(self):
         row={'source_url':self.exp.source_url, 'source_content_sha256':'a'*64,

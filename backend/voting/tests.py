@@ -15,18 +15,16 @@ class VotingTests(TestCase):
     def test_verified_identity_required(self):
         with self.assertRaises(VoteDenied):cast_vote(user=self.u,company_id=self.c1.pk,scores={'work_conditions_pressure':7},idempotency_key='first-event-001')
 
-    def test_single_active_three_months_history_and_replay(self):
+    def test_legacy_votes_never_create_state_even_with_verified_identity(self):
+        # The former three-month lifecycle remains archived until dual-six voting is designed.
         IdentityVerification.objects.create(user=self.u,status='verified',provider='test-only')
-        r,replayed=cast_vote(user=self.u,company_id=self.c1.pk,scores={'work_conditions_pressure':7},idempotency_key='first-event-001')
-        self.assertFalse(replayed)
-        r2,replayed=cast_vote(user=self.u,company_id=self.c1.pk,scores={'work_conditions_pressure':7},idempotency_key='first-event-001')
-        self.assertTrue(replayed);self.assertEqual(r.pk,r2.pk)
-        with self.assertRaises(VoteDenied):cast_vote(user=self.u,company_id=self.c2.pk,scores={'work_conditions_pressure':8},idempotency_key='second-event-002')
-        VoteRevision.objects.filter(pk=r.pk).update(issued_at=timezone.now()-timedelta(days=120))
-        r3,replayed=cast_vote(user=self.u,company_id=self.c2.pk,scores={'work_conditions_pressure':8},idempotency_key='second-event-002')
-        self.assertEqual(VoteRevision.objects.count(),2)
-        self.assertEqual(ActiveVote.objects.get(user=self.u).revision,r3)
-        with self.assertRaises(ValueError):r3.delete()
+        for company_id, score, key in ((self.c1.pk,7,'first-event-001'),
+                                       (self.c2.pk,8,'second-event-002')):
+            with self.assertRaises(VoteDenied):
+                cast_vote(user=self.u, company_id=company_id,
+                          scores={'work_conditions_pressure':score}, idempotency_key=key)
+        self.assertFalse(VoteRevision.objects.exists())
+        self.assertFalse(ActiveVote.objects.exists())
 
     def test_legacy_vote_key_rejected_for_new_votes(self):
         from .services import validate_scores

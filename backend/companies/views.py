@@ -6,6 +6,7 @@ import re
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from .models import Company
+from criteria_v2.views import framework_context as dual_framework_context
 
 
 def index(request):
@@ -57,8 +58,8 @@ def detail(request, pk):
     from assessments.models import DIMENSIONS
     from assessments.publication_workflow_v104 import public_company_assessments
 
-    # Existing approved five-dimension AI display stays unchanged.
-    published = public_company_assessments(c)
+    # Old five-axis scores are archived and never mixed into the new work/interview framework.
+    published = {'summary': [], 'cards': [], 'approved_count': 0, 'has_summary': False}  # jobiew_dual_framework_v200
     tab = request.GET.get('tab', 'ai')
     if tab not in ('ai', 'work', 'interview'):
         tab = 'ai'
@@ -90,6 +91,7 @@ def detail(request, pk):
         context.update({'experience_query': term, 'experience_page': page_obj,
                         'experience_cards': public_cards})
 
+    context.update(dual_framework_context())
     return render(request, 'companies/detail.html', context)
 
 

@@ -41,7 +41,7 @@
      <td>{% if last %}{% if row.comparison.claude == None %}بدون نمره{% else %}{{ row.comparison.claude }} از ۱۰{% endif %}{% else %}هنوز بررسی نشده{% endif %}</td>
      <td>{% if last %}{% if row.comparison.needs_attention %}<span class="alert">نیازمند بررسی</span>{% else %}—{% endif %}
       {% if row.comparison.delta != None %}<br>تفاوت {{ row.comparison.delta }}{% endif %}{% endif %}</td>
-     <td><strong>دلیل AI فعلی:</strong> {{ row.comparison.original_explanation|default:row.original.explanation|default:"—" }}
+     <td><strong>دلیل AI فعلی:</strong> {% if row.comparison.original_explanation %}{{ row.comparison.original_explanation }}{% elif row.original %}{{ row.original.explanation|default:"—" }}{% else %}—{% endif %}
       {% if last %}<br><strong>دلیل Claude:</strong> {{ row.comparison.claude_reason }}
       {% if row.comparison.evidence %}<br><span class="evidence">شاهد پیشنهادی Claude: «{{ row.comparison.evidence }}»</span>
        {% if not row.comparison.evidence_exact %}<br><span class="alert">این نقل‌قول دقیقاً در متن ارسالی یافت نشد؛ نیازمند بررسی انسانی است.</span>{% endif %}
