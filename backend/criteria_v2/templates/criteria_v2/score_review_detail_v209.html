@@ -1,0 +1,16 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بررسی تحلیل شش‌معیاری</title></head>
+<body style="font-family:system-ui;max-width:980px;margin:2rem auto;padding:0 1rem;line-height:1.9">
+<a href="{% url 'dual-score-review-queue' %}">بازگشت به صف</a>
+<h1>بازبینی تحلیل {{ analysis.pk }}</h1>
+<p>شرکت: {{ analysis.experience.company.display_name }} · نوع: {{ analysis.experience.source_kind }} · مدل: {{ analysis.model_name }}</p>
+{% if not eligible %}<p role="alert">این تحلیل قابل تأیید نیست؛ شواهد، نسخه، تاریخچه بازبینی یا مجوز منبع نیاز به بررسی دارد.</p>{% else %}
+<h2>متن به‌حداقل‌رسانده‌شده</h2><pre style="white-space:pre-wrap;background:#f4f5f7;padding:12px">{{ story }}</pre>
+<form method="post">{% csrf_token %}<input type="hidden" name="source_sha256" value="{{ analysis.source_content_sha256 }}">
+{% for r in rows %}<fieldset style="margin:14px 0"><legend>{{ r.axis.label }}</legend><p>امتیاز پیشنهادی: {% if r.item.score != None %}{{ r.item.score }}{% else %}فاقد امتیاز{% endif %} · اطمینان: {{ r.item.confidence }}</p>
+<p>شاهد: {% for quote in r.item.evidence %}<q>{{ quote }}</q>{% empty %}ندارد{% endfor %}</p>
+<p>توضیح: {{ r.item.explanation }}</p>
+<label for="axis_{{ r.axis.key }}">تصمیم بازبین</label><select id="axis_{{ r.axis.key }}" name="axis_{{ r.axis.key }}" required><option value="">انتخاب کنید</option>{% for choice in r.options %}<option value="{{ choice }}">{% if choice == 'approve' %}تأیید امتیاز با شاهد{% elif choice == 'reject' %}رد امتیاز پیشنهادی{% else %}تأیید نبود شواهد کافی{% endif %}</option>{% endfor %}</select>
+</fieldset>{% endfor %}
+<label>دلیل و توضیح تصمیم <textarea name="note" rows="4" minlength="12" maxlength="1500" required style="width:100%"></textarea></label>
+<p>تصمیم شما فقط در پرونده داخلی ثبت می‌شود. انتشار عمومی با کنترل مستقل غیرفعال است.</p><button type="submit">ثبت نهایی تصمیم‌های شش‌معیاری</button></form>{% endif %}
+</body></html>

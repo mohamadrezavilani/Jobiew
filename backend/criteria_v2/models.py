@@ -129,3 +129,40 @@ class CriteriaAxisScore(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+class CriteriaScoreReviewEvent(models.Model):
+    """Append-only human score review; neither edits the source nor publishes ratings."""
+    analysis = models.ForeignKey(CriteriaAnalysis, on_delete=models.PROTECT,
+                                 related_name='human_score_review_events')
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    source_content_sha256 = models.CharField(max_length=64)
+    decisions = models.JSONField(default=dict)
+    note = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at', '-pk')
+        constraints = [models.UniqueConstraint(fields=['analysis'], name='wi_dual_one_human_review')]
+
+    def clean(self):
+        super().clean()
+        if not self.analysis_id:
+            raise ValidationError('Analysis is required')
+        if self.source_content_sha256 != self.analysis.source_content_sha256:
+            raise ValidationError('Review has a stale source content hash')
+        if not isinstance(self.decisions, dict) or set(self.decisions) != {
+                a.key for a in axes_for(self.analysis.experience.source_kind)}:
+            raise ValidationError('All six independent axes require a decision')
+        if any(x not in {'approve', 'reject', 'abstain'} for x in self.decisions.values()):
+            raise ValidationError('Invalid score review decision')
+        if not 12 <= len((self.note or '').strip()) <= 1500:
+            raise ValidationError('Human review note must be 12..1500 characters')
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError('Score review events are append-only')
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError('Score review events are append-only')

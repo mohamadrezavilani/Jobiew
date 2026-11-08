@@ -4,7 +4,7 @@ Classification decisions are created through the guarded staff queue. Existing
 comments, old ratings, and source text are not editable here.
 """
 from django.contrib import admin
-from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore
+from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent
 
 
 class AuditOnlyAdmin(admin.ModelAdmin):
@@ -39,3 +39,8 @@ class CriteriaAnalysisAdmin(AuditOnlyAdmin):
 class CriteriaAxisScoreAdmin(AuditOnlyAdmin):
     list_display = ('analysis', 'key', 'score', 'semantic_status')
     list_filter = ('key', 'semantic_status')
+
+@admin.register(CriteriaScoreReviewEvent)
+class CriteriaScoreReviewEventAdmin(AuditOnlyAdmin):
+    list_display = ('analysis', 'reviewer', 'created_at')
+    list_select_related = ('analysis', 'reviewer')
