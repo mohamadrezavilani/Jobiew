@@ -118,13 +118,18 @@ def evaluate(corpus):
         mismatched_kind += detected != kind
         unsupported_quotes += len(unsupported)
         unsupported_cases += bool(unsupported)
+        # A rejected/ungrounded prediction must not inflate scored-pair accuracy.
+        # Keep invalid raw score attempts in the precision denominator as errors.
+        invalid_axes = set(unsupported)
+        kind_eligible = (detected == kind and case['prediction']['kind_confidence'] >= 70)
         for key in gold:
             tally = totals[key]
             g, p = gold[key], predicted[key]
+            accepted_prediction = p is not None and kind_eligible and key not in invalid_axes
             tally['reference_scored'] += g is not None
             tally['prediction_scored'] += p is not None
-            tally['true_scored'] += (g is not None and p is not None)
-            if g is not None and p is not None:
+            tally['true_scored'] += (g is not None and accepted_prediction)
+            if g is not None and accepted_prediction:
                 tally['both_scored'] += 1
                 tally['absolute_error_sum'] += abs(g - p)
                 tally['within_one'] += abs(g - p) <= 1
@@ -141,7 +146,7 @@ def evaluate(corpus):
                          'within_one_ratio': round(t['within_one'] / both, 3) if both else None}
     both = micro['both_scored']
     ref_count, pred_count = micro['reference_scored'], micro['prediction_scored']
-    correct_scored = both
+    correct_scored = both  # only source-grounded, scope-correct pairs
     precision = correct_scored / pred_count if pred_count else None
     recall = correct_scored / ref_count if ref_count else None
     return {
