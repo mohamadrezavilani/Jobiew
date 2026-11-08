@@ -92,6 +92,12 @@ def detail(request, pk):
                         'experience_cards': public_cards})
 
     context.update(dual_framework_context())
+    # Product contract: one approved relevant experience may display a score,
+    # but publication is separately feature-gated and OFF by default.
+    from criteria_v2.sufficiency_v208 import publication_enabled, company_public_sufficiency
+    if tab == 'ai' and publication_enabled():
+        context['dual_sufficiency_public'] = True
+        context['dual_sufficiency_data'] = company_public_sufficiency(c)
     return render(request, 'companies/detail.html', context)
 
 

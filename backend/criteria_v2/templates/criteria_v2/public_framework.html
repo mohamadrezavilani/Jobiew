@@ -1,3 +1,6 @@
+{% if dual_sufficiency_public %}
+  {% include 'criteria_v2/public_sufficiency_v208.html' %}
+{% else %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'criteria_v2/dual_criteria_v200.css' %}">
 <section class="dual-framework" id="dual-criteria" aria-label="شاخص‌های مستقل شرایط کاری و مصاحبه">
@@ -34,3 +37,4 @@
   </div>
   <p class="dual-framework__foot">عدد ۱۰ در آینده به معنی تجربهٔ بهتر و ۱ به معنی تجربهٔ ضعیف‌تر خواهد بود. تا پایان بازبینی، هیچ امتیازی با نسخهٔ قبلی ادغام یا از آن مشتق نمی‌شود.</p>
 </section>
+{% endif %}
