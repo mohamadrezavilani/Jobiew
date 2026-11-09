@@ -197,7 +197,7 @@ class CheckpointV218PostgresConcurrencyTests(TransactionTestCase):
     def test_two_concurrent_imports_have_one_immutable_run(self):
         from concurrent.futures import ThreadPoolExecutor
         from threading import Barrier
-        from django.db import close_old_connections, connection
+        from django.db import close_old_connections, connection, connections
 
         if connection.vendor != 'postgresql':
             self.skipTest('Real row locking is a PostgreSQL-only assertion')
@@ -210,7 +210,7 @@ class CheckpointV218PostgresConcurrencyTests(TransactionTestCase):
                 barrier.wait(timeout=15)
                 return stage_one(row)
             finally:
-                close_old_connections()
+                connections.close_all()  # Ensure test DB can be dropped after the worker exits.
 
         with ThreadPoolExecutor(max_workers=2) as executor:
             results = list(executor.map(worker, (1, 2)))
