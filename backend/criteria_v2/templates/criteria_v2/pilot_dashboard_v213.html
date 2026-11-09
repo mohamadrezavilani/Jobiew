@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="viewport" content="width=device-width,initial-scale=1"><title>پایلوت خصوصی ۶+۶ | جابیو</title>
+<style>body{font-family:Tahoma,system-ui,sans-serif;max-width:1100px;margin:20px auto;padding:0 18px;color:#202939;line-height:1.8}a{color:#12568a}h1{font-size:1.65rem}p{margin:8px 0 14px}.notice{border-right:4px solid #bc6b0a;background:#fff5e7;padding:12px}.stats{display:flex;gap:15px;flex-wrap:wrap}.stat{border:1px solid #d8e2ee;border-radius:10px;padding:10px 18px;min-width:140px}.stat strong{display:block;font-size:1.4rem}table{width:100%;border-collapse:collapse;margin-top:16px}td,th{border-bottom:1px solid #d9e1e8;text-align:right;padding:10px 8px}th{background:#f4f6f9}form{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-top:18px}input,select,button{padding:8px;font:inherit}nav{margin:20px 0}small{color:#4b5870}</style>
+</head><body>
+<a href="/admin/">مدیریت جابیو</a>
+<h1>پایلوت خصوصی تحلیل‌های ۶+۶</h1>
+<p class="notice">تمام نمره‌ها فقط <strong>پیشنهاد تأییدنشده</strong> هستند. وضعیت <code>pilot_unverified</code> معادل تأیید انسانی، مجوز منبع یا امتیاز قابل‌انتشار نیست. داده‌ها از شرکت‌های مختلف هستند و در این صفحه میانگین شرکت محاسبه نمی‌شود.</p>
+<div class="stats"><div class="stat">تحلیل‌ها<strong>{{ summary.cases }}</strong></div><div class="stat">معیارهای امتیازدار<strong>{{ summary.numeric }}</strong></div><div class="stat">معیارهای بدون شاهد<strong>{{ summary.abstentions }}</strong></div></div>
+<form method="get"><label>نوع تجربه <select name="kind"><option value="">هر دو</option><option value="work" {% if kind == 'work' %}selected{% endif %}>کاری</option><option value="interview" {% if kind == 'interview' %}selected{% endif %}>مصاحبه</option></select></label><label>شناسهٔ شرکت <input name="company" value="{{ company_filter }}" maxlength="24" autocomplete="off"></label><button type="submit">اعمال فیلتر</button><a href="{% url 'dual-pilot-dashboard-v213' %}">پاک‌کردن فیلترها</a></form>
+<table><thead><tr><th>پرونده</th><th>شرکت</th><th>نوع</th><th>شناسهٔ تجربه</th><th>امتیازدار</th><th>بدون شاهد</th><th>بررسی جزئیات</th></tr></thead><tbody>
+{% for run in page %}<tr><td>{{ run.raw_payload.case_id|default:'—' }}</td><td>{{ run.experience.company.display_name }}</td><td>{% if run.experience.source_kind == 'work' %}کاری{% else %}مصاحبه{% endif %}</td><td>{{ run.experience.pk }}</td><td>{{ run.numeric_count }}</td><td>{{ run.null_count }}</td><td><a href="{% url 'dual-pilot-detail-v213' run.pk %}">مشاهدهٔ شواهد و نمره‌ها</a></td></tr>
+{% empty %}<tr><td colspan="7">در این فیلتر تحلیل آزمایشی وجود ندارد.</td></tr>{% endfor %}
+</tbody></table>
+<nav>{% if page.has_previous %}<a href="?kind={{ kind|urlencode }}&amp;company={{ company_filter|urlencode }}&amp;page={{ page.previous_page_number }}">صفحهٔ قبل</a>{% endif %} صفحهٔ {{ page.number }} از {{ page.paginator.num_pages }} {% if page.has_next %}<a href="?kind={{ kind|urlencode }}&amp;company={{ company_filter|urlencode }}&amp;page={{ page.next_page_number }}">صفحهٔ بعد</a>{% endif %}</nav>
+<small>صفحه فقط‌خواندنی است؛ تأیید یا انتشار نمره در آن امکان‌پذیر نیست.</small>
+</body></html>
