@@ -26,3 +26,44 @@ jobs:
           python manage.py check
           python manage.py makemigrations --check --dry-run
           python manage.py test companies.test_company_ui_v23 companies.test_public_map_v24 assessments.test_five_criteria_contract_v6 criteria_v2 --noinput -v 1
+
+  postgres-synthetic:
+    name: Private checkpoint PostgreSQL concurrency (synthetic only)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: jobiew_ci
+          POSTGRES_USER: jobiew_ci
+          POSTGRES_PASSWORD: ci-only-not-production
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jobiew_ci -d jobiew_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_DEBUG: '1'
+      DJANGO_SECRET_KEY: synthetic-ci-only-never-use-in-production
+      WI_DB_ENGINE: postgresql
+      WI_DB_NAME: jobiew_ci
+      WI_DB_USER: jobiew_ci
+      WI_DB_PASSWORD: ci-only-not-production
+      WI_DB_HOST: 127.0.0.1
+      WI_DB_PORT: '5432'
+      JOBIEW_DUAL6_PUBLICATION_ENABLED: '0'
+      JOBIEW_DUAL6_PAID_ENABLED: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Django and PostgreSQL client dependencies
+        run: pip install -r backend/requirements.txt
+      - name: Test private staging and concurrent idempotency on PostgreSQL
+        run: |
+          cd backend
+          python manage.py check
+          python manage.py test criteria_v2.test_checkpoint_stage_db_v218 --noinput -v 2
