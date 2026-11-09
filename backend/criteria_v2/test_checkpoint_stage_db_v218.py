@@ -3,7 +3,7 @@ import hashlib
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 
 from companies.models import Company
@@ -176,3 +176,46 @@ class CheckpointV218StagingAccessTests(TestCase):
                    'JOBIEW_DUAL6_PUBLICATION_ENABLED': '1'}):
             self.assertEqual(self.client.get(reverse('dual-checkpoint-dashboard-v218'),
                             secure=True, HTTP_HOST='private-staging.example.invalid').status_code, 404)
+
+
+class CheckpointV218PostgresConcurrencyTests(TransactionTestCase):
+    """Real row-lock race check; executes only against ephemeral PostgreSQL CI.
+
+    Uses no user-provided data. TransactionTestCase is essential here: TestCase
+    transaction wrappers would mask concurrent workers' writes.
+    """
+
+    def setUp(self):
+        self.company = Company.objects.create(
+            id='v218-race-company', source_url='https://example.invalid/race-company',
+            source_name='ساختگی', display_name='آزمایش هم‌زمانی خصوصی')
+        self.exp = PublicExperience.objects.create(
+            company=self.company, source_url='https://example.invalid/race-story',
+            source_kind='work', title='ساختگی', body=STORY, content_sha256='c' * 64,
+            copyright_review='pending', company_attribution_status='unverified')
+
+    def test_two_concurrent_imports_have_one_immutable_run(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        from django.db import close_old_connections, connection, connections
+
+        if connection.vendor != 'postgresql':
+            self.skipTest('Real row locking is a PostgreSQL-only assertion')
+        row = CheckpointV218DBTests.proposal(self)
+        barrier = Barrier(2)
+
+        def worker(_):
+            close_old_connections()
+            try:
+                barrier.wait(timeout=15)
+                return stage_one(row)
+            finally:
+                connections.close_all()  # Ensure test DB can be dropped after the worker exits.
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(worker, (1, 2)))
+
+        self.assertEqual(sorted(results), [False, True])
+        self.assertEqual(CriteriaAnalysis.objects.count(), 1)
+        self.assertEqual(CriteriaAxisScore.objects.count(), 6)
+        self.assertEqual(CriteriaAnalysis.objects.get().review_status, STATUS)
