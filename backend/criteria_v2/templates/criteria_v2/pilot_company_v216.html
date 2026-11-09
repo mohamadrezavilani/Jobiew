@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>پوشش آزمایشی ۶+۶ شرکت | جابیو</title>
+<style>
+body{max-width:1050px;margin:24px auto;padding:0 16px;font-family:Tahoma,system-ui,sans-serif;color:#172337;line-height:1.85}
+h1{font-size:1.55rem}h2{font-size:1.25rem;margin-top:32px}a{color:#075f96}
+.notice{padding:14px 16px;background:#fff6e5;border-right:5px solid #a75b00}
+table{width:100%;border-collapse:collapse;margin:12px 0 26px}th,td{padding:9px 11px;border-bottom:1px solid #dce3eb;text-align:right}
+th{background:#f3f6fa}small{color:#4c6070}code{direction:ltr;display:inline-block}
+</style></head><body>
+<a href="{% url 'dual-pilot-dashboard-v213' %}">بازگشت به پرونده‌های پایلوت</a>
+<h1>خلاصهٔ آزمایشی شش‌معیاری: {{ company.display_name }}</h1>
+<p class="notice" role="alert"><strong>غیرقابل انتشار / فقط برای ارزیابی داخلی:</strong>
+اعداد حاصل از پیشنهادهای AI با وضعیت <code>pilot_unverified</code> هستند. «کفایت تعداد نمونه» به معنی صحت امتیاز، استقلال تجربه‌ها، مجوز استفاده یا تأیید انسانی نیست. این صفحه از امتیاز عمومی شرکت جدا است.</p>
+{% for item in rollups %}
+<section>
+<h2>{% if item.source_kind == 'work' %}تجربهٔ کاری{% else %}تجربهٔ مصاحبه{% endif %}</h2>
+<p>کل تجربیات این دسته در پایگاه: {{ item.total_experiences }} · پایلوت معتبر از نظر ساختار: {{ item.pilot_valid_cases }} ·
+تحلیل نامعتبر/قدیمی: {{ item.pilot_invalid_cases }} · اجرای تکراری: {{ item.pilot_duplicate_runs }} ·
+پیشنهادهای عددی: {{ item.pilot_numeric_scores }} · بدون شاهد: {{ item.pilot_abstentions }}</p>
+<table><thead><tr><th>معیار</th><th>تعداد تجربه با شاهد</th><th>میانگین آزمایشی از ۱۰</th><th>وضعیت تعداد نمونه</th></tr></thead><tbody>
+{% for axis in item.axes %}<tr>
+<td>{{ axis.label }}</td><td>{{ axis.dimension_experience_count }}</td>
+<td>{% if axis.score != None %}{{ axis.score }}{% else %}نامشخص (null){% endif %}</td>
+<td>{{ axis.status_label }}</td></tr>{% endfor %}
+</tbody></table>
+</section>
+{% endfor %}
+<small>فقط‌خواندنی · بدون امکان تأیید، صادرات متن یا تغییر دیتابیس · متکی به شواهد پایلوت با کنترل هش منبع</small>
+</body></html>
