@@ -25,7 +25,7 @@ jobs:
           cd backend
           python manage.py check
           python manage.py makemigrations --check --dry-run
-          python manage.py test companies.test_company_ui_v23 companies.test_public_map_v24 assessments.test_five_criteria_contract_v6 criteria_v2 --noinput -v 1
+          python manage.py test companies.test_company_ui_v23 companies.test_public_map_v24 companies.test_homepage_preview_v219 assessments.test_five_criteria_contract_v6 criteria_v2 --noinput -v 1
 
   postgres-synthetic:
     name: Private checkpoint PostgreSQL concurrency (synthetic only)
@@ -66,4 +66,4 @@ jobs:
         run: |
           cd backend
           python manage.py check
-          python manage.py test criteria_v2.test_checkpoint_stage_db_v218 --noinput -v 2
+          python manage.py test criteria_v2.test_checkpoint_stage_db_v218 companies.test_homepage_preview_v219 --noinput -v 2
