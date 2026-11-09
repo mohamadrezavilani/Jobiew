@@ -1,0 +1,9 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1"><title>بازبینی امتیازهای شش‌معیاری | جابیو</title></head>
+<body style="font-family:system-ui;max-width:980px;margin:2rem auto;padding:0 1rem;line-height:1.8">
+<h1>صف تحلیل‌های نیازمند بازبینی</h1><p>این بخش خصوصی است. بررسی یک تحلیل هیچ امتیازی را به‌صورت عمومی منتشر نمی‌کند.</p>
+{% for message in messages %}<p>{{ message }}</p>{% endfor %}
+<table style="width:100%;border-collapse:collapse"><thead><tr><th>شرکت</th><th>نوع</th><th>شناسه تجربه</th><th>تحلیل</th></tr></thead><tbody>
+{% for row in page %}<tr><td>{{ row.experience.company.display_name }}</td><td>{{ row.experience.source_kind }}</td><td>{{ row.experience.pk }}</td><td><a href="{% url 'dual-score-review-detail' row.pk %}">بازبینی تحلیل {{ row.pk }}</a></td></tr>
+{% empty %}<tr><td colspan="4">تحلیل بررسی‌نشده‌ای موجود نیست.</td></tr>{% endfor %}
+</tbody></table><nav>{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">قبلی</a>{% endif %} صفحهٔ {{ page.number }} از {{ page.paginator.num_pages }} {% if page.has_next %}<a href="?page={{ page.next_page_number }}">بعدی</a>{% endif %}</nav>
+</body></html>

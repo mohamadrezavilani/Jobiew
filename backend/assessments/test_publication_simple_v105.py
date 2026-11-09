@@ -44,7 +44,7 @@ class SimplePublicationTests(TestCase):
     def _five_yes():
         return {'decision_' + key: 'yes' for key, _ in DIMENSIONS}
 
-    def test_one_click_approval_creates_correct_abstention_and_publishes(self):
+    def test_legacy_five_decisions_are_audited_but_never_published(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         # The v107 button text is selected client-side after all five votes.
@@ -55,22 +55,22 @@ class SimplePublicationTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.ai.refresh_from_db()
         self.exp.refresh_from_db()
-        self.assertTrue(self.ai.publish_approved)
-        self.assertEqual(self.exp.company_attribution_status, 'verified')
-        self.assertEqual(self.exp.independence_status, 'verified')
+        self.assertFalse(self.ai.publish_approved)
+        self.assertEqual(self.exp.company_attribution_status, 'unverified')
+        self.assertEqual(self.exp.independence_status, 'unknown')
         self.assertEqual(AiHumanReviewEvent.objects.filter(dimension__assessment=self.ai).count(), 5)
         null_dim = AiDimension.objects.get(assessment=self.ai, key=DIMENSIONS[-1][0])
         self.assertEqual(null_dim.human_review_events.first().verdict, 'correct_abstention')
-        self.assertEqual(public_company_assessments(self.company)['approved_count'], 1)
+        self.assertEqual(public_company_assessments(self.company)['approved_count'], 0)
         self.assertEqual(LogEntry.objects.filter(object_id=str(self.ai.pk),
-            change_message__contains='PUBLISH_APPROVED').count(), 1)
+            change_message__contains='PUBLISH_APPROVED').count(), 0)
 
-    def test_pending_rights_no_longer_gates_derived_scores(self):
+    def test_pending_rights_does_not_override_v2_publication_suspension(self):
         self.exp.copyright_review = 'pending'
         self.exp.save(update_fields=['copyright_review'])
         self.client.post(self.url, {'action': 'finish_review', **self._five_yes()})
         self.ai.refresh_from_db(); self.exp.refresh_from_db()
-        self.assertTrue(self.ai.publish_approved)
+        self.assertFalse(self.ai.publish_approved)
         self.assertEqual(self.exp.copyright_review, 'pending')
         self.assertFalse(ExperienceReviewEvent.objects.filter(review_field='copyright').exists())
         self.assertNotContains(self.client.get(reverse('company-detail', args=[self.company.pk])), self.exp.body)
@@ -91,7 +91,7 @@ class SimplePublicationTests(TestCase):
         self.assertTrue(publication_blockers(self.ai))
         self.client.post(self.url, {'action': 'publish_reviewed', **self._five_yes()})
         self.ai.refresh_from_db()
-        self.assertTrue(self.ai.publish_approved)
+        self.assertFalse(self.ai.publish_approved)
         self.assertEqual(first.human_review_events.count(), 2)
         self.assertEqual(first.human_review_events.last().verdict, 'unsupported')
 

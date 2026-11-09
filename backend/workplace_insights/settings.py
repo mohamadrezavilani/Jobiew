@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "companies", "experiences", "assessments", "voting", "locations",
+    "criteria_v2",  # jobiew_dual_framework_v200
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

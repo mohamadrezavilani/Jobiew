@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="viewport" content="width=device-width,initial-scale=1"><title>جزئیات پایلوت خصوصی | جابیو</title>
+<style>body{font-family:Tahoma,system-ui,sans-serif;max-width:1050px;margin:20px auto;padding:0 18px;color:#202939;line-height:1.9}h1{font-size:1.65rem}a{color:#12568a}.notice{background:#fff5e7;border-right:4px solid #bc6b0a;padding:12px;margin:16px 0}.alert{background:#fff0f1;border-right:4px solid #b42a3d;padding:12px}.story{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f7f9;border:1px solid #dde4ec;border-radius:8px;padding:14px;max-height:500px;overflow-y:auto}section.axis{border-bottom:1px solid #d8e2ee;padding:14px 2px}q{display:block;white-space:pre-wrap;background:#eef4fa;border-radius:5px;padding:8px;overflow-wrap:anywhere}small{color:#546276}strong.score{font-size:1.25rem}</style>
+</head><body>
+<a href="{% url 'dual-pilot-dashboard-v213' %}">بازگشت به فهرست خصوصی</a>
+<h1>تجربهٔ {{ analysis.raw_payload.case_id|default:'آزمایشی' }} — تحلیل ۶+۶</h1>
+<p>شرکت: {{ analysis.experience.company.display_name }} · شناسهٔ تجربه: {{ analysis.experience.pk }} · نوع: {% if analysis.experience.source_kind == 'work' %}کاری{% else %}مصاحبه{% endif %} · شناسهٔ تحلیل: {{ analysis.pk }}</p>
+<p>مدل/منشأ: {{ analysis.model_name }} · نسخهٔ معیارها: {{ analysis.criteria_version }}</p>
+<p class="notice"><strong>پیشنهاد آزمایشی، تأییدنشده</strong> — {{ number_scored }} معیار دارای نمره است. این نتیجه نباید در امتیاز شرکت یا صفحهٔ عمومی استفاده شود. برچسب‌های حقوق استفاده و انتساب تجربه مستقل از تحلیل‌اند.</p>
+{% if not integrity_ok %}<p class="alert" role="alert">هشدار: اعتبارسنجی متن، نسخه، شاهدها یا وضعیت منبع ناموفق بوده است. متن فعلی برای جلوگیری از تطبیق اشتباه نمایش داده نمی‌شود؛ این تحلیل قابل استناد نیست.</p>{% else %}
+<h2>متن تجربهٔ مورد تحلیل</h2><div class="story">{{ story }}</div>{% endif %}
+<h2>نتایج شش معیار مستقل</h2>
+{% for row in axes %}
+<section class="axis"><h3>{{ forloop.counter }}. {{ row.definition.label }}</h3><small>{{ row.definition.description }}</small>
+{% if row.item %}<p><strong class="score">{% if row.item.score != None %}{{ row.item.score }} از ۱۰{% else %}فاقد نمره (null){% endif %}</strong> · اطمینان پیشنهادی: {{ row.item.confidence }}٪ · وضعیت: {{ row.item.semantic_status }}</p>
+{% if integrity_ok %}<p>دلیل: {{ row.item.explanation }}</p><p>شاهد: {% for quote in row.item.evidence %}<q>{{ quote }}</q>{% empty %}شاهد مرتبطی موجود نیست{% endfor %}</p>{% else %}<p>به علت عدم تطبیق اعتبار، شاهد و توضیح این تحلیل قابل اتکا نیست.</p>{% endif %}
+{% else %}<p class="alert">دادهٔ این معیار در تحلیل موجود نیست؛ ساختار شش‌معیاری ناقص است.</p>{% endif %}
+</section>
+{% endfor %}
+<small>این بخش کاملاً فقط‌خواندنی است؛ هیچ دکمه‌ای برای تأیید، تغییر یا انتشار ندارد.</small>
+</body></html>

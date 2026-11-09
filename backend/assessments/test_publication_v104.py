@@ -36,16 +36,18 @@ class PublicationV104Tests(TestCase):
         self.assertEqual(self.client.get(d).status_code,200)
         self.assertContains(self.client.get(d),'متن محرمانه برای مدیران')
 
-    def test_publish_and_revoke_with_csrf_ack_and_audit(self):
+    def test_legacy_publish_is_refused_and_public_stays_empty(self):
         url=reverse('admin:assessments_aiassessment_publication_detail',args=[self.ai.pk])
         self.assertFalse(self.ai.publish_approved)
         self.client.post(url,{'action':'publish','rationale':'بازبینی انسانی کافی انجام شده'})
         self.ai.refresh_from_db();self.assertFalse(self.ai.publish_approved)
         self.client.post(url,{'action':'publish','rationale':'بازبینی انسانی کافی انجام شده','confirmed':'on'})
-        self.ai.refresh_from_db();self.assertTrue(self.ai.publish_approved)
-        self.assertEqual(LogEntry.objects.filter(object_id=str(self.ai.pk),change_message__contains='PUBLISH_APPROVED').count(),1)
+        self.ai.refresh_from_db();self.assertFalse(self.ai.publish_approved)
+        self.assertEqual(LogEntry.objects.filter(object_id=str(self.ai.pk),change_message__contains='PUBLISH_APPROVED').count(),0)
         response=self.client.get(reverse('company-detail',args=[self.company.pk]))
-        self.assertContains(response,'ارزیابی‌های تأییدشده')
+        self.assertNotContains(response,'ارزیابی‌های تأییدشده')
+        self.assertContains(response,'work6_v2')
+        self.assertContains(response,'interview6_v2')
         self.assertNotContains(response,self.exp.body)
         self.client.post(url,{'action':'revoke','rationale':'نیاز به بررسی دوباره منبع','confirmed':'on'})
         self.ai.refresh_from_db();self.assertFalse(self.ai.publish_approved)
@@ -56,7 +58,7 @@ class PublicationV104Tests(TestCase):
         self.assertTrue(publication_blockers(self.ai))
         self.company.identity_status='verified';self.company.save(update_fields=['identity_status'])
         self.exp.copyright_review='pending';self.exp.save(update_fields=['copyright_review'])
-        self.assertFalse(publication_blockers(self.ai))
+        self.assertTrue(publication_blockers(self.ai))  # legacy model is suspended even when source rights are pending
         self.exp.copyright_review='blocked';self.exp.save(update_fields=['copyright_review'])
         self.assertTrue(publication_blockers(self.ai))
         self.exp.copyright_review='approved';self.exp.save(update_fields=['copyright_review'])
@@ -66,11 +68,11 @@ class PublicationV104Tests(TestCase):
         self.assertTrue(publication_blockers(self.ai))
         self.assertFalse(public_company_assessments(self.company)['approved_count'])
 
-    def test_public_refuses_wrongly_flagged_rows_and_no_company_mean_for_one(self):
+    def test_legacy_approval_flag_never_publishes_in_v2(self):
         self.ai.publish_approved=True;self.ai.independent_review_status='approved';
         self.ai.save(update_fields=['publish_approved','independent_review_status'])
         result=public_company_assessments(self.company)
-        self.assertEqual(result['approved_count'],1)
+        self.assertEqual(result['approved_count'],0)  # legacy approval flags are not v2 publication
         self.assertTrue(all(x['score'] is None for x in result['summary']))
         self.assertFalse(result['has_summary'])
         self.exp.company_attribution_status='rejected';self.exp.save(update_fields=['company_attribution_status'])

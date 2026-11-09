@@ -1,0 +1,44 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'criteria_v2/dual_criteria_v200.css' %}">
+<section class="dual-framework" id="dual-criteria" aria-label="کفایت داده و ارزیابی مستقل شرایط کاری و مصاحبه">
+  <div class="dual-framework__intro">
+    <h2>شرایط کاری و مصاحبه؛ ارزیابی شش‌معیاری مستقل</h2>
+    <p>مبنای کفایت اطلاعات، تعداد <strong>تجربه‌های قابل‌ارزیابی مرتبط با هر معیار</strong> است؛ نه تعداد کل تجربه‌های شرکت یا تکرار یک موضوع در یک متن.</p>
+    <p class="dual-framework__notice">نبود داده معادل امتیاز صفر نیست. عبور از آستانهٔ کفایت نیز تضمین نمایندگی آماری کارکنان نیست.</p>
+  </div>
+  <div class="dual-framework__columns">
+  {% for kind, scope in dual_sufficiency_data.items %}
+    <section class="dual-framework__pane" aria-label="{% if kind == 'work' %}شرایط کاری{% else %}شرایط مصاحبه{% endif %}">
+      <span class="dual-framework__eyebrow">{% if kind == 'work' %}تجربهٔ کاری · work6_v2{% else %}تجربهٔ مصاحبه · interview6_v2{% endif %}</span>
+      <h3>{% if kind == 'work' %}شرایط کاری{% else %}شرایط مصاحبه{% endif %}</h3>
+      <p>کل تجربه‌های ثبت‌شده در این دسته: {{ scope.total_experiences }} · آستانهٔ اطلاعات کافی برای هر معیار: {{ scope.min_sufficient_experiences }} تجربه</p>
+      <div class="dual-framework__axis-preview">
+        <svg data-chart-mode="{% if scope.has_scores %}published{% else %}empty{% endif %}" viewBox="0 0 260 220" role="img" aria-label="وضعیت شش‌محوری؛ نبود داده از امتیاز کم متمایز است">
+          <polygon points="130,20 210,66 210,158 130,204 50,158 50,66" fill="none" stroke="#c6d4e5" stroke-width="2"/>
+          <polygon points="130,56 178,84 178,140 130,168 82,140 82,84" fill="none" stroke="#dce5ef"/>
+          <g stroke="#e2e8f0"><line x1="130" y1="112" x2="130" y2="20"/><line x1="130" y1="112" x2="210" y2="66"/><line x1="130" y1="112" x2="210" y2="158"/><line x1="130" y1="112" x2="130" y2="204"/><line x1="130" y1="112" x2="50" y2="158"/><line x1="130" y1="112" x2="50" y2="66"/></g>
+          {% if scope.full_coverage %}<polygon points="{{ scope.polygon_points }}" fill="#a9c5e5" fill-opacity=".4" stroke="#315a91" stroke-width="2"/>{% endif %}
+          {% for axis in scope.axes %}
+            {% if axis.score != None %}
+              {% if not scope.full_coverage %}<line x1="130" y1="112" x2="{{ axis.chart_x }}" y2="{{ axis.chart_y }}" stroke="#315a91" stroke-width="2"/>{% endif %}
+              <circle cx="{{ axis.chart_x }}" cy="{{ axis.chart_y }}" r="4" fill="#315a91"/>
+            {% endif %}
+          {% endfor %}
+          {% if not scope.has_scores %}<text x="130" y="117" text-anchor="middle" font-size="11" fill="#586981">بدون امتیاز</text>{% endif %}
+        </svg>
+      </div>
+      <p class="dual-framework__foot">{% if scope.full_coverage %}هر شش معیار دارای داده است؛ این به معنی کافی‌بودن دادهٔ هر شش معیار نیست.{% else %}هنوز همهٔ معیارها دارای داده نیستند؛ نقاط بدون داده به صفر تبدیل نشده‌اند.{% endif %}</p>
+      <ol class="dual-framework__axes">
+      {% for axis in scope.axes %}
+        <li><div><strong>{{ axis.label }}</strong><p>{{ axis.description }}</p>
+          <p>{{ axis.status_label }} · {{ axis.dimension_experience_count }} تجربهٔ مرتبط و قابل‌ارزیابی</p>
+          {% if axis.data_sufficiency_status == 'partial' %}<p>این امتیاز بر اساس تعداد محدودی تجربه محاسبه شده و ممکن است نماینده تجربه عمومی کارکنان شرکت نباشد.</p>{% endif %}
+          {% if axis.data_sufficiency_status == 'insufficient' %}<p>اطلاعاتی برای ارزیابی این بُعد وجود ندارد.</p>{% endif %}
+        </div><span>{% if axis.score != None %}{{ axis.score }} / ۱۰{% else %}—{% endif %}</span></li>
+      {% endfor %}
+      </ol>
+    </section>
+  {% endfor %}
+  </div>
+  <p class="dual-framework__foot">کفایت اطلاعات مبتنی بر تعداد متن‌های مرتبط است و استقلال نویسندگان، تازگی تجربه و نمایندگی آماری را تأیید نمی‌کند. امتیازها تنها از تحلیل‌های تأییدشده استخراج می‌شوند.</p>
+</section>

@@ -1,0 +1,40 @@
+{% if dual_sufficiency_public %}
+  {% include 'criteria_v2/public_sufficiency_v208.html' %}
+{% else %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'criteria_v2/dual_criteria_v200.css' %}">
+<section class="dual-framework" id="dual-criteria" aria-label="شاخص‌های مستقل شرایط کاری و مصاحبه">
+  <div class="dual-framework__intro">
+    <h2>تحلیل محیط کار و شرایط مصاحبه؛ دو چارچوب مستقل</h2>
+    <p>شرایط کاری و فرایند مصاحبه با معیارهای متفاوت ارزیابی می‌شوند. هر بخش شش معیار دارد؛ امتیازهای تاریخی پنج‌گانه به این چارچوب منتقل نشده‌اند.</p>
+    <p class="dual-framework__notice">در انتظار بازبینی مجدد تجربه‌ها و امتیازدهی مطابق معیارهای جدید؛ خط تیره به معنی صفر نیست.</p>
+  </div>
+  <div class="dual-framework__columns">
+    <section class="dual-framework__pane" aria-labelledby="dual-work-heading">
+      <span class="dual-framework__eyebrow">تجربهٔ کارکنان · work6_v2</span>
+      <h3 id="dual-work-heading">شرایط کاری</h3>
+      <div class="dual-framework__axis-preview" aria-label="نمای شش‌ضلعی بدون امتیاز شرایط کاری">
+        <svg data-chart-mode="empty" viewBox="0 0 260 220" role="img" aria-label="شش محور شرایط کاری؛ هنوز امتیازی ثبت نشده است"><polygon points="130,20 210,66 210,158 130,204 50,158 50,66" fill="none" stroke="#c6d4e5" stroke-width="2"/><polygon points="130,56 178,84 178,140 130,168 82,140 82,84" fill="none" stroke="#dce5ef"/><g stroke="#e2e8f0"><line x1="130" y1="112" x2="130" y2="20"/><line x1="130" y1="112" x2="210" y2="66"/><line x1="130" y1="112" x2="210" y2="158"/><line x1="130" y1="112" x2="130" y2="204"/><line x1="130" y1="112" x2="50" y2="158"/><line x1="130" y1="112" x2="50" y2="66"/></g><text x="130" y="117" text-anchor="middle" font-size="11" fill="#586981">بدون امتیاز</text></svg>
+      </div>
+      <ol class="dual-framework__axes">
+        {% for axis in dual_criteria.work %}
+        <li><div><strong>{{ axis.label }}</strong><p>{{ axis.description }}</p></div><span aria-label="هنوز امتیاز ندارد">—</span></li>
+        {% endfor %}
+      </ol>
+    </section>
+    <section class="dual-framework__pane" aria-labelledby="dual-interview-heading">
+      <span class="dual-framework__eyebrow">تجربهٔ متقاضیان · interview6_v2</span>
+      <h3 id="dual-interview-heading">شرایط مصاحبه</h3>
+      <div class="dual-framework__axis-preview" aria-label="نمای شش‌ضلعی بدون امتیاز شرایط مصاحبه">
+        <svg data-chart-mode="empty" viewBox="0 0 260 220" role="img" aria-label="شش محور شرایط مصاحبه؛ هنوز امتیازی ثبت نشده است"><polygon points="130,20 210,66 210,158 130,204 50,158 50,66" fill="none" stroke="#c6d4e5" stroke-width="2"/><polygon points="130,56 178,84 178,140 130,168 82,140 82,84" fill="none" stroke="#dce5ef"/><g stroke="#e2e8f0"><line x1="130" y1="112" x2="130" y2="20"/><line x1="130" y1="112" x2="210" y2="66"/><line x1="130" y1="112" x2="210" y2="158"/><line x1="130" y1="112" x2="130" y2="204"/><line x1="130" y1="112" x2="50" y2="158"/><line x1="130" y1="112" x2="50" y2="66"/></g><text x="130" y="117" text-anchor="middle" font-size="11" fill="#586981">بدون امتیاز</text></svg>
+      </div>
+      <ol class="dual-framework__axes">
+        {% for axis in dual_criteria.interview %}
+        <li><div><strong>{{ axis.label }}</strong><p>{{ axis.description }}</p></div><span aria-label="هنوز امتیاز ندارد">—</span></li>
+        {% endfor %}
+      </ol>
+    </section>
+  </div>
+  <p class="dual-framework__foot">عدد ۱۰ در آینده به معنی تجربهٔ بهتر و ۱ به معنی تجربهٔ ضعیف‌تر خواهد بود. تا پایان بازبینی، هیچ امتیازی با نسخهٔ قبلی ادغام یا از آن مشتق نمی‌شود.</p>
+</section>
+{% endif %}

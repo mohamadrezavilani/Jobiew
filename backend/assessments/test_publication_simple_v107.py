@@ -27,7 +27,7 @@ class OneClickPublicationTests(TestCase):
         self.url=reverse('admin:assessments_aiassessment_publication_detail',args=[self.ai.pk])
     def votes(self,negative=()):
         return {'decision_'+key:'no' if key in negative else 'yes' for key,_ in DIMENSIONS}
-    def test_one_form_one_click_pending_rights_publishes_no_raw_text(self):
+    def test_one_form_review_remains_historical_and_unpublished(self):
         html=self.client.get(self.url).content.decode()
         # Each dimension is a binary choice: two radio inputs, one logical decision.
         self.assertEqual(html.count('type="radio" name="decision_'), 10)
@@ -43,11 +43,11 @@ class OneClickPublicationTests(TestCase):
         response=self.client.post(self.url,{'action':'finish_review',**self.votes()})
         self.assertEqual(response.status_code,302)
         self.ai.refresh_from_db();self.exp.refresh_from_db()
-        self.assertTrue(self.ai.publish_approved)
+        self.assertFalse(self.ai.publish_approved)
         self.assertEqual(self.exp.copyright_review,'pending')
         self.assertEqual(AiHumanReviewEvent.objects.filter(dimension__assessment=self.ai).count(),5)
         self.assertFalse(ExperienceReviewEvent.objects.filter(review_field='copyright').exists())
-        self.assertEqual(public_company_assessments(self.company)['approved_count'],1)
+        self.assertEqual(public_company_assessments(self.company)['approved_count'],0)
         public=self.client.get(reverse('company-detail',args=[self.company.pk]))
         self.assertNotContains(public,self.exp.body)
     def test_explicit_block_still_prevents_publishing(self):
@@ -60,7 +60,7 @@ class OneClickPublicationTests(TestCase):
         self.ai.refresh_from_db();self.assertFalse(self.ai.publish_approved)
         self.assertEqual(AiHumanReviewEvent.objects.filter(dimension__assessment=self.ai).count(),5)
         self.client.post(self.url,{'action':'finish_review',**self.votes()})
-        self.ai.refresh_from_db();self.assertTrue(self.ai.publish_approved)
+        self.ai.refresh_from_db();self.assertFalse(self.ai.publish_approved)
         self.client.post(self.url,{'action':'finish_review',**self.votes({DIMENSIONS[0][0]})})
         self.ai.refresh_from_db();self.assertFalse(self.ai.publish_approved)
         self.assertEqual(public_company_assessments(self.company)['approved_count'],0)

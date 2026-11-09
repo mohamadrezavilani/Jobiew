@@ -38,7 +38,7 @@ def publication_blockers(assessment, *, check_other=True):
     """Human-readable reasons to refuse publication; never treat AI confidence as approval."""
     exp = assessment.experience
     company = exp.company
-    problems = []
+    problems = ['انتشار مدل قدیمی پنج‌معیاری متوقف شده؛ هر دو دسته باید با چارچوب شش‌معیاری بازبینی شوند.']  # jobiew_dual_framework_v200
     if assessment.criteria_version != FIVE_CRITERIA_VERSION:
         problems.append('فقط مدل پنج‌شاخصی جدید مجاز است.')
     if exp.source_kind != 'work':
@@ -106,29 +106,14 @@ def reviewed_assessments_for_company(company):
 
 
 def public_company_assessments(company, *, min_independent=3):
-    """Distinct, verified review-level scores; company means only for >=3 experiences."""
+    """Historical five-axis scores are not valid new public ratings.
+
+    All existing approvals are retained in the database for audit/rollback;
+    this v2 presentation intentionally exposes no numeric legacy values.
+    """
     if min_independent < 3:
         raise ValueError('Minimum independent evidence is 3')
-    assessments = reviewed_assessments_for_company(company)
-    groups = defaultdict(list)
-    cards = []
-    for a in assessments:
-        dims = {d.key: d for d in a.dimensions.all()}
-        rows = []
-        for key, label in DIMENSIONS:
-            d = dims[key]
-            if d.score is not None:
-                groups[key].append(d.score)
-            rows.append({'label':label,'score':d.score,'confidence':d.confidence})
-        cards.append({'id':a.pk,'date':a.experience.published_jalali,
-                      'source':source_url(a.experience.source_url),'dimensions':rows})
-    summary = []
-    for key, label in DIMENSIONS:
-        scores = groups[key]
-        summary.append({'key':key,'label':label,'count':len(scores),
-                        'score':round(mean(scores),1) if len(scores)>=min_independent else None})
-    return {'summary':summary,'cards':cards[:20],'approved_count':len(assessments),
-            'has_summary':any(x['score'] is not None for x in summary)}
+    return {'summary': [], 'cards': [], 'approved_count': 0, 'has_summary': False}
 
 
 def log_publication(request, assessment, action, rationale):

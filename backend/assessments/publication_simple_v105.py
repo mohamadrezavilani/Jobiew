@@ -21,7 +21,7 @@ def preliminary_blockers(a):
     """Safety prerequisites independent of the five human decisions."""
     exp = a.experience
     company = exp.company
-    problems = []
+    problems = ['مدل پنج‌معیاری قدیمی بایگانی شده و انتشار جدید آن غیرفعال است.']  # jobiew_dual_framework_v200
     if a.criteria_version != FIVE_CRITERIA_VERSION or exp.source_kind != 'work':
         problems.append('فقط تجربهٔ کاری با مدل پنج‌شاخصی قابلیت انتشار دارد.')
     if company.identity_status != 'verified' or company.tech_status != 'verified':

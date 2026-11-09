@@ -1,0 +1,11 @@
+{% load static %}
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width, initial-scale=1"><title>چارچوب جدید {{ company.display_name }} | جابیو</title><link rel="stylesheet" href="{% static 'criteria_v2/dual_criteria_v200.css' %}"></head>
+<body class="dual-page"><main class="dual-container">
+  <a href="{% url 'company-detail' company.pk %}">بازگشت به صفحهٔ شرکت</a>
+  <h1>چارچوب شش‌معیاری مستقل — {{ company.display_name }}</h1>
+  <p class="dual-framework__notice">نمای داخلی · امتیازدهی جدید هنوز آغاز نشده است. داده‌های قبلی پنج‌معیاری فقط سابقه‌اند و نباید با این شاخص‌ها مقایسه یا تجمیع شوند.</p>
+  <p>کل تجربه‌های کاری واردشده: <strong>{{ counts.work }}</strong> | در انتظار بازبینی نوع/محتوا: <strong>{{ pendings.work }}</strong></p>
+  <p>کل تجربه‌های مصاحبه واردشده: <strong>{{ counts.interview }}</strong> | در انتظار بازبینی نوع/محتوا: <strong>{{ pendings.interview }}</strong></p>
+  <p><a href="{% url 'dual-criteria-review-queue' %}?kind=work">صف بازبینی تجربه‌های کاری</a> | <a href="{% url 'dual-criteria-review-queue' %}?kind=interview">صف بازبینی تجربه‌های مصاحبه</a></p>
+  {% include 'criteria_v2/public_framework.html' %}
+</main></body></html>

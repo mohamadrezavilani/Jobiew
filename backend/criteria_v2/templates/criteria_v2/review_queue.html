@@ -1,0 +1,30 @@
+{% load static %}
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width, initial-scale=1"><title>بازبینی تجربه‌ها | جابیو</title><link rel="stylesheet" href="{% static 'criteria_v2/dual_criteria_v200.css' %}"></head>
+<body class="dual-page"><main class="dual-container">
+  <h1>بازبینی مجدد تجربه‌ها — {{ kind_label }}</h1>
+  <p class="dual-framework__notice">این مرحله فقط دسته‌بندی و بررسی اولیهٔ متن را ثبت می‌کند؛ هیچ نمره‌ای تولید یا تغییر نمی‌کند. متن اصلی و وضعیت انتشار قبلی دست‌نخورده می‌مانند.</p>
+  <nav class="dual-switch" aria-label="نوع تجربه"><a {% if kind == 'work' %}aria-current="page"{% endif %} href="?kind=work">شرایط کاری ({{ counts.work }} در انتظار)</a><a {% if kind == 'interview' %}aria-current="page"{% endif %} href="?kind=interview">شرایط مصاحبه ({{ counts.interview }} در انتظار)</a></nav>
+  <p>قرارداد معیارها: <code>{{ version }}</code> · شش شاخص مستقل · نظرهای بازبینی‌نشده یا با منبع تغییرکرده دوباره در صف قرار می‌گیرند.</p>
+  {% for message in messages %}<p class="dual-flash">{{ message }}</p>{% endfor %}
+  {% for exp in page %}
+    <article class="dual-review-item">
+      <div><strong>{{ exp.company.display_name }}</strong> · {{ exp.job_title|default:'عنوان شغل نامشخص' }} · شناسه {{ exp.pk }}</div>
+      <h2>{{ exp.title|truncatechars:180 }}</h2>
+      <p class="dual-body">{{ exp.body|truncatechars:1500 }}</p>
+      <p><small>منشأ: {% if exp.safe_source_url %}<a href="{{ exp.safe_source_url }}" target="_blank" rel="noopener noreferrer nofollow">لینک منبع</a>{% else %}لینک معتبر ندارد{% endif %} · آخرین وضعیت در همین نسخه: {{ exp.latest_scope_review|default:'هنوز بازبینی نشده' }}</small></p>
+      {% if can_review %}
+      <form method="post" class="dual-review-form">{% csrf_token %}
+        <input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="experience_id" value="{{ exp.pk }}">
+        <label>نتیجهٔ بازبینی <select name="decision" required><option value="confirmed">نوع و چارچوب صحیح است</option><option value="needs_revision">نوع نیازمند اصلاح است</option><option value="excluded">از ارزیابی حذف شود</option></select></label>
+        <label>نوع پیشنهادی (فقط در صورت اختلاف) <select name="suggested_kind"><option value="">—</option>{% if kind == 'work' %}<option value="interview">مصاحبه</option>{% else %}<option value="work">کاری</option>{% endif %}</select></label>
+        <label>توضیح (برای موارد نیازمند اصلاح/حذف الزامی) <textarea name="note" rows="2" placeholder="علت را بنویسید"></textarea></label>
+        <button type="submit">ثبت تصمیم بدون تغییر نمره</button>
+      </form>{% endif %}
+    </article>
+  {% empty %}<p class="dual-flash">در این گروه، نظری برای بازبینی باقی نمانده است.</p>{% endfor %}
+  <nav class="dual-pagination">
+    {% if page.has_previous %}<a href="?kind={{ kind }}&amp;page={{ page.previous_page_number }}">صفحهٔ قبل</a>{% endif %}
+    <span>صفحهٔ {{ page.number }} از {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?kind={{ kind }}&amp;page={{ page.next_page_number }}">صفحهٔ بعد</a>{% endif %}
+  </nav>
+</main></body></html>

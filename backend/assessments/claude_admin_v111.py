@@ -65,7 +65,7 @@ def dashboard(admin_view,request):
     ctx.update({'items':items,'page':page,'q':q,'page_query':urlencode({'q':q})+'&',
                 'history_rows':history_rows,'limit':limit,'used':ClaudeValidationRun.objects.count(),
                 'remaining':max(0,limit-ClaudeValidationRun.objects.count()),
-                'can_run':request.user.has_perm('assessments.change_aiassessment'),
+                'can_run':False,  # dual6_v202: old paid scoring frozen
                 'key_ready':bool(os.environ.get('ANTHROPIC_API_KEY','').strip()),
                 'model_id':_model_id(), 'fields':DIMENSIONS})
     return _render(request,'admin/assessments/aiassessment/claude_dashboard_v111.html',ctx)
@@ -88,7 +88,7 @@ def detail(admin_view,request,assessment_id):
     ctx.update({'assessment':a,'experience':a.experience,'rows':rows,
                 'history':runs,'last':last,'model_id':_model_id(),
                 'remaining':max(0,_pilot_limit()-ClaudeValidationRun.objects.count()),
-                'can_run':request.user.has_perm('assessments.change_aiassessment'),
+                'can_run':False,  # dual6_v202: old paid scoring frozen
                 'key_ready':bool(os.environ.get('ANTHROPIC_API_KEY','').strip())})
     return _render(request,'admin/assessments/aiassessment/claude_detail_v111.html',ctx)
 
@@ -96,6 +96,9 @@ def detail(admin_view,request,assessment_id):
 def run(admin_view,request,assessment_id):
     _permissions(request,run=True)
     if request.method!='POST':return HttpResponseNotAllowed(['POST'])
+    # Old five-axis paid analysis is frozen until a versioned replacement is approved.
+    return JsonResponse({'ok':False,'error':'legacy_scoring_suspended',
+                         'message':'اجرای جدید تحلیل پنج‌معیاری غیرفعال است.'}, status=409)  # dual6_v202
     get_object_or_404(AiAssessment,pk=assessment_id)
     try:
         new,called=validate_one(assessment_id,request.user,
