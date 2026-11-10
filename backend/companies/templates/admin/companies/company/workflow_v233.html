@@ -44,8 +44,8 @@
   {% endif %}
   {% endif %}
 </section>
-<section class="module" style="padding:18px;margin-bottom:16px">
-  <h2>خلاصهٔ ثابتِ این شرکت</h2>
+<details class="module" style="padding:18px;margin-bottom:16px">
+  <summary><strong>آمار دقیق تجربه‌ها، پرونده‌های امتیاز و انتشار</strong></summary>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px">
   <div><strong style="font-size:1.5rem">{{ total_experiences }}</strong><div>تجربهٔ واردشده</div></div>
   <div><strong style="font-size:1.5rem">{{ summary.imported }}</strong><div>تحلیل GPT-6 واردشده</div></div>
@@ -54,9 +54,9 @@
   <div><strong style="font-size:1.5rem">{{ blockers.cleared }}</strong><div>دارای مدارک انتشار کامل</div></div>
   <div><strong style="font-size:1.5rem">{{ public_state.visible_experiences }}</strong><div>فعال در امتیاز عمومی</div></div>
   </div>
-</section>
-<section class="module" style="padding:18px;margin-bottom:16px">
-  <h2>مسیر کوتاه کار</h2>
+</details>
+<details class="module" style="padding:18px;margin-bottom:16px">
+  <summary><strong>همهٔ مراحل و پیوندهای تکمیلی</strong></summary>
   <table>
   <thead><tr><th>گام</th><th>وضعیت فعلی</th><th>مشاهده / اقدام</th></tr></thead>
   <tbody>
@@ -67,7 +67,7 @@
   <tr><th>۵. انتشار</th><td>{{ public_state.reason }}</td><td><a href="{{ release_url }}">وضعیت زندهٔ انتشار</a></td></tr>
   </tbody>
   </table>
-</section>
+</details>
 <details class="module" style="padding:16px">
 <summary><strong>امکانات تکمیلی: نقشه، اطلاعات شرکت و تاریخچه</strong></summary>
 <p>پین عمومی: {% if map_state.visible %}نمایش داده می‌شود{% else %}فعلاً قابل نمایش نیست{% endif %}.
