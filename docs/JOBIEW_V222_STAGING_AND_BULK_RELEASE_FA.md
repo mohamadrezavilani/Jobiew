@@ -25,11 +25,32 @@ sudo nginx -t
 sudo -u jobiew git -C /opt/jobiew fetch origin main
 sudo -u jobiew git -C /opt/jobiew pull --ff-only origin main
 # از مسیر موجود venv و service اطمینان حاصل کنید
-sudo -u jobiew bash -c 'cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py check'
-sudo -u jobiew bash -c 'cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py makemigrations --check --dry-run'
+sudo -u jobiew bash -c 'set -a; source /etc/jobiew/jobiew.env; set +a; cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py check'
+sudo -u jobiew bash -c 'set -a; source /etc/jobiew/jobiew.env; set +a; cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py makemigrations --check --dry-run'
 ```
 
 این نسخه migration جدید **صرفاً افزایشی** برای receipt خصوصی دارد. اجرای `migrate` روی تولید قبل از بررسی بکاپ، `showmigrations`، طرح rollback و آزمون restore ممنوع است؛ ابتدا همان فرایند در staging مستقل باید پاس شود. بعد از آن `migrate --noinput` را با محیط امن درست هر سرور اجرا کنید.
+
+**نمونهٔ بکاپ** (فقط اگر نام واقعی دیتابیس تولید `jobiew` است؛ نام را پیش از اجرا از تنظیمات محرمانهٔ سرور کنترل کنید؛ این فایل را به چت/گیت نفرستید):
+
+```bash
+sudo install -d -m 700 /root/jobiew-backups
+sudo bash -o pipefail -c 'sudo -u postgres pg_dump --format=custom --no-owner -d jobiew > /root/jobiew-backups/jobiew_before_v222.dump'
+sudo chmod 600 /root/jobiew-backups/jobiew_before_v222.dump
+sudo test -s /root/jobiew-backups/jobiew_before_v222.dump
+sudo pg_restore --list /root/jobiew-backups/jobiew_before_v222.dump >/dev/null
+```
+
+`pg_restore --list` فقط ساختار آرشیو را بررسی می‌کند؛ **جای آزمون واقعی restore در دیتابیس موقت جدا را نمی‌گیرد**. پس از موفقیت restore آزمایشی و تأیید مالک:
+
+```bash
+sudo -u jobiew bash -c 'set -a; source /etc/jobiew/jobiew.env; set +a; cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py showmigrations criteria_v2'
+sudo -u jobiew bash -c 'set -a; source /etc/jobiew/jobiew.env; set +a; cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py migrate --plan'
+# فقط اگر plan شامل migration موردانتظار 0004 و هیچ تغییر غیرمنتظره‌ای نیست:
+sudo -u jobiew bash -c 'set -a; source /etc/jobiew/jobiew.env; set +a; cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py migrate --noinput'
+```
+
+فایل env در این پروژه به قالب systemd EnvironmentFile قرار دارد؛ `source` تنها وقتی ایمن است که مقادیر آن از قبل توسط ادمین مورد اعتماد و با escape صحیح برای Bash تنظیم شده باشند. مقادیر حساس را در لاگ یا خروجی ارسالی چاپ نکنید.
 
 در `/etc/jobiew/jobiew.env` متعلق به همان سرویس **تولیدی** (نه در Git) تنها برای نمایش صفحهٔ تازه:
 
@@ -45,7 +66,7 @@ JOBIEW_CHECKPOINT_IMPORT_STAGING_ENABLED=0
 پس از پشتیبان‌گیری از فایل env و کنترل `check --deploy`، با مسیرهای واقعی:
 
 ```bash
-sudo -u jobiew bash -c 'cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py collectstatic --noinput'
+sudo -u jobiew bash -c 'set -a; source /etc/jobiew/jobiew.env; set +a; cd /opt/jobiew/backend && /opt/jobiew/.venv/bin/python manage.py collectstatic --noinput'
 sudo systemctl restart jobiew-web
 sudo systemctl status jobiew-web --no-pager
 sudo journalctl -u jobiew-web -n 60 --no-pager

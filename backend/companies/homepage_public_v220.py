@@ -6,7 +6,7 @@ The historical company directory remains accessible at /companies/ during any cu
 import os
 from django.shortcuts import render
 from django.urls import reverse
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_safe
 from . import views as company_views
 from .homepage_preview_v219 import homepage_context, apply_homepage_headers
 
@@ -18,7 +18,7 @@ def home_or_directory(request):
     return public_home(request)
 
 
-@require_GET
+@require_safe
 def public_home(request):
     context = homepage_context(request)
     context.update({
