@@ -239,3 +239,36 @@ class CriteriaCompanyReleaseEvent(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError('Company releases are append-only')
+
+
+class CriteriaClaudeValidationRun(models.Model):
+    """Private, opt-in Claude 6+6 comparison; never an approval or public score."""
+    analysis = models.ForeignKey(
+        CriteriaAnalysis, on_delete=models.PROTECT, related_name='claude_six_checks')
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name='jobiew_claude_six_checks')
+    status = models.CharField(
+        max_length=16, choices=[('running', 'در حال اجرا'),
+                                ('completed', 'تکمیل شده'), ('failed', 'ناموفق')],
+        default='running')
+    model_id = models.CharField(max_length=100)
+    prompt_version = models.CharField(max_length=40, default='independent_six_v233')
+    source_content_sha256 = models.CharField(max_length=64)
+    source_text_sha256 = models.CharField(max_length=64)
+    original_scores = models.JSONField(default=dict)
+    claude_results = models.JSONField(default=dict)
+    comparison = models.JSONField(default=dict)
+    input_tokens = models.PositiveIntegerField(default=0)
+    output_tokens = models.PositiveIntegerField(default=0)
+    error_type = models.CharField(max_length=80, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ('-created_at', '-pk')
+        indexes = [models.Index(fields=['analysis', '-id'],
+                                name='wi_claude6_analysis_idx')]
+
+    def __str__(self):
+        return f'Claude 6+6 #{self.pk} — analysis {self.analysis_id} ({self.status})'
