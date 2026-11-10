@@ -133,7 +133,7 @@ def company_release(request, pk):
     current = CriteriaCompanyReleaseEvent.objects.filter(company=company).first()
     if request.method == 'GET':
         import os
-        return _private(request, 'criteria_v2/company_release_v224.html', {
+        response = _private(request, 'criteria_v2/company_release_v224.html', {
             'company': company, 'stats': stats, 'eligible_count': len(proofs),
             'admin_mode': request.resolver_match.url_name == 'companies_company_checkpoint_release',
             'current': current, 'token': token,
@@ -141,6 +141,10 @@ def company_release(request, pk):
                 and os.environ.get('JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED') == '1'
                 and os.environ.get('JOBIEW_COMPANY_RELEASE_ONLY_ENABLED') == '1'),
         })
+        # Keep referrers on same-origin form submissions only; the current
+        # 'no-referrer' policy breaks Django HTTPS CSRF on browsers omitting Origin.
+        response['Referrer-Policy'] = 'same-origin'
+        return response
     action = request.POST.get('action')
     note = (request.POST.get('note') or '').strip()
     if (action not in ('published', 'held') or not 20 <= len(note) <= 1200 or

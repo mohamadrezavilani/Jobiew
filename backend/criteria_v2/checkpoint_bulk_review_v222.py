@@ -101,12 +101,17 @@ def company_bulk_review(request, pk):
     company = get_object_or_404(Company, pk=pk)
     if request.method == 'GET':
         rows, ready, token = _prepare(company)
-        return _private(request, 'criteria_v2/checkpoint_bulk_review_v222.html', {
+        response = _private(request, 'criteria_v2/checkpoint_bulk_review_v222.html', {
             'company': company, 'rows': rows, 'ready_count': len(ready),
             'total_count': len(rows), 'token': token, 'cap': MAX_COMPANY_RUNS,
             'can_approve': request.user.has_perm('criteria_v2.add_criteriascorereviewevent'),
             'admin_mode': request.resolver_match.url_name == 'companies_company_checkpoint_bulk',
         })
+        # HTTPS form POSTs require Origin or same-origin Referer for Django CSRF.
+        # The generic read-only _private() no-referrer policy previously hid
+        # Referer on browsers that omit Origin for same-origin form POSTs.
+        response['Referrer-Policy'] = 'same-origin'
+        return response
     note = (request.POST.get('note') or '').strip()
     if (request.POST.get('confirm_reviewed') != 'yes' or
             request.POST.get('confirm_private') != 'yes' or

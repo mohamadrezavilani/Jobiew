@@ -93,7 +93,7 @@ class AdminCheckpointWorkflowV225Tests(TestCase):
     def test_focused_index_shows_current_tasks_without_erasing_legacy_models(self):
         page = self.get(reverse('admin:index'))
         self.assertEqual(page.status_code, 200)
-        self.assertContains(page, 'بازبینی گروهی و انتشار')
+        self.assertContains(page, 'بررسی، تأیید و انتشار شرکت‌ها')
         labels = {app['app_label'] for app in page.context['app_list']}
         self.assertIn('companies', labels)
         self.assertIn('experiences', labels)
@@ -118,17 +118,18 @@ class AdminCheckpointWorkflowV225Tests(TestCase):
     def test_real_csrf_missing_cookie_blocks_writes_then_valid_form_works(self):
         # Fresh logged-in browser: a raw POST is correctly rejected.
         url = self.bulk
-        bad = self.post(url, {'confirm_private':'yes'})
+        bad = self.post(url, {'confirm_private':'yes'}, HTTP_REFERER='https://jobiew.ir'+url)
         self.assertEqual(bad.status_code, 403)
         self.assertContains(bad, 'COOKIE_NOT_SET', status_code=403)
         self.assertEqual(CriteriaScoreReviewEvent.objects.count(), 0)
         page = self.get(url)
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, 'name="csrfmiddlewaretoken"')
+        self.assertEqual(page['Referrer-Policy'], 'same-origin')
         self.assertIn('csrftoken', self.client.cookies)
         csrf = self.client.cookies['csrftoken'].value
         result = self.post(url, {**self.review_form(page), 'csrfmiddlewaretoken':csrf},
-                           HTTP_ORIGIN='https://jobiew.ir')
+                           HTTP_REFERER='https://jobiew.ir'+url)
         self.assertEqual(result.status_code, 302)
         self.assertEqual(result.url, url)
         self.assertEqual(CriteriaScoreReviewEvent.objects.count(), 1)
@@ -148,13 +149,14 @@ class AdminCheckpointWorkflowV225Tests(TestCase):
         self.assertEqual(page.status_code, 200)
         self.assertContains(page, 'name="csrfmiddlewaretoken"')
         self.assertContains(page, 'فهرست شرکت‌ها')
+        self.assertEqual(page['Referrer-Policy'], 'same-origin')
         form = {
             'snapshot': page.context['token'],
             'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value,
             'action':'published', 'confirm_rights':'yes', 'confirm_public':'yes',
             'note':'اسناد انتشار منبع باید برای هر تجربه جداگانه تأیید شوند.',
         }
-        result = self.post(self.release, form, HTTP_ORIGIN='https://jobiew.ir')
+        result = self.post(self.release, form, HTTP_REFERER='https://jobiew.ir'+self.release)
         self.assertEqual(result.status_code, 409)
         self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
 
