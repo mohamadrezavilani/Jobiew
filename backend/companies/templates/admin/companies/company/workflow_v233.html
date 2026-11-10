@@ -1,0 +1,79 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div dir="rtl" style="max-width:1180px;margin:auto;line-height:1.85">
+<header style="margin-bottom:18px">
+  <p><a href="{% url 'admin:companies_company_checkpoint_queue' %}">همهٔ شرکت‌ها</a> ·
+  <a href="{% url 'admin:index' %}">خانهٔ مدیریت</a></p>
+  <h1>میز کار {{ company.display_name }}</h1>
+  <p>همهٔ وضعیت‌ها از دیتابیس خوانده می‌شوند و بعد از ورود مجدد باقی می‌مانند. هیچ مرحلهٔ انجام‌شده‌ای نیاز به تکرار ندارد.</p>
+</header>
+<section class="module" style="padding:20px;margin-bottom:16px">
+  <h2>الان چه کاری لازم است؟</h2>
+  {% if next_step == 'ingestion' %}
+  <p><strong>این شرکت هنوز پیشنهاد امتیازدهی GPT-6 ندارد.</strong>
+  {{ total_experiences }} تجربهٔ منبع موجود است. واردکردن تجربه، با ایجاد تحلیل شش‌معیاری فرق دارد.</p>
+  <p><a class="button" href="{{ experiences_url }}">دیدن و بررسی تجربه‌های واردشده</a></p>
+  <p>ورود فایل‌ها و ساخت checkpoint همچنان فقط از مسیر کنترل‌شدهٔ import انجام می‌شود؛ از این صفحه امتیاز یا مدرک ساختگی ایجاد نمی‌شود.</p>
+  {% elif next_step == 'scores' %}
+  <p><strong>{{ summary.pending }} پرونده منتظر بازبینی شواهد شش‌معیاری است.</strong></p>
+  <p><a class="button default" href="{{ bulk_url }}">بررسی همین پرونده‌های باقی‌مانده</a></p>
+  {% elif next_step == 'identity' %}
+  <p><strong>تأیید هویت شرکت یا فعالیت فناوری تکمیل نشده است.</strong></p>
+  <p><a class="button default" href="{{ verify_url }}">بررسی سادهٔ شرکت</a></p>
+  {% elif next_step == 'sources' %}
+  <p><strong>نمره‌های بازبینی‌شده موجودند؛ بخشی از مدارک هنوز کامل نیست.</strong></p>
+  <p>انتساب ناقص: {{ blockers.attribution_missing }} · استقلال ناقص: {{ blockers.independence_missing }} ·
+  دسته‌بندی ناقص: {{ blockers.classification_missing }} · مجوز منبع ناقص: {{ blockers.copyright_missing }}</p>
+  <p><a class="button default" href="{{ sources_url }}">بررسی مدارک باقی‌مانده</a></p>
+  <p>اگر فقط حق استفاده از منبع ناقص است، ثبت دوبارهٔ بررسی‌های عادی کمکی نمی‌کند.</p>
+  {% elif next_step == 'release' %}
+  <p><strong>{{ blockers.cleared }} پرونده از تمام کنترل‌ها عبور کرده و برای تصمیم انتشار جدید آماده‌اند.</strong></p>
+  <p><a class="button default" href="{{ release_url }}">بازکردن تأیید نهایی انتشار</a></p>
+  {% else %}
+  {% if public_state.visible_now %}
+  <p><strong>کار این مجموعه تمام شده است.</strong> {{ public_state.recorded_count }} پرونده در تصمیم انتشار ثبت شده‌اند و {{ public_state.visible_experiences }} تجربه همین حالا در امتیازهای عمومی استفاده می‌شوند.</p>
+  <p><a class="button" href="{{ public_url }}" target="_blank" rel="noopener noreferrer">مشاهدهٔ امتیازهای منتشرشده</a></p>
+  {% elif public_state.is_published %}
+  <p><strong>تصمیم انتشار ثبت شده اما نمایش عمومی کامل نیست.</strong> {{ public_state.reason }}</p>
+  <p><a class="button default" href="{{ release_url }}">مشاهدهٔ گیت‌های نمایش</a></p>
+  {% elif public_state.release %}
+  <p><strong>آخرین تصمیم: توقف انتشار.</strong> در صورت تمایل به انتشار دوباره، وضعیت مجوزها را بررسی کن.</p>
+  <p><a class="button" href="{{ release_url }}">بررسی تصمیم انتشار</a></p>
+  {% else %}
+  <p>برای پرونده‌های فعلی اقدام تازه‌ای باقی نمانده است. وضعیت امتیازهای بدون شاهد عددی را در قسمت پایین ببین.</p>
+  {% endif %}
+  {% endif %}
+</section>
+<section class="module" style="padding:18px;margin-bottom:16px">
+  <h2>خلاصهٔ ثابتِ این شرکت</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px">
+  <div><strong style="font-size:1.5rem">{{ total_experiences }}</strong><div>تجربهٔ واردشده</div></div>
+  <div><strong style="font-size:1.5rem">{{ summary.imported }}</strong><div>تحلیل GPT-6 واردشده</div></div>
+  <div><strong style="font-size:1.5rem">{{ summary.reviewed }}</strong><div>بازبینی شش‌معیاری تکمیل‌شده</div></div>
+  <div><strong style="font-size:1.5rem">{{ summary.abstained }}</strong><div>بدون شاهد عددی</div></div>
+  <div><strong style="font-size:1.5rem">{{ blockers.cleared }}</strong><div>دارای مدارک انتشار کامل</div></div>
+  <div><strong style="font-size:1.5rem">{{ public_state.visible_experiences }}</strong><div>فعال در امتیاز عمومی</div></div>
+  </div>
+</section>
+<section class="module" style="padding:18px;margin-bottom:16px">
+  <h2>مسیر کوتاه کار</h2>
+  <table>
+  <thead><tr><th>گام</th><th>وضعیت فعلی</th><th>مشاهده / اقدام</th></tr></thead>
+  <tbody>
+  <tr><th>۱. تجربه‌ها و مصاحبه‌ها</th><td>{{ total_experiences }} واردشده</td><td><a href="{{ experiences_url }}">فهرست و متن نظرها + Claude</a></td></tr>
+  <tr><th>۲. بازبینی شش معیار</th><td>{{ summary.reviewed }} انجام‌شده · {{ summary.pending }} باقی‌مانده</td><td><a href="{{ bulk_url }}">بازبینی امتیازها</a></td></tr>
+  <tr><th>۳. تأیید شرکت</th><td>{% if identity_ready %}انجام‌شده{% else %}نیازمند بررسی{% endif %}</td><td><a href="{{ verify_url }}">تأیید هویت / فناوری</a></td></tr>
+  <tr><th>۴. مدارک و مجوز منبع</th><td>{% if ordinary_ready and rights_ready %}کامل{% else %}ناقص؛ {{ blockers.blocked_provenance }} پرونده{% endif %}</td><td><a href="{{ sources_url }}">بررسی مدارک</a></td></tr>
+  <tr><th>۵. انتشار</th><td>{{ public_state.reason }}</td><td><a href="{{ release_url }}">وضعیت زندهٔ انتشار</a></td></tr>
+  </tbody>
+  </table>
+</section>
+<details class="module" style="padding:16px">
+<summary><strong>امکانات تکمیلی: نقشه، اطلاعات شرکت و تاریخچه</strong></summary>
+<p>پین عمومی: {% if map_state.visible %}نمایش داده می‌شود{% else %}فعلاً قابل نمایش نیست{% endif %}.
+<a href="{{ map_review_url }}">مشاهدهٔ شرایط نقشه</a></p>
+<p><a href="{% url 'admin:companies_company_change' company.pk %}">اطلاعات فنی و آرشیوی شرکت</a></p>
+<p>سوابق تأییدها و تصمیم‌ها پاک نمی‌شوند؛ ثبت یک تصمیم جدید مجوز قبلی را خودکار تغییر نمی‌دهد.</p>
+</details>
+</div>
+{% endblock %}

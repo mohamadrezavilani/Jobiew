@@ -1,11 +1,14 @@
 from django.contrib import admin
+from django.urls import reverse
+from django.utils.html import format_html
 from .models import ExperienceReviewEvent, PublicExperience
 
 
 @admin.register(PublicExperience)
 class PublicExperienceAdmin(admin.ModelAdmin):
     list_display = ('company', 'source_kind', 'short_title', 'published_jalali',
-                    'copyright_review', 'company_attribution_status', 'independence_status')
+                    'copyright_review', 'company_attribution_status', 'independence_status',
+                    'review_six_and_claude')
     list_filter = ('source_kind', 'copyright_review', 'company_attribution_status', 'independence_status')
     search_fields = ('company__display_name', 'title', 'source_url')
     readonly_fields = tuple(f.name for f in PublicExperience._meta.fields)
@@ -15,6 +18,12 @@ class PublicExperienceAdmin(admin.ModelAdmin):
     @admin.display(description='عنوان')
     def short_title(self, obj):
         return obj.title[:90]
+
+    @admin.display(description='متن، GPT-6 و Claude')
+    def review_six_and_claude(self, obj):
+        return format_html('<a href="{}">مشاهده و بررسی</a>',
+                           reverse('admin:companies_company_experience_detail',
+                                   args=[obj.company_id, obj.pk]))
 
     def has_add_permission(self, request):
         return False

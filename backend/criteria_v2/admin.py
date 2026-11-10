@@ -6,7 +6,7 @@ comments, old ratings, and source text are not editable here.
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent, CheckpointApprovalReceipt, CriteriaCompanyReleaseEvent
+from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent, CheckpointApprovalReceipt, CriteriaCompanyReleaseEvent, CriteriaClaudeComparison
 
 
 class AuditOnlyAdmin(admin.ModelAdmin):
@@ -82,3 +82,12 @@ class CriteriaCompanyReleaseEventAdmin(AuditOnlyAdmin):
     list_display = ('company', 'decision', 'reviewer', 'created_at')
     list_filter = ('decision', 'created_at')
     list_select_related = ('company', 'reviewer')
+
+
+@admin.register(CriteriaClaudeComparison)
+class CriteriaClaudeComparisonAdmin(AuditOnlyAdmin):
+    list_display = ('analysis', 'model_id', 'status', 'requested_by', 'created_at')
+    list_filter = ('status', 'model_id')
+    search_fields = ('analysis__experience__company__display_name',
+                     'analysis__experience__source_url')
+    list_select_related = ('analysis', 'requested_by')
