@@ -218,10 +218,18 @@ class TaskFirstAdminV233Tests(TestCase):
 
     def test_legacy_claude_results_not_mixed_with_six_framework(self):
         from assessments.models import AiAssessment
-        AiAssessment.objects.create(
+        from assessments.claude_validation_models_v111 import ClaudeValidationRun
+        historical = AiAssessment.objects.create(
             experience=self.exp, criteria_version='five_v1',
             run_id='v233-legacy', prompt_version='legacy', model_name='historical')
+        ClaudeValidationRun.objects.create(
+            assessment=historical, requested_by=self.staff,
+            model_id='claude-historical', source_sha256='a'*64,
+            status='completed')
         detail = self.get(self.detail)
+        self.assertContains(detail, 'نتیجهٔ تاریخی Claude با پنج معیار قدیمی')
+        self.assertContains(detail, reverse(
+            'admin:assessments_aiassessment_claude_detail', args=[historical.pk]))
         self.assertNotContains(detail, 'five_v1')
         self.assertNotContains(detail, 'صحت‌سنجی با Claude و مقایسهٔ پنج شاخص')
         self.assertContains(detail, self.claude)

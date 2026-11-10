@@ -182,6 +182,15 @@ def company_experience_detail(admin_view, request, object_id, experience_id):
     latest = _six_runs([exp]).get(exp.pk) if can_six else None
     claude_run = (CriteriaClaudeComparison.objects.filter(
         analysis=latest).first() if latest else None)
+    historical_claude = None
+    if (request.user.has_perm('assessments.view_aiassessment') and
+            request.user.has_perm('assessments.view_aidimension') and
+            request.user.has_perm('experiences.view_publicexperience')):
+        from assessments.claude_validation_models_v111 import ClaudeValidationRun
+        historical_claude = (ClaudeValidationRun.objects.filter(
+            assessment__experience=exp, status='completed',
+            assessment__criteria_version='five_v1')
+            .select_related('assessment').first())
     integrity_ok = (bool(latest) and _private_run_valid(
         latest, story_from_experience(exp))) if can_six else False
     axis_rows = []
@@ -194,6 +203,7 @@ def company_experience_detail(admin_view, request, object_id, experience_id):
         'experience': exp,
         'can_view_six': can_six,
         'six_run': latest, 'claude_run': claude_run,
+        'historical_claude': historical_claude,
         'six_state': _six_state(latest),
         'six_integrity_ok': integrity_ok,
         'six_axes': axis_rows,

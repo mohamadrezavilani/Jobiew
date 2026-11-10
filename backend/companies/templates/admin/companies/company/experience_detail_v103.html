@@ -59,6 +59,13 @@
     <p><a class="button" href="{% url 'admin:companies_company_experience_claude' company.pk experience.pk %}">{% if claude_run %}مشاهدهٔ نتیجهٔ Claude{% else %}بررسی با Claude و مشاهدهٔ نتیجه{% endif %}</a></p>
     </section>
     {% endif %}
+    {% if historical_claude %}
+    <details class="module" style="padding:12px;margin:14px 0">
+      <summary><strong>نتیجهٔ تاریخی Claude با پنج معیار قدیمی (آرشیو)</strong></summary>
+      <p>این گزارش فقط سابقهٔ پژوهشی است و به امتیازهای فعال ۶+۶ ارتباطی ندارد.</p>
+      <p><a href="{% url 'admin:assessments_aiassessment_claude_detail' historical_claude.assessment_id %}">مشاهدهٔ نتیجهٔ ذخیره‌شدهٔ Claude قدیمی</a></p>
+    </details>
+    {% endif %}
     {% if can_view_six %}
       <p class="wi-x-nav">
         <a class="button" href="{% url 'admin:companies_company_workflow' company.pk %}">میز کار شرکت و اقدام بعدی</a>
