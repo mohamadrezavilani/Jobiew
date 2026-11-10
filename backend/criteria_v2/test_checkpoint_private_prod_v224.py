@@ -236,6 +236,12 @@ class PrivateProductionReleaseTests(TestCase):
         self.assertTrue(release.context['public_state']['visible_now'])
         self.assertEqual(release.context['public_state']['recorded_count'], 2)
         self.assertEqual(release.context['public_state']['visible_experiences'], 2)
+        # Publication of GPT-6 scores is independent of verified map pins.
+        self.assertFalse(release.context['map_state']['visible'])
+        self.assertContains(release, 'وضعیت مستقل نمایش مکان این شرکت روی نقشه')
+        self.assertContains(release, 'ارتباط شرکت با تهران')
+        self.assertContains(release, reverse(
+            'admin:companies_company_review', args=[self.company.pk]))
         self.assertContains(release, 'این 2 پرونده قبلاً منتشر شده‌اند')
         self.assertContains(release, 'مشاهدهٔ امتیازهای واقعی')
         self.assertContains(queue, 'انتشار ثبت شده')

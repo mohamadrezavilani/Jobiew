@@ -103,23 +103,8 @@ def company_map(request):
 
 def approved_geojson(request):
     """Never publish unverified, stale or directly injected coordinates."""
-    from django.db.models import OuterRef, Subquery, F
-    from locations.models import CompanyLocation, CompanyLocationReviewEvent
-
-    latest = CompanyLocationReviewEvent.objects.filter(company_id=OuterRef('company_id')).order_by('-created_at', '-pk')
-    rows = CompanyLocation.objects.select_related('company').annotate(
-        reviewed_decision=Subquery(latest.values('decision')[:1]),
-        reviewed_latitude=Subquery(latest.values('latitude')[:1]),
-        reviewed_longitude=Subquery(latest.values('longitude')[:1]),
-        reviewed_evidence_url=Subquery(latest.values('evidence_url')[:1]),
-    ).filter(
-        verification_status='verified', verified_at__isnull=False,
-        company__identity_status='verified', company__tech_status='verified',
-        company__tehran_status='verified',
-        latitude__isnull=False, longitude__isnull=False,
-        reviewed_decision='verified', reviewed_latitude=F('latitude'),
-        reviewed_longitude=F('longitude'), reviewed_evidence_url=F('evidence_url'),
-    ).exclude(evidence_url='')
+    from .map_visibility_v232 import verified_company_locations
+    rows = verified_company_locations()
     features = [
         {'type': 'Feature',
          'geometry': {'type': 'Point', 'coordinates': [float(row.longitude), float(row.latitude)]},
