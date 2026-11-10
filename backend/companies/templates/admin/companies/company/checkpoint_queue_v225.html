@@ -1,40 +1,51 @@
 {% extends "admin/base_site.html" %}
 {% block content %}
-<div id="content-main" dir="rtl">
-<h1>میز کار شرکت‌ها</h1>
-<p>روی «ادامهٔ کار» بزن تا وضعیت همهٔ مراحل آن شرکت، کارهای انجام‌شده و قدم بعدی را ببینی. سوابق پس از ورود مجدد هم باقی می‌مانند.</p>
-<form method="get" action="">
-  <label for="q">جست‌وجوی شرکت</label>
-  <input type="search" name="q" id="q" value="{{ q }}" maxlength="90">
-  <button type="submit" class="button">جست‌وجو</button>
-</form>
-<div class="module" style="overflow-x:auto;margin-top:15px">
-<table>
-<thead><tr><th>شرکت</th><th>کل</th><th>در انتظار</th><th>نمره‌های بازبینی‌شده</th><th>فاقد شاهد کافی</th><th>آخرین وضعیت انتشار (ثبت‌شده)</th><th>اقدام‌ها</th></tr></thead>
-<tbody>
-{% for item in page %}
-<tr>
-<th scope="row">{{ item.experience__company__display_name }}</th>
-<td>{{ item.total }}</td><td>{{ item.pending }}</td><td>{{ item.approved }}</td><td>{{ item.no_evidence }}</td>
-<td><strong>{{ item.release_status }}</strong>{% if item.released_count %}<small> · {{ item.released_count }} پرونده در تصمیم انتشار</small>{% endif %}{% if item.released_at %}<small> · {{ item.released_at|date:"Y/m/d H:i" }}</small>{% endif %}</td>
-<td>
-<a class="button" href="{% url 'admin:companies_company_workflow' item.experience__company_id %}"><strong>ادامهٔ کار</strong></a>
-<details><summary>لینک‌های بیشتر</summary>
-<a href="{% url 'admin:companies_company_experiences' item.experience__company_id %}">تجربه‌ها</a> ·
-<a href="{% url 'admin:companies_company_checkpoint_bulk' item.experience__company_id %}">نمره‌ها</a> ·
-<a href="{% url 'admin:companies_company_checkpoint_sources' item.experience__company_id %}">مدارک</a> ·
-<a href="{% url 'admin:companies_company_checkpoint_release' item.experience__company_id %}">انتشار</a>
-</details>
-</td></tr>
-{% empty %}<tr><td colspan="7">هیچ پرونده‌ای با این شرایط یافت نشد.</td></tr>{% endfor %}
-</tbody></table>
-</div>
-{% if page.paginator.num_pages > 1 %}
-<p>صفحهٔ {{ page.number }} از {{ page.paginator.num_pages }}
-{% if page.has_previous %}<a href="?q={{ q|urlencode }}&page={{ page.previous_page_number }}">قبلی</a>{% endif %}
-{% if page.has_next %}<a href="?q={{ q|urlencode }}&page={{ page.next_page_number }}">بعدی</a>{% endif %}
-</p>
-{% endif %}
-<p><a href="{% url 'admin:index' %}">بازگشت به خانهٔ مدیریت</a></p>
-</div>
+<main id="content-main" dir="rtl" style="max-width:1160px;line-height:1.8">
+  <header><h1>میز کار شرکت‌ها</h1>
+    <p>شرکت را انتخاب کنید؛ صفحهٔ بعد فقط اقدام ضروریِ باقی‌مانده را پیشنهاد می‌کند. تمام تأییدها و سوابق قبلی حفظ می‌شوند.</p>
+  </header>
+  <form method="get" action="" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0">
+    <label for="q">نام شرکت</label>
+    <input type="search" name="q" id="q" value="{{ q }}" maxlength="90" placeholder="جست‌وجوی شرکت">
+    <button type="submit" class="button">جست‌وجو</button>
+    {% if q %}<a href="{% url 'admin:companies_company_checkpoint_queue' %}">همهٔ شرکت‌ها</a>{% endif %}
+  </form>
+  <div class="module" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>شرکت</th><th>پرونده‌های GPT-6</th><th>انتشار</th><th>ادامهٔ کار</th></tr></thead>
+      <tbody>{% for item in page %}
+        <tr>
+          <th scope="row">{{ item.experience__company__display_name }}</th>
+          <td>
+            <strong>{% if item.pending %}{{ item.pending }} در انتظار بازبینی{% else %}بازبینی جدیدی در صف نیست{% endif %}</strong>
+            <small>از {{ item.total }} پرونده · {{ item.approved }} تأییدشده · {{ item.no_evidence }} فاقد شاهد کافی</small>
+          </td>
+          <td>
+            <strong>{{ item.release_status }}</strong>
+            {% if item.released_count %}<small>{{ item.released_count }} پرونده در آخرین تصمیم انتشار</small>{% endif %}
+            {% if item.released_at %}<small>{{ item.released_at|date:"Y/m/d H:i" }}</small>{% endif %}
+          </td>
+          <td>
+            <a class="button default" href="{% url 'admin:companies_company_workflow' item.experience__company_id %}">ادامهٔ کار</a>
+            <details style="margin-top:7px">
+              <summary style="cursor:pointer">دسترسی مستقیم به مراحل</summary>
+              <a href="{% url 'admin:companies_company_experiences' item.experience__company_id %}">نظرها</a> ·
+              <a href="{% url 'admin:companies_company_checkpoint_bulk' item.experience__company_id %}">تأیید GPT-6</a> ·
+              <a href="{% url 'admin:companies_company_checkpoint_sources' item.experience__company_id %}">مدارک</a> ·
+              <a href="{% url 'admin:companies_company_checkpoint_release' item.experience__company_id %}">انتشار</a>
+            </details>
+          </td>
+        </tr>
+      {% empty %}<tr><td colspan="4">شرکتی با این جست‌وجو پیدا نشد.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+    <nav style="display:flex;gap:12px;margin-top:14px" aria-label="صفحه‌بندی">
+      <span>صفحهٔ {{ page.number }} از {{ page.paginator.num_pages }}</span>
+      {% if page.has_previous %}<a href="?q={{ q|urlencode }}&page={{ page.previous_page_number }}">قبلی</a>{% endif %}
+      {% if page.has_next %}<a href="?q={{ q|urlencode }}&page={{ page.next_page_number }}">بعدی</a>{% endif %}
+    </nav>
+  {% endif %}
+  <p><a href="{% url 'admin:index' %}">بازگشت به خانهٔ مدیریت</a></p>
+</main>
 {% endblock %}
