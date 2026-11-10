@@ -1,0 +1,72 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'companies/css/company_experiences_v103.css' %}">{% endblock %}
+{% block content %}
+<main class="wi-x" dir="rtl">
+  <div class="wi-x-bar">
+    <div><p class="wi-x-over">بازبینی خصوصی · بدون تغییر نمره‌ها یا انتشار</p>
+      <h1>بررسی مستقل با Claude</h1>
+      <p>{{ company.display_name }} · {{ experience.get_source_kind_display }} · {{ experience.title|truncatechars:100 }}</p>
+    </div>
+    <nav class="wi-x-nav">
+      <a href="{{ detail_url }}">متن و نمره‌های GPT-6</a>
+      <a href="{{ company_experiences_url }}">همهٔ نظرهای شرکت</a>
+    </nav>
+  </div>
+  <div class="wi-x-note">Claude در صورت درخواست دستی، شش معیار ویژهٔ همین نوع تجربه را مستقل می‌سنجد. نتیجه صرفاً یک نظر دوم است؛ نمرهٔ GPT-6، بازبینی انسانی و مجوز انتشار هیچ‌کدام تغییر نمی‌کنند. متن پیش از ارسال تا حدی از شناسه‌های فردی پاک‌سازی می‌شود؛ حاوی محتوای خصوصی باقی‌مانده ممکن است باشد.</div>
+  {% if not analysis %}
+    <section class="wi-x-panel"><h2>هنوز ارزیابی فعال وجود ندارد</h2><p>ابتدا خروجی GPT-6 این تجربه باید در checkpoint ثبت شود. ارزیابی پنج‌معیاری قدیمی برای مقایسهٔ ۶+۶ قابل استفاده نیست.</p></section>
+  {% elif not integrity_ok %}
+    <section class="wi-x-panel"><h2>ارزیابی فعلی معتبر نیست</h2><p>هش، نسخهٔ شش معیار یا شواهد منبع مطابقت ندارند؛ فراخوانی پولی غیرفعال است. ابتدا دادهٔ اصلی را اصلاح کنید.</p></section>
+  {% else %}
+    <section class="wi-x-panel">
+      <h2>وضعیت مقایسه</h2>
+      {% if latest %}
+        <p><strong>آخرین نتیجه موفق:</strong> {{ latest.created_at|date:"Y/m/d H:i" }} · مدل {{ latest.model_id }}</p>
+        {% if stale %}<p role="alert"><strong>هشدار:</strong> متن تجربه بعد از این بررسی تغییر کرده است. این مقایسه دیگر مبنای بررسی متن فعلی نیست.</p>{% endif %}
+      {% else %}<p>هنوز برای این تحلیل، نتیجهٔ موفق Claude ثبت نشده است.</p>{% endif %}
+      <p><strong>اعتبار باقیماندهٔ درخواست‌ها:</strong> {{ remaining }} از سقف {{ quota }} · <strong>مدل:</strong> {{ model_id }}</p>
+      {% if can_execute %}
+        <form method="post" action="" class="wi-x-claude-form">{% csrf_token %}
+          <label><input type="checkbox" name="confirm_paid" value="yes" required> تأیید می‌کنم که این اقدام یک درخواست API پولی به Claude می‌فرستد و محتوای پالایش‌شدهٔ نظر به سرویس خارجی ارسال می‌شود.</label>
+          {% if latest %}<label><input type="checkbox" name="force" value="yes"> درخواست مقایسهٔ تازه (در صورت عدم انتخاب، نتیجهٔ قبلی نمایش داده می‌شود و هزینه‌ای ندارد)</label>{% endif %}
+          <button type="submit" class="button default">بررسی با Claude و ثبت نتیجه</button>
+        </form>
+      {% else %}
+        <p role="status">فراخوانی تازه فعلاً در دسترس نیست:
+          {% if not enabled %}فعال‌سازی <code>JOBIEW_CLAUDE6_ENABLED=1</code> لازم است.{% elif not key_ready %}کلید API روی سرور تنظیم نشده است.{% elif remaining == 0 %}سقف فراخوانی مصرف شده است.{% else %}این دسترسی نیازمند مجوز اجرای Claude است.{% endif %}
+        </p>
+      {% endif %}
+    </section>
+    {% if latest %}
+    <section class="wi-x-panel">
+      <h2>مقایسهٔ شش معیار</h2>
+      <div class="wi-x-table-wrap"><table class="wi-x-table">
+        <thead><tr><th>معیار</th><th>GPT-6</th><th>Claude</th><th>اختلاف</th><th>دلیل و شاهد Claude</th></tr></thead>
+        <tbody>{% for row in rows %}<tr>
+          <th scope="row">{{ row.axis.label }}</th>
+          <td>{% if row.original.score != None %}{{ row.original.score }}{% else %}بدون شاهد{% endif %}</td>
+          <td>{% if row.compared.claude != None %}{{ row.compared.claude }}{% else %}بدون شاهد{% endif %}</td>
+          <td>{% if row.compared.delta != None %}{{ row.compared.delta }}{% else %}—{% endif %}{% if row.compared.needs_attention %}<small><strong>نیازمند بررسی مدیر</strong></small>{% endif %}</td>
+          <td>{{ row.compared.reason }}{% if row.compared.evidence %}<blockquote>{{ row.compared.evidence }}</blockquote>{% endif %}
+            {% if row.compared.claude != None and not row.compared.evidence_exact %}<small role="alert">شاهد دقیقاً در متن ارسالی پیدا نشد؛ قابل اتکا نیست.</small>{% endif %}
+          </td>
+        </tr>{% endfor %}</tbody>
+      </table></div>
+    </section>
+    {% endif %}
+  {% endif %}
+  <details class="wi-x-panel">
+    <summary><strong>تاریخچهٔ بررسی‌های Claude</strong> ({{ history|length }})</summary>
+    <div class="wi-x-table-wrap"><table class="wi-x-table">
+      <thead><tr><th>تاریخ</th><th>مدل</th><th>وضعیت</th><th>توکن ورودی / خروجی</th><th>خطا</th></tr></thead>
+      <tbody>{% for run in history %}<tr>
+        <td>{{ run.created_at|date:"Y/m/d H:i" }}</td><td>{{ run.model_id }}</td>
+        <td>{{ run.get_status_display }}</td>
+        <td>{{ run.input_tokens }} / {{ run.output_tokens }}</td>
+        <td>{{ run.error_type|default:"—" }}</td>
+      </tr>{% empty %}<tr><td colspan="5">تا امروز فراخوانی ثبت نشده است.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </details>
+</main>
+{% endblock %}
