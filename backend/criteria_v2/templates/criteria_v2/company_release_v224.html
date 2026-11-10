@@ -1,0 +1,42 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>انتشار کنترل‌شدهٔ شرکت | جابیو</title>
+<style>
+body{font:16px/1.9 Tahoma,system-ui;max-width:900px;margin:24px auto;padding:0 18px;color:#1b293e}
+a{color:#075e9a}section{border:1px solid #dae2e8;padding:18px;border-radius:12px;margin:18px 0}
+label{display:block;margin:12px 0}textarea{width:100%;max-width:100%;min-height:100px}
+button{font:inherit;padding:9px 20px;cursor:pointer}
+.notice{background:#fff2db;border-right:5px solid #ad680e;padding:15px}
+table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1px solid #dae2e8;padding:8px}
+</style></head><body>
+<a href="{% url 'dual-checkpoint-company-v218' company.pk %}">بازگشت به پروندهٔ شرکت</a>
+<h1>انتشار امتیازهای تأییدشده: {{ company.display_name }}</h1>
+<div class="notice">انتشار شرکت با تأیید گروهی نمره‌ها فرق دارد. فقط پرونده‌هایی که شش معیارشان بازبینی شده و مجوز انتشار، انتساب، استقلال و دسته‌بندی آن‌ها جداگانه با سند ثبت شده، قابل انتشار هستند. متن خام نظرها در این مرحله عمومی نمی‌شود.</div>
+{% for message in messages %}<p>{{ message }}</p>{% endfor %}
+<section>
+<h2>وضعیت بررسی</h2>
+<table>
+<tr><th>نمره‌های قابل انتشار با مدارک کامل</th><td>{{ eligible_count }}</td></tr>
+<tr><th>در انتظار بازبینی نمره</th><td>{{ stats.pending }}</td></tr>
+<tr><th>دارای بازبینی انسانی</th><td>{{ stats.human_reviewed }}</td></tr>
+<tr><th>فاقد تأییدهای منبع/شرکت</th><td>{{ stats.blocked_provenance }}</td></tr>
+<tr><th>نامعتبر یا تغییرکرده</th><td>{{ stats.invalid_or_changed }}</td></tr>
+<tr><th>هویت و حوزهٔ شرکت تأیید شده</th><td>{% if stats.company_verified %}بله{% else %}خیر{% endif %}</td></tr>
+<tr><th>آخرین تصمیم انتشار</th><td>{% if current %}{{ current.get_decision_display }}{% else %}هنوز تصمیمی ثبت نشده{% endif %}</td></tr>
+<tr><th>گیت‌های نمایش در سایت</th><td>{% if public_enabled %}فعال{% else %}غیرفعال؛ حتی پس از ثبت تصمیم، نمره عمومی نمی‌شود{% endif %}</td></tr>
+</table></section>
+<section><h2>ثبت تصمیم انتشار شرکت</h2>
+<form method="post">{% csrf_token %}
+<input type="hidden" name="snapshot" value="{{ token }}">
+<label>یادداشت و دلیل تصمیم
+<textarea name="note" minlength="20" maxlength="1200" required></textarea></label>
+<label><input type="checkbox" name="confirm_rights" value="yes">
+بررسی کرده‌ام که برای همهٔ پرونده‌های قابل انتشار، مجوز و مدارک معتبر به‌صورت جداگانه ثبت شده است.</label>
+<label><input type="checkbox" name="confirm_public" value="yes" required>
+می‌دانم این اقدام می‌تواند نمره‌های تأییدشدهٔ شرکت را در سایت عمومی نمایان کند؛ متن کامل تجربه‌ها جداگانه مجوز می‌خواهد.</label>
+<button name="action" value="published" type="submit" {% if not eligible_count %}disabled{% endif %}>انتشار همین {{ eligible_count }} پروندهٔ تأییدشده</button>
+<button name="action" value="held" type="submit">توقف نمایش امتیازهای شرکت</button>
+</form>
+<p>تجربه‌های تازه در checkpointهای بعدی خودکار منتشر نمی‌شوند و باید مجدداً بررسی و به انتشار اضافه شوند.</p>
+</section></body></html>
