@@ -6,13 +6,13 @@
 {% if wi_can_review_checkpoint %}
 <p><a class="button default" href="{{ wi_workflow_url }}">میز کار این شرکت و اقدام بعدی</a></p>
 {% if wi_score_state.is_published %}
-<p><strong>انتشار قبلاً ثبت شده است.</strong>
+<p><strong>تصمیم انتشار ثبت شده است.</strong>
 {{ wi_score_state.recorded_count }} پرونده در آخرین انتشار؛
 {{ wi_score_state.visible_experiences }} تجربه اکنون در امتیاز عمومی مشارکت دارند.
 {% if wi_score_state.visible_now %}<a href="{{ wi_public_profile_url }}">دیدن سایت عمومی</a>{% else %}{{ wi_score_state.reason }}{% endif %}</p>
 {% endif %}
 {% endif %}
-{% if wi_can_see_experiences %}<p><a href="{{ wi_experiences_url }}">مشاهدهٔ متن تجربه‌ها و نتیجهٔ Claude</a></p>{% endif %}
+{% if wi_can_see_experiences %}<p><a href="{{ wi_experiences_url }}">مشاهده نظرهای این شرکت و نتیجهٔ Claude</a></p>{% endif %}
 <details>
 <summary>اقدام‌های تخصصی و تاریخچه</summary>
 <p><a href="{{ wi_review_url }}">بررسی موقعیت و مدارک شرکت</a></p>
