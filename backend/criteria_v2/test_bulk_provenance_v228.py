@@ -125,17 +125,17 @@ class ProvenanceBulkV228Tests(TestCase):
         self.assertEqual(CriteriaScoreReviewEvent.objects.count(), 2)
         self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
 
-    def form(self, page, checks=None, selected=None, doc=''):
+    def form(self, page, *, action='standard', selected=None, doc='',
+             scope='standard', note=''):
         return {
             'snapshot': page.context['snapshot'],
             'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value,
             'selected': [str(exp.pk) for exp in self.exp] if selected is None else selected,
-            'checks': checks if checks is not None else [
-                'classification', 'attribution', 'independence'],
-            'note': 'متن‌های اصلی را خوانده‌ام و شیوه تطبیق انتساب و تکرار بررسی شده است.',
+            'action': action,
+            'scope': scope,
+            'note': note,
             'confirm_manual': 'yes',
             'rights_document_url': doc,
-            'confirm_rights_scope': 'yes',
         }
 
     def test_real_csrf_get_works_and_invalid_origin_blocks(self):
@@ -145,6 +145,10 @@ class ProvenanceBulkV228Tests(TestCase):
         self.assertEqual(page['Referrer-Policy'], 'same-origin')
         self.assertContains(page, 'منبع اصلی')
         self.assertContains(page, self.release)
+        self.assertContains(page, 'name="selected"', count=2)
+        self.assertContains(page, 'checked', count=2)
+        self.assertContains(page, 'ثبت بررسی‌های عادی (بدون تأیید مجوز انتشار)')
+        self.assertNotContains(page, 'EXPLICIT_RIGHTS_DOCUMENT_REQUIRED')
         result = self.post(self.form(page), origin='https://evil.invalid')
         self.assertEqual(result.status_code, 403)
         self.assertFalse(ExperienceReviewEvent.objects.exists())
@@ -173,7 +177,7 @@ class ProvenanceBulkV228Tests(TestCase):
         self.assertEqual(self.post(self.form(first)).status_code, 302)
         page = self.get()
         data = self.form(
-            page, checks=['copyright'], doc='https://example.invalid/licence/v228')
+            page, action='rights', doc='https://example.invalid/licence/v228')
         self.assertEqual(self.post(data).status_code, 302)
         self.assertEqual(ExperienceReviewEvent.objects.count(), 6)
         for exp in self.exp:
@@ -202,8 +206,10 @@ class ProvenanceBulkV228Tests(TestCase):
             with self.subTest(url=url):
                 page = self.get()
                 result = self.post(self.form(page,
-                    checks=['copyright'], selected=[str(self.exp[0].pk)], doc=url))
+                    action='rights', selected=[str(self.exp[0].pk)], doc=url))
                 self.assertEqual(result.status_code, 400)
+                self.assertContains(result, 'ثبت انجام نشد', status_code=400)
+                self.assertContains(result, 'checked', count=1, status_code=400)
                 self.assertFalse(ExperienceReviewEvent.objects.exists())
         self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
 
@@ -246,13 +252,48 @@ class ProvenanceBulkV228Tests(TestCase):
         self.assertEqual(bad.status_code, 400)
         self.assertEqual(ExperienceReviewEvent.objects.count(), 1)
 
-    def test_company_isolation_and_duplicate_copyright_scope(self):
+    def test_invalid_or_unsupported_review_scope_does_not_write(self):
         page = self.get()
-        duplicate = self.post(self.form(page,
-            checks=['copyright', 'copyright'], doc='https://example.invalid/licence'))
-        self.assertEqual(duplicate.status_code, 400)
+        bad = self.post(self.form(page, scope='copyright_without_proof'))
+        self.assertEqual(bad.status_code, 400)
+        self.assertContains(bad, 'نوع بررسی انتخاب‌شده معتبر نیست', status_code=400)
         self.assertFalse(ExperienceReviewEvent.objects.exists())
         self.assertEqual(CriteriaAnalysis.objects.count(), 2)
+
+    def test_default_form_without_note_needs_one_explicit_attestation(self):
+        page = self.get()
+        data = self.form(page)
+        data.pop('confirm_manual')
+        blocked = self.post(data)
+        self.assertEqual(blocked.status_code, 400)
+        self.assertFalse(ExperienceReviewEvent.objects.exists())
+        result = self.post(self.form(page))
+        self.assertEqual(result.status_code, 302)
+        self.assertEqual(ExperienceReviewEvent.objects.count(), 4)
+        self.assertEqual(CriteriaReviewEvent.objects.count(), 2)
+        self.assertEqual(CriteriaCompanyReleaseEvent.objects.count(), 0)
+
+    def test_selected_rows_can_be_unchecked_or_scope_narrowed(self):
+        page = self.get()
+        data = self.form(
+            page, selected=[str(self.exp[1].pk)], scope='classification')
+        result = self.post(data)
+        self.assertEqual(result.status_code, 302)
+        self.assertEqual(CriteriaReviewEvent.objects.count(), 1)
+        self.assertEqual(CriteriaReviewEvent.objects.first().experience_id,
+                         self.exp[1].pk)
+        self.assertFalse(ExperienceReviewEvent.objects.exists())
+        self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
+
+    def test_rights_error_is_friendly_and_preserves_row_selection(self):
+        page = self.get()
+        result = self.post(self.form(page, action='rights', doc=''))
+        self.assertEqual(result.status_code, 400)
+        self.assertContains(result, 'برای ثبت مجوز انتشار', status_code=400)
+        self.assertContains(result, 'ثبت بررسی‌های عادی', status_code=400)
+        self.assertContains(result, 'checked', count=2, status_code=400)
+        self.assertFalse(ExperienceReviewEvent.objects.exists())
+        self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
 
     def test_missing_staff_permissions_restrict_private_reviews(self):
         staff = get_user_model().objects.create_user(

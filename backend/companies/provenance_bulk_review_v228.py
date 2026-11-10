@@ -29,6 +29,15 @@ from criteria_v2.models import CriteriaAnalysis, CriteriaReviewEvent
 from criteria_v2.registry import version_for
 
 MAX_CASES = 1000
+
+# A single, human-attested action covers the three non-copyright decisions.
+# Reviewers can narrow its scope without clicking three independent checkboxes.
+STANDARD_SCOPES = {
+    'standard': ('classification', 'attribution', 'independence'),
+    'classification': ('classification',),
+    'attribution': ('attribution',),
+    'independence': ('independence',),
+}
 FIELDS = ('copyright', 'attribution', 'independence', 'classification')
 LABELS = {
     'copyright': 'مجوز استفاده از منبع برای انتشار امتیاز',
@@ -170,7 +179,16 @@ def provenance_review(admin_view, request, object_id):
         raise Http404('Review batch too large')
     snapshot = _snapshot(company, rows)
 
-    if request.method == 'GET':
+    def review_page(error='', status=200):
+        # The default selects reviewable rows, not factual/legal attestations.
+        # POST errors preserve the user's actual selected IDs and draft fields.
+        if request.method == 'GET':
+            selected_ids = {row['exp'].pk for row in rows if row['eligible']}
+        else:
+            selected_ids = set()
+            for raw in request.POST.getlist('selected'):
+                if raw.isascii() and raw.isdecimal():
+                    selected_ids.add(int(raw))
         ctx = {
             **admin_view.admin_site.each_context(request),
             'title': 'بررسی گروهی مدارک: ' + company.display_name,
@@ -182,31 +200,62 @@ def provenance_review(admin_view, request, object_id):
                 'admin:companies_company_checkpoint_bulk', args=[company.pk]),
             'labels': LABELS,
             'available': sum(row['eligible'] for row in rows),
+            'selected_ids': selected_ids,
+            'error': error,
+            'note_value': (request.POST.get('note', '') if request.method == 'POST' else ''),
+            'rights_document_url': (request.POST.get('rights_document_url', '')
+                                    if request.method == 'POST' else ''),
+            'scope_value': request.POST.get('scope', 'standard'),
+            'rights_open': request.POST.get('action') == 'rights',
         }
         response = TemplateResponse(
-            request, 'admin/companies/company/provenance_review_v228.html', ctx)
+            request, 'admin/companies/company/provenance_review_v228.html',
+            ctx, status=status)
         response['Cache-Control'] = 'private, no-store, no-cache, must-revalidate'
         response['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
         response['Referrer-Policy'] = 'same-origin'
         return response
 
+    if request.method == 'GET':
+        return review_page()
+
     selected = _valid_selected_ids(request.POST.getlist('selected'))
-    checks = request.POST.getlist('checks')
+    action = request.POST.get('action', '')
+    scope = request.POST.get('scope', 'standard')
     note = (request.POST.get('note') or '').strip()
     rights_doc = (request.POST.get('rights_document_url') or '').strip()
     if request.POST.get('snapshot') != snapshot:
-        return HttpResponse('STALE_SOURCE_REVIEW_RELOAD', status=409)
-    if (request.POST.get('confirm_manual') != 'yes' or
-            selected is None or
-            not checks or len(checks) != len(set(checks)) or
-            any(check not in FIELDS for check in checks) or
-            not 25 <= len(note) <= 1200):
-        return HttpResponse('SELECT_AND_DOCUMENT_REAL_INDEPENDENT_REVIEWS', status=400)
-    if 'copyright' in checks and (
-            request.POST.get('confirm_rights_scope') != 'yes'
-            or not _https_document(rights_doc)):
-        return HttpResponse('EXPLICIT_RIGHTS_DOCUMENT_REQUIRED', status=400)
-
+        return review_page(
+            'فهرست تجربه‌ها در این فاصله تغییر کرده است؛ صفحه را تازه کن و دوباره بررسی کن.',
+            status=409)
+    if selected is None:
+        return review_page(
+            'هیچ تجربه‌ای انتخاب نشده است. حداقل یک مورد بررسی‌شده را انتخاب کن.',
+            status=400)
+    if request.POST.get('confirm_manual') != 'yes':
+        return review_page(
+            'برای ثبت، باید صریحاً تأیید کنی همهٔ موارد انتخابی را شخصاً بررسی کرده‌ای.',
+            status=400)
+    if len(note) > 1200:
+        return review_page('توضیح اختیاری باید کمتر از ۱۲۰۰ نویسه باشد.', status=400)
+    if action == 'standard':
+        checks = STANDARD_SCOPES.get(scope)
+        if checks is None:
+            return review_page('نوع بررسی انتخاب‌شده معتبر نیست.', status=400)
+    elif action == 'rights':
+        checks = ('copyright',)
+        if not _https_document(rights_doc):
+            return review_page(
+                'برای ثبت مجوز انتشار، لینک HTTPS سند واقعی مجوز لازم است. '
+                'اگر مجوزی نداری، از دکمهٔ «ثبت بررسی‌های عادی (بدون مجوز)» استفاده کن.',
+                status=400)
+    else:
+        return review_page(
+            'یکی از دو دکمهٔ ثبت بررسی عادی یا ثبت مجوز مستند را انتخاب کن.',
+            status=400)
+    rationale = (note if note else
+        'بازبین با تأیید صریح، بررسی انسانی موارد انتخاب‌شده را '
+        'در محدودهٔ تصمیم‌های ثبت‌شده اعلام کرده است.')
     with transaction.atomic():
         company = Company.objects.select_for_update().get(pk=company.pk)
         list(PublicExperience.objects.select_for_update().filter(
@@ -216,21 +265,21 @@ def provenance_review(admin_view, request, object_id):
         except ValueError:
             return HttpResponse('REVIEW_BATCH_TOO_LARGE', status=409)
         if _snapshot(company, current) != snapshot:
-            return HttpResponse('STALE_SOURCE_REVIEW_RELOAD', status=409)
+            return review_page('وضعیت تجربه‌ها عوض شده است؛ صفحه را تازه کن.', status=409)
         index = {row['exp'].pk: row for row in current}
         if (not selected.issubset(index)
                 or any(not index[exp_id]['eligible'] for exp_id in selected)):
-            return HttpResponse('INVALID_OR_BLOCKED_SOURCE_SELECTION', status=400)
+            return review_page('یکی از تجربه‌های انتخابی متعلق به شرکت نیست یا قبلاً رد شده است.', status=400)
         selected_rows = [index[exp_id] for exp_id in sorted(selected)]
         if (any(not row['source_href'] for row in selected_rows)
                 and any(check != 'classification' for check in checks)):
-            return HttpResponse('SOURCE_LINK_REQUIRED_FOR_PROVENANCE_REVIEW', status=400)
+            return review_page('برای بررسی انتساب یا استقلال، لینک معتبر منبع هر تجربه لازم است.', status=400)
         if 'copyright' in checks:
             source_sites = {row['exp'].source_site for row in selected_rows}
             if len(source_sites) != 1:
-                return HttpResponse('SELECT_ONE_SOURCE_SITE_PER_RIGHTS_DOCUMENT', status=400)
+                return review_page('هر بار مجوز یک سایت منبع را بررسی کن؛ موارد مربوط به سایت‌های دیگر را جدا ثبت کن.', status=400)
             if any(rights_doc == row['exp'].source_url for row in selected_rows):
-                return HttpResponse('SOURCE_POST_IS_NOT_A_LICENCE_DOCUMENT', status=400)
+                return review_page('آدرس خود تجربه، سند مجوز نیست. لینک سند مجوز مستقل را وارد کن.', status=400)
 
         created = 0
         for row in selected_rows:
@@ -245,20 +294,20 @@ def provenance_review(admin_view, request, object_id):
                         criteria_version=version_for(exp.source_kind),
                         source_content_sha256=exp.content_sha256,
                         decision='confirmed', note=(
-                            'بازبینی دستی نوع تجربه پس از مطالعهٔ منبع. ' + note))
+                            'بازبینی دستی نوع تجربه پس از مطالعهٔ منبع. ' + rationale))
                 else:
                     ExperienceReviewEvent.objects.create(
                         experience=exp, reviewer=request.user,
                         review_field=key, decision=SOURCE_DECISIONS[key],
                         evidence_url=rights_doc if key == 'copyright' else exp.source_url,
                         rationale=(
-                            'بازبینی گروهی با تأیید مستقل بازبین. ' + note +
+                            'بازبینی گروهی با تأیید مستقل بازبین. ' + rationale +
                             (' | مجوز استفاده از تحلیل مشتق‌شده از منبع بررسی شد.'
                              if key == 'copyright' else '')
                         ))
                 created += 1
         if not created:
-            return HttpResponse('NO_NEW_SOURCE_DECISIONS_TO_RECORD', status=409)
+            return review_page('تأیید تازه‌ای برای موارد انتخابی باقی نمانده است.', status=409)
     messages.success(
         request, f'{created} رویداد بررسی برای {len(selected_rows)} تجربه ثبت شد. '
         'هیچ نمره یا متنی خودکار منتشر نشده است.')
