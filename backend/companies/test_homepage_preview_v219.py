@@ -43,6 +43,27 @@ class HomepagePreviewV219Tests(TestCase):
             body='PRIVATE_HOMEPAGE_BODY_927413 must remain private',
             content_sha256='a' * 64,
         )
+        # Source counters are unverified hints; public-listable record counts
+        # exclude blocked/rejected/duplicate and non-HTTP source links.
+        for idx in range(2):
+            PublicExperience.objects.create(
+                company=cls.second, source_url=f'https://example.test/interview/{idx}',
+                source_kind='interview', title='نمونهٔ مصاحبه',
+                body='متن خصوصی مصاحبه', content_sha256=str(idx + 2) * 64,
+            )
+        for idx, overrides in enumerate((
+            {'copyright_review': 'blocked'},
+            {'company_attribution_status': 'rejected'},
+            {'independence_status': 'duplicate'},
+            {'source_url': 'ftp://example.test/hidden'},
+        )):
+            PublicExperience.objects.create(
+                company=cls.first,
+                source_url=overrides.pop('source_url', f'https://example.test/hidden/{idx}'),
+                source_kind='work', title='BLOCKED_META_SENTINEL',
+                body='PRIVATE_BLOCKED_BODY', content_sha256=str(idx + 5) * 64,
+                **overrides,
+            )
         CriteriaAnalysis.objects.create(
             experience=exp, criteria_version='work6_v2',
             source_content_sha256='a' * 64,
@@ -109,6 +130,13 @@ class HomepagePreviewV219Tests(TestCase):
         self.assertNotContains(has_records, 'مؤسسه بدون تجربه')
         self.assertNotContains(interview, 'مؤسسه بدون تجربه')
 
+    def test_map_scripts_are_not_eagerly_loaded_before_verified_pins(self):
+        with self._authorized():
+            html = self.client.get(self.url).content.decode()
+        self.assertNotIn('src="https://unpkg.com/maplibre-gl', html)
+        self.assertNotIn('href="https://unpkg.com/maplibre-gl', html)
+        self.assertIn('companies/js/homepage_preview_v219.js', html)
+
     def test_only_verified_api_is_present_no_hardcoded_pin(self):
         with self._authorized():
             html = self.client.get(self.url).content.decode()
@@ -118,6 +146,25 @@ class HomepagePreviewV219Tests(TestCase):
         self.assertNotIn('موقعیت‌ها نمایشی هستند', html)
         self.assertNotIn('data:image/svg+xml;base64', html)
         self.assertIn('data-company-id=', html)
+
+    def test_counts_match_public_company_details_not_unreviewed_source_counters(self):
+        with self._authorized():
+            work = self.client.get(self.url)
+            interview = self.client.get(self.url, {'mode': 'interview'})
+            only_work = self.client.get(self.url, {'has_records': '1'})
+            only_interview = self.client.get(self.url, {'mode': 'interview', 'has_records': '1'})
+        self.assertEqual(work.status_code, 200)
+        self.assertEqual(interview.status_code, 200)
+        count_by_id = {c.pk: c.experience_count for c in work.context['page'].object_list}
+        self.assertEqual(count_by_id[self.first.pk], 1)
+        self.assertEqual(count_by_id[self.second.pk], 0)
+        self.assertEqual({c.pk: c.experience_count for c in interview.context['page'].object_list}[self.second.pk], 2)
+        self.assertEqual({c.pk for c in only_work.context['page'].object_list}, {self.first.pk})
+        self.assertEqual({c.pk for c in only_interview.context['page'].object_list}, {self.second.pk})
+        self.assertNotContains(work, 'BLOCKED_META_SENTINEL')
+        self.assertNotContains(work, 'PRIVATE_BLOCKED_BODY')
+        self.assertNotContains(work, '۱۴ تجربه')
+        self.assertNotContains(interview, '۱۵ تجربه')
 
     def test_get_does_not_write_or_update_analyses(self):
         before = list(CriteriaAnalysis.objects.values_list('run_id', 'raw_payload'))
@@ -139,6 +186,7 @@ class HomepagePreviewV219Tests(TestCase):
         with self._authorized(), patch.dict('os.environ', {
             'JOBIEW_HOMEPAGE_STAGING_ENABLED': '1',
             'JOBIEW_HOMEPAGE_STAGING_HOST': 'stage.example.test',
+            'JOBIEW_HOMEPAGE_PUBLIC_HOST': 'www.example.test',
             'JOBIEW_DUAL6_PUBLICATION_ENABLED': '0',
         }):
             self.assertEqual(self.client.get(self.url, HTTP_HOST='testserver', secure=True).status_code, 404)
@@ -147,10 +195,37 @@ class HomepagePreviewV219Tests(TestCase):
 
     @override_settings(DEBUG=False, SECURE_SSL_REDIRECT=False,
                        ALLOWED_HOSTS=['stage.example.test'])
+    def test_staging_requires_explicit_distinct_public_hostname(self):
+        with self._authorized(), patch.dict('os.environ', {
+            'JOBIEW_HOMEPAGE_STAGING_ENABLED': '1',
+            'JOBIEW_HOMEPAGE_STAGING_HOST': 'stage.example.test',
+            'JOBIEW_HOMEPAGE_PUBLIC_HOST': 'stage.example.test',
+            'JOBIEW_DUAL6_PUBLICATION_ENABLED': '0',
+        }):
+            self.assertEqual(self.client.get(self.url, HTTP_HOST='stage.example.test', secure=True).status_code, 404)
+            with patch.dict('os.environ', {'JOBIEW_HOMEPAGE_PUBLIC_HOST': ''}):
+                self.assertEqual(self.client.get(self.url, HTTP_HOST='stage.example.test', secure=True).status_code, 404)
+            with patch.dict('os.environ', {'JOBIEW_HOMEPAGE_PUBLIC_HOST': 'www.example.test'}):
+                self.assertEqual(self.client.get(self.url, HTTP_HOST='stage.example.test', secure=True).status_code, 200)
+
+    @override_settings(DEBUG=False, SECURE_SSL_REDIRECT=False,
+                       ALLOWED_HOSTS=['stage.example.test', 'www.example.test'])
+    def test_staging_does_not_share_allowed_hosts_with_production(self):
+        with self._authorized(), patch.dict('os.environ', {
+            'JOBIEW_HOMEPAGE_STAGING_ENABLED': '1',
+            'JOBIEW_HOMEPAGE_STAGING_HOST': 'stage.example.test',
+            'JOBIEW_HOMEPAGE_PUBLIC_HOST': 'www.example.test',
+            'JOBIEW_DUAL6_PUBLICATION_ENABLED': '0',
+        }):
+            self.assertEqual(self.client.get(self.url, HTTP_HOST='stage.example.test', secure=True).status_code, 404)
+
+    @override_settings(DEBUG=False, SECURE_SSL_REDIRECT=False,
+                       ALLOWED_HOSTS=['stage.example.test'])
     def test_prod_publication_gate_cannot_open_preview(self):
         with self._authorized(), patch.dict('os.environ', {
             'JOBIEW_HOMEPAGE_STAGING_ENABLED': '1',
             'JOBIEW_HOMEPAGE_STAGING_HOST': 'stage.example.test',
+            'JOBIEW_HOMEPAGE_PUBLIC_HOST': 'www.example.test',
             'JOBIEW_DUAL6_PUBLICATION_ENABLED': '1',
         }):
             self.assertEqual(self.client.get(self.url, HTTP_HOST='stage.example.test', secure=True).status_code, 404)

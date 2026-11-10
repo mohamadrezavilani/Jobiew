@@ -9,8 +9,16 @@
   const close = document.getElementById('close');
   const scrim = document.getElementById('scrim');
   let previousFocus = null;
+  let temporarilyInert = [];
   function showDrawer() {
+    if (!drawer.inert) return;
     previousFocus = document.activeElement;
+    // Prevent pointer/keyboard access behind the aria-modal drawer. Restore
+    // only elements we changed; respect any pre-existing inert controls.
+    temporarilyInert = Array.from(document.body.children).filter(
+      el => el !== drawer && el !== scrim && !el.inert
+    );
+    temporarilyInert.forEach(el => { el.inert = true; });
     scrim.hidden = false;
     scrim.classList.add('show');
     drawer.inert = false;
@@ -26,12 +34,18 @@
     scrim.hidden = true;
     open.setAttribute('aria-expanded', 'false');
     document.body.style.overflow = '';
+    temporarilyInert.forEach(el => { el.inert = false; });
+    temporarilyInert = [];
     if (previousFocus && previousFocus.isConnected) previousFocus.focus();
     else open.focus();
   }
   open.addEventListener('click', showDrawer);
   close.addEventListener('click', hideDrawer);
   scrim.addEventListener('click', hideDrawer);
+  document.addEventListener('focusin', (event) => {
+    // Catch programmatic focus escaping the dialog as well as Tab key presses.
+    if (!drawer.inert && !drawer.contains(event.target)) close.focus();
+  });
   document.addEventListener('keydown', (event) => {
     if (drawer.inert) return;
     if (event.key === 'Escape') {
@@ -74,7 +88,35 @@
       companyRows.has(properties.company_id);
   }
 
+  // On-demand map assets: no request to third-party map/CDN infrastructure
+  // merely because a staff user opens the private preview without verified pins.
+  function loadMapAssets() {
+    const stylesheet = document.createElement('link');
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = 'https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css';
+    stylesheet.referrerPolicy = 'no-referrer';
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js';
+    script.referrerPolicy = 'no-referrer';
+    return Promise.all([
+      new Promise((resolve, reject) => {
+        stylesheet.onload = resolve;
+        stylesheet.onerror = reject;
+        document.head.appendChild(stylesheet);
+      }),
+      new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      }),
+    ]);
+  }
+
   (async function displayVerifiedLocations() {
+    if (!companyRows.size) {
+      status('شرکتی در این صفحه وجود ندارد', 'فیلترها را تغییر دهید تا فهرست شرکت‌ها نمایش داده شود.');
+      return;
+    }
     let features;
     try {
       const result = await fetch(body.dataset.geojsonUrl, {
@@ -90,6 +132,12 @@
     if (!features.length) {
       status('موقعیت تأییدشده‌ای در این صفحه وجود ندارد',
         'نبود موقعیت روی نقشه به معنی نبود شرکت یا فعالیت آن در تهران نیست.');
+      return;
+    }
+    try {
+      if (!window.maplibregl) await loadMapAssets();
+    } catch (_error) {
+      status('بارگذاری ابزار نقشه ممکن نشد', 'فهرست شرکت‌ها بدون سرویس نقشه همچنان قابل استفاده است.');
       return;
     }
     if (!window.maplibregl || typeof maplibregl.Map !== 'function' ||
