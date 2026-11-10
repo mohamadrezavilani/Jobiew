@@ -6,7 +6,7 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('criteria_v2', '0004_checkpointapprovalreceipt_v222'),
+        ('criteria_v2', '0005_criteriacompanyreleaseevent_v224'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
     operations = [

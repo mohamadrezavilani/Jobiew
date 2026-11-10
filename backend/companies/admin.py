@@ -81,7 +81,9 @@ class CompanyAdmin(admin.ModelAdmin):
     def verification_summary(self, obj):
         identity = obj.identity_status == 'verified'
         tech = obj.tech_status == 'verified'
-        return 'تأیید هویت و فناوری' if identity and tech else 'در انتظار بررسی شرکت'
+        return format_html('<a href="{}">{} · داشبورد بررسی</a>',
+                           reverse('admin:companies_company_review', args=[obj.pk]),
+                           'تأیید هویت و فناوری' if identity and tech else 'نیازمند بررسی شرکت')
 
     @admin.display(description='مسیر اصلی مدیریت')
     def workflow_link(self, obj):
