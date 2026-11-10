@@ -36,6 +36,7 @@ class Migration(migrations.Migration):
                 ('requested_by', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT,
                     related_name='claude_six_checks', to=settings.AUTH_USER_MODEL)),
             ],
+            options={'ordering': ('-created_at', '-pk')},
         ),
         migrations.AddConstraint(
             model_name='claudesixcheck',

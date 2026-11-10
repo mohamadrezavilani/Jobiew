@@ -11,7 +11,7 @@
 <a class="button default" href="{{ wi_workflow_url }}">مشاهدهٔ وضعیت همهٔ مراحل</a>
 {% endif %}
 {% if wi_score_state.is_published %}
-<p><strong>انتشار قبلاً ثبت شده است</strong> · {{ wi_score_state.recorded_count }} پرونده در تصمیم انتشار ·
+<p><strong>تصمیم انتشار ثبت شده است</strong> · {{ wi_score_state.recorded_count }} پرونده در تصمیم انتشار ·
 {{ wi_score_state.visible_experiences }} تجربه اکنون در محاسبهٔ عمومی.</p>
 {% elif wi_score_state.release and wi_score_state.release.decision == 'held' %}
 <p>امتیازهای شرکت به تصمیم مدیر متوقف شده‌اند.</p>
