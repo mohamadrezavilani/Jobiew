@@ -20,3 +20,15 @@
 .wi-x-detail-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(240px,1fr);gap:15px}.wi-x-panel{min-width:0;padding:20px;border:1px solid var(--hairline-color,#ddd);border-radius:10px;background:var(--body-bg,#fff);margin-bottom:16px}
 .wi-x-meta{display:flex;gap:18px;flex-wrap:wrap;border-bottom:1px solid var(--hairline-color,#eee);padding-bottom:12px;margin-bottom:19px}.wi-x-meta div{flex:1 1 120px}.wi-x-meta dt,.wi-x-side dt{font-size:12px;color:var(--body-quiet-color,#75869a)}.wi-x-meta dd,.wi-x-side dd{margin:0 0 12px;overflow-wrap:anywhere}.wi-x-body{font-size:15px;line-height:2.15;overflow-wrap:anywhere;white-space:normal}.wi-x-body p{margin-bottom:14px}.wi-x-side{margin:0}.wi-x-assessment{border-top:1px solid var(--hairline-color,#ddd);padding-top:15px;margin-top:16px}.wi-x-assessment table{margin-top:10px}
 @media(max-width:800px){.wi-x-stats{grid-template-columns:repeat(2,1fr)}.wi-x-detail-grid{grid-template-columns:1fr}.wi-x-panel{padding:13px}}
+
+/* v234: secondary filters and audits stay available without crowding the list. */
+.wi-x .wi-x-advanced{flex-basis:100%;min-width:0;margin-top:2px}
+.wi-x .wi-x-advanced summary{cursor:pointer;color:var(--link-fg,#14639b);font-weight:600}
+.wi-x .wi-x-advanced-fields{display:flex;flex-wrap:wrap;gap:12px;padding:12px 0 2px}
+.wi-x .wi-x-advanced-fields label{flex:1 1 180px}
+.wi-x .wi-x-quick-actions{min-width:190px}
+.wi-x .wi-x-quick-actions a.button{display:inline-block;white-space:normal;margin:2px 0;line-height:1.6}
+.wi-x .wi-x-table details{margin-top:8px}
+.wi-x .wi-x-table details summary{cursor:pointer;white-space:normal}
+.wi-x .wi-x-table td strong{overflow-wrap:anywhere}
+@media(max-width:800px){.wi-x .wi-x-quick-actions{min-width:0}.wi-x .wi-x-quick-actions a.button{font-size:12px}}
