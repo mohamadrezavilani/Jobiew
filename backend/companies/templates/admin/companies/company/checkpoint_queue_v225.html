@@ -1,8 +1,8 @@
 {% extends "admin/base_site.html" %}
 {% block content %}
 <div id="content-main" dir="rtl">
-<h1>تأیید گروهی و انتشار شرکت‌ها</h1>
-<p>این فهرست وضعیت بازبینی و آخرین تصمیم انتشار هر شرکت را مستقیماً از دیتابیس می‌خواند؛ پس بعد از خروج و ورود مجدد هم وضعیت‌ها حفظ می‌شوند. «انتشار ثبت شده» با «امتیاز اکنون در سایت دیده می‌شود» یکسان نیست؛ برای مشاهدهٔ وضعیت زندهٔ هر شرکت وارد صفحهٔ انتشار آن شوید.</p>
+<h1>شرکت‌ها — وضعیت و قدم بعدی</h1>
+<p>نام شرکت را جست‌وجو کن و دکمهٔ «ادامهٔ کار» را بزن. صفحهٔ بعد مراحل تکمیل‌شده و اقدام بعدی را نشان می‌دهد؛ نیازی نیست برای هر کار چند بخش مختلف را پیدا کنی.</p>
 <form method="get" action="">
   <label for="q">جست‌وجوی شرکت</label>
   <input type="search" name="q" id="q" value="{{ q }}" maxlength="90">
@@ -18,13 +18,13 @@
 <td>{{ item.total }}</td><td>{{ item.pending }}</td><td>{{ item.approved }}</td><td>{{ item.no_evidence }}</td>
 <td><strong>{{ item.release_status }}</strong>{% if item.released_count %}<small> · {{ item.released_count }} پرونده در تصمیم انتشار</small>{% endif %}{% if item.released_at %}<small> · {{ item.released_at|date:"Y/m/d H:i" }}</small>{% endif %}</td>
 <td>
-<a href="{% url 'admin:companies_company_checkpoint_bulk' item.experience__company_id %}">تأیید گروهی</a>
-&nbsp;·&nbsp;
-<a href="{% url 'admin:companies_company_checkpoint_sources' item.experience__company_id %}">مدارک گروهی</a>
-&nbsp;·&nbsp;
-<a href="{% url 'admin:companies_company_checkpoint_release' item.experience__company_id %}">انتشار/توقف</a>
-&nbsp;·&nbsp;
-<a href="{% url 'admin:companies_company_experiences' item.experience__company_id %}">تجربه‌ها</a>
+<a class="button default" href="{% url 'admin:companies_company_workflow' item.experience__company_id %}">ادامهٔ کار</a>
+<details><summary>گزینه‌های تخصصی</summary>
+<a href="{% url 'admin:companies_company_checkpoint_bulk' item.experience__company_id %}">بازبینی گروهی</a> ·
+<a href="{% url 'admin:companies_company_checkpoint_sources' item.experience__company_id %}">مدارک</a> ·
+<a href="{% url 'admin:companies_company_checkpoint_release' item.experience__company_id %}">انتشار/توقف</a> ·
+<a href="{% url 'admin:companies_company_experiences' item.experience__company_id %}">نظرها</a>
+</details>
 </td></tr>
 {% empty %}<tr><td colspan="7">هیچ پرونده‌ای با این شرایط یافت نشد.</td></tr>{% endfor %}
 </tbody></table>

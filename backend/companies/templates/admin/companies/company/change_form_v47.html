@@ -1,43 +1,34 @@
 {% extends "admin/change_form.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'companies/css/admin_workflow_v233.css' %}">{% endblock %}
+{% block form_top %}
+{{ block.super }}
+<section class="jw-next" dir="rtl" style="margin:0 0 20px">
+<p class="jw-kicker">مدیریت سادهٔ شرکت</p>
+<h2>بهترین مسیر: وضعیت و قدم بعدی</h2>
+<p>به جای بازکردن چند فرم و تأیید دوباره، مسیر شرکت را از یک صفحه دنبال کن.</p>
+{% if wi_can_review_checkpoint %}
+<a class="button default" href="{{ wi_workflow_url }}">مشاهدهٔ وضعیت همهٔ مراحل</a>
+{% endif %}
+{% if wi_score_state.is_published %}
+<p><strong>تصمیم انتشار ثبت شده است</strong> · {{ wi_score_state.recorded_count }} پرونده در تصمیم انتشار ·
+{{ wi_score_state.visible_experiences }} تجربه اکنون در محاسبهٔ عمومی.</p>
+{% elif wi_score_state.release and wi_score_state.release.decision == 'held' %}
+<p>امتیازهای شرکت به تصمیم مدیر متوقف شده‌اند.</p>
+{% endif %}
+</section>
+{% endblock %}
 {% block after_field_sets %}
-  {% if wi_can_review_checkpoint %}
-  <section class="module" dir="rtl" style="padding:16px;line-height:2;">
-    <h2>امتیازهای شش‌معیاری GPT-6 — وضعیت فعلی</h2>
-    {% if wi_score_state.is_published %}
-      <p><strong>تصمیم انتشار ثبت شده است.</strong>
-      {{ wi_score_state.recorded_count }} پرونده در آخرین تصمیم ثبت شده‌اند.
-      {% if wi_score_state.visible_now %}
-        <strong>{{ wi_score_state.visible_experiences }} تجربهٔ دارای امتیاز اکنون در بخش عمومی قابل نمایش است.</strong>
-        <a href="{{ wi_public_profile_url }}">دیدن امتیازها در سایت</a>
-      {% else %}
-        <strong>فعلاً امتیازی در سایت قابل نمایش نیست:</strong> {{ wi_score_state.reason }}
-      {% endif %}</p>
-    {% elif wi_score_state.release and wi_score_state.release.decision == 'held' %}
-      <p><strong>نمایش امتیازها به تصمیم مدیر متوقف شده است.</strong></p>
-    {% else %}
-      <p><strong>هنوز انتشار نمره‌های این شرکت ثبت نشده است.</strong></p>
-    {% endif %}
-    <p>تاریخچهٔ تصمیم‌ها در دیتابیس محفوظ است؛ لینک‌های زیر برای بررسی یا تغییر تصمیم‌اند و لازم نیست تأییدهای قبلی تکرار شوند.</p>
-    <a class="button" href="{{ wi_checkpoint_bulk_url }}">تأیید گروهی تجربه‌های شرکت</a>
-    &nbsp;
-    <a class="button" href="{{ wi_checkpoint_sources_url }}">بررسی گروهی مدارک تجربه‌ها</a>
-    &nbsp;
-    <a class="button" href="{{ wi_checkpoint_release_url }}">انتشار یا توقف نمایش امتیازهای شرکت</a>
-  </section>
-  {% endif %}
-  {{ block.super }}
-  {% if wi_can_see_experiences %}
-  <section class="module" dir="rtl" style="padding:16px;line-height:2;">
-    <h2>تجربه‌ها و مصاحبه‌های ثبت‌شده</h2>
-    <p>متن کامل نظرهای واردشده از منبع، جست‌وجو، وضعیت بررسی و نتایج آزمایشی AI را برای همین شرکت ببینید.</p>
-    <a class="button" href="{{ wi_experiences_url }}">مشاهده نظرهای این شرکت</a>
-  </section>
-  {% endif %}
-  {% if wi_review_url %}
-  <section class="module" dir="rtl" style="padding:16px;line-height:2;">
-    <h2>بررسی و تأیید شرکت</h2>
-    <p>برای تأیید هویت، فناوری‌محور بودن، ارتباط با تهران و انتخاب مکان روی نقشه، از داشبورد یکپارچه استفاده کنید.</p>
-    <a class="button" href="{{ wi_review_url }}">ورود به داشبورد بررسی همین شرکت ←</a>
-  </section>
-  {% endif %}
+{{ block.super }}
+<details class="jw-secondary" dir="rtl">
+<summary>کارهای تخصصی و مدیریت مکان شرکت</summary>
+<p>در حالت معمول از «وضعیت و قدم بعدی» استفاده کن. این پیوندها برای اصلاح جزئی و حسابرسی است.</p>
+{% if wi_can_see_experiences %}<a href="{{ wi_experiences_url }}">مشاهده نظرهای این شرکت</a> · {% endif %}
+{% if wi_can_review_checkpoint %}
+<a href="{{ wi_checkpoint_bulk_url }}">بررسی امتیازهای ۶+۶</a> ·
+<a href="{{ wi_checkpoint_sources_url }}">بررسی مدارک منبع</a> ·
+<a href="{{ wi_checkpoint_release_url }}">تصمیم انتشار</a> ·
+{% endif %}
+<a href="{{ wi_review_url }}">ورود به داشبورد بررسی همین شرکت</a>
+</details>
 {% endblock %}

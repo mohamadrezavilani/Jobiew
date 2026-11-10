@@ -1,0 +1,58 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'companies/css/admin_workflow_v233.css' %}">{% endblock %}
+{% block content %}
+<main class="jw-admin" dir="rtl">
+  <nav class="jw-breadcrumb"><a href="{% url 'admin:index' %}">خانهٔ مدیریت</a> /
+  <a href="{% url 'admin:companies_company_checkpoint_queue' %}">شرکت‌ها</a> /
+  {{ company.display_name }}</nav>
+  <header class="jw-hero">
+    <div><p class="jw-kicker">وضعیت ثابت و قابل پیگیری</p><h1>مدیریت {{ company.display_name }}</h1>
+    <p>تأییدهای انجام‌شده باقی می‌مانند؛ فقط مرحلهٔ ناقص را انجام بده.</p></div>
+    <a class="jw-link" href="{{ public_url }}" target="_blank" rel="noopener">صفحهٔ عمومی شرکت</a>
+  </header>
+  <section class="jw-overview" aria-label="خلاصهٔ پرونده‌ها">
+    <div><strong>{{ total_experiences }}</strong><span>تجربهٔ واردشده</span></div>
+    <div><strong>{{ counts.approved }}</strong><span>نمره‌دار و تأییدشده</span></div>
+    <div><strong>{{ counts.pending }}</strong><span>در انتظار بررسی</span></div>
+    <div><strong>{{ public_state.visible_experiences }}</strong><span>در نمایش عمومی</span></div>
+  </section>
+  {% if unscored_experiences %}
+  <p class="jw-hint">{{ unscored_experiences }} تجربه هنوز در checkpointهای شش‌معیاری واردشده تحلیل ندارد.
+  برای آن‌ها امتیاز قدیمی پنج‌معیاری استفاده نمی‌شود؛ ورود تحلیل‌های جدید یک مرحلهٔ مستقل است.</p>
+  {% endif %}
+  <section class="jw-next" aria-labelledby="jw-next-label">
+    <p class="jw-kicker">قدم بعدی پیشنهادی</p>
+    <h2 id="jw-next-label">{{ next.label }}</h2>
+    <a class="button default" href="{{ next.url }}">{{ next.action }}</a>
+  </section>
+  <section class="jw-steps" aria-label="مسیر اصلی کار">
+    <h2>مراحل از دریافت نظر تا انتشار امتیاز</h2>
+    <ol>
+      {% for row in steps %}
+      <li class="jw-step">
+        <div class="jw-step-main">
+          <div class="jw-step-heading"><h3>{{ row.label }}</h3>
+          {% if row.complete %}<span class="jw-status jw-ok">تکمیل‌شده</span>
+          {% else %}<span class="jw-status jw-pending">نیازمند اقدام</span>{% endif %}</div>
+          <p>{{ row.description }}</p>
+        </div>
+        <a href="{{ row.url }}">{% if row.complete %}مشاهدهٔ نتیجه{% else %}{{ row.action }}{% endif %}</a>
+      </li>
+      {% endfor %}
+    </ol>
+    <p class="jw-hint">شرط «مجوز استفاده از منابع» با انتخاب گروهیِ نظرها یا تأیید امتیازها خودکار ثبت نمی‌شود.
+    انتشار متن خام نظر نیز مجوز مستقل لازم دارد.</p>
+  </section>
+  <details class="jw-secondary">
+    <summary>تنظیمات تکمیلی شرکت و نقشه</summary>
+    <p>وضعیت پین نقشه: {% if location_state.visible %}<strong>قابل نمایش</strong>{% else %}<strong>نمایش داده نمی‌شود</strong>{% endif %}.
+    این مورد از امتیازهای ۶+۶ مستقل است.</p>
+    {% if location_state.missing %}
+    <p>{% for gate in location_state.missing %}{{ gate.label }}{% if not forloop.last %}، {% endif %}{% endfor %} نیاز به بررسی دارد.</p>
+    {% endif %}
+    <p><a href="{% url 'admin:companies_company_review' company.pk %}#map-visibility">بررسی نقشه و مشخصات</a> ·
+    <a href="{% url 'admin:companies_company_change' company.pk %}">فیلدهای فنی شرکت</a></p>
+  </details>
+</main>
+{% endblock %}

@@ -7,6 +7,8 @@ from .pilot_review_queue_v48 import pilot_review_queue
 from .checkpoint_admin_queue_v225 import checkpoint_review_queue
 from .quick_company_review_v226 import quick_company_review
 from .provenance_bulk_review_v228 import provenance_review
+from .workflow_v233 import company_workflow
+from criteria_v2.claude_six_admin_v233 import company_claude_review
 from criteria_v2.checkpoint_bulk_review_v222 import company_bulk_review
 from criteria_v2.company_release_v224 import company_release
 from .models import Company, CompanyVerificationEvent
@@ -14,9 +16,9 @@ from .models import Company, CompanyVerificationEvent
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('display_name', 'identity_status', 'tech_status', 'tehran_status',
-                    'source_work_count', 'source_interview_count', 'vote_enabled', 'experiences_link', 'review_link',
-                    'checkpoint_bulk_link', 'checkpoint_release_link')
+    list_display = ('display_name', 'verification_summary',
+                    'source_work_count', 'source_interview_count',
+                    'experiences_link', 'workflow_link')
     list_filter = ('identity_status', 'tech_status', 'tehran_status', 'vote_enabled')
     search_fields = ('display_name', 'source_url', 'source_name')
     readonly_fields = ('id', 'source_url', 'source_name', 'identity_status', 'tech_status',
@@ -32,12 +34,14 @@ class CompanyAdmin(admin.ModelAdmin):
             fields.remove('experiences_link')
         if not (request.user.has_perm('criteria_v2.view_criteriaanalysis') and
                 request.user.has_perm('experiences.view_publicexperience')):
-            fields.remove('checkpoint_bulk_link')
-            fields.remove('checkpoint_release_link')
+            fields.remove('workflow_link')
         return tuple(fields)
 
     def get_urls(self):
         return [
+            path('<path:object_id>/workflow/',
+                 self.admin_site.admin_view(self.workflow_view),
+                 name='companies_company_workflow'),
             path('checkpoints/', self.admin_site.admin_view(self.checkpoint_queue_view),
                  name='companies_company_checkpoint_queue'),
             path('<path:object_id>/checkpoint/verify/',
@@ -52,6 +56,9 @@ class CompanyAdmin(admin.ModelAdmin):
             path('<path:object_id>/checkpoint/release/',
                  self.admin_site.admin_view(self.checkpoint_release_view),
                  name='companies_company_checkpoint_release'),
+            path('<path:object_id>/experiences/<int:experience_id>/claude-six/',
+                 self.admin_site.admin_view(self.claude_six_view),
+                 name='companies_company_claude_six'),
             path('<path:object_id>/experiences/<int:experience_id>/',
                  self.admin_site.admin_view(self.experience_detail_view),
                  name='companies_company_experience_detail'),
@@ -63,6 +70,25 @@ class CompanyAdmin(admin.ModelAdmin):
             path('<path:object_id>/review/', self.admin_site.admin_view(self.review_view),
                  name='companies_company_review'),
         ] + super().get_urls()
+
+    def workflow_view(self, request, object_id):
+        return company_workflow(self, request, object_id)
+
+    def claude_six_view(self, request, object_id, experience_id):
+        return company_claude_review(self, request, object_id, experience_id)
+
+    @admin.display(description='پیشرفت تأیید شرکت')
+    def verification_summary(self, obj):
+        identity = obj.identity_status == 'verified'
+        tech = obj.tech_status == 'verified'
+        return format_html('<a href="{}">{} · داشبورد بررسی</a>',
+                           reverse('admin:companies_company_review', args=[obj.pk]),
+                           'تأیید هویت و فناوری' if identity and tech else 'نیازمند بررسی شرکت')
+
+    @admin.display(description='مسیر اصلی مدیریت')
+    def workflow_link(self, obj):
+        return format_html('<a href="{}">وضعیت و قدم بعدی</a>',
+                           reverse('admin:companies_company_workflow', args=[obj.pk]))
 
     def quick_company_review_view(self, request, object_id):
         return quick_company_review(self, request, object_id)
@@ -113,6 +139,7 @@ class CompanyAdmin(admin.ModelAdmin):
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         extra_context = dict(extra_context or {})
+        extra_context['wi_workflow_url'] = reverse('admin:companies_company_workflow', args=[object_id])
         extra_context['wi_review_url'] = reverse('admin:companies_company_review', args=[object_id])
         extra_context['wi_experiences_url'] = reverse('admin:companies_company_experiences', args=[object_id])
         extra_context['wi_can_see_experiences'] = request.user.has_perm('experiences.view_publicexperience')

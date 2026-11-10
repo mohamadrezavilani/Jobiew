@@ -6,7 +6,7 @@ comments, old ratings, and source text are not editable here.
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent, CheckpointApprovalReceipt, CriteriaCompanyReleaseEvent
+from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent, CheckpointApprovalReceipt, CriteriaCompanyReleaseEvent, ClaudeSixCheck
 
 
 class AuditOnlyAdmin(admin.ModelAdmin):
@@ -82,3 +82,12 @@ class CriteriaCompanyReleaseEventAdmin(AuditOnlyAdmin):
     list_display = ('company', 'decision', 'reviewer', 'created_at')
     list_filter = ('decision', 'created_at')
     list_select_related = ('company', 'reviewer')
+
+@admin.register(ClaudeSixCheck)
+class ClaudeSixCheckAdmin(AuditOnlyAdmin):
+    """Searchable historical Claude runs; never edit or delete audit responses."""
+    list_display = ('analysis', 'status', 'model_id', 'requested_by', 'created_at')
+    list_filter = ('status', 'model_id', 'created_at')
+    search_fields = ('analysis__experience__company__display_name',
+                     'analysis__experience__source_url', 'model_id')
+    list_select_related = ('analysis', 'requested_by')

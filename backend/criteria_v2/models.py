@@ -239,3 +239,6 @@ class CriteriaCompanyReleaseEvent(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError('Company releases are append-only')
+
+# Current six-axis independent second-opinion audit; separate from historical five_v1.
+from .claude_six_models_v233 import ClaudeSixCheck

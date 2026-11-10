@@ -1,36 +1,60 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'companies/css/admin_workflow_v233.css' %}">{% endblock %}
 {% block content %}
-<div id="content-main" dir="rtl">
-  <section class="module" style="margin-bottom:24px;padding:18px;line-height:2;">
-    <h2>مسیر اصلی کار: یک شرکت، از بررسی تا انتشار</h2>
-    <p>نمره‌های خصوصی را از اینجا برای هر شرکت مرور و گروهی تأیید کنید. انتشار عمومی یک تصمیم جداگانه است و فقط با حقوق منبع، انتساب، استقلال و شواهد ثبت‌شده انجام می‌شود.</p>
-    {% if perms.criteria_v2.view_criteriaanalysis and perms.experiences.view_publicexperience %}
-      <p><a class="button" href="{% url 'admin:companies_company_checkpoint_queue' %}">پرونده‌های شرکت‌ها و تأیید گروهی GPT-6</a></p>
-    {% endif %}
-    {% if perms.companies.view_company %}
-      <p><a href="{% url 'admin:companies_company_changelist' %}">مدیریت و جست‌وجوی همهٔ شرکت‌ها</a></p>
-    {% endif %}
-    {% if perms.experiences.view_publicexperience %}
-      <p><a href="{% url 'admin:experiences_publicexperience_changelist' %}">فهرست تجربه‌ها و مصاحبه‌ها</a></p>
-    {% endif %}
-    <p style="color:var(--body-quiet-color)">منوی زیر فقط امکانات موردنیاز را نشان می‌دهد. داده‌ها، سوابق نسخه‌های قبلی و تاریخچهٔ حسابرسی حذف نشده‌اند.</p>
-  </section>
-  {% for app in app_list %}
-    <div class="app-{{ app.app_label }} module">
-      <table>
-        <caption><a href="{{ app.app_url }}" class="section" title="{{ app.name }}">{{ app.name }}</a></caption>
-        {% for model in app.models %}
-          <tr class="model-{{ model.object_name|lower }}">
-            <th scope="row">
-              {% if model.admin_url %}<a href="{{ model.admin_url }}">{{ model.name }}</a>
-              {% else %}{{ model.name }}{% endif %}
-            </th>
-            <td>{% if model.add_url %}<a href="{{ model.add_url }}">افزودن</a>{% endif %}</td>
-          </tr>
-        {% endfor %}
-      </table>
-    </div>
-  {% endfor %}
+<div id="content-main" dir="rtl" class="jw-admin jw-home">
+<section class="jw-intro">
+<p class="jw-kicker">پنل سادهٔ مدیریت جابیو · ۶+۶</p>
+<h2>از دریافت تجربه تا انتشار امتیاز</h2>
+<p>برای هر شرکت یک مسیر مشخص داریم. کارهای تکمیل‌شده را دوباره انجام نده؛ در «وضعیت و قدم بعدی» مرحلهٔ باقی‌مانده را ببین.</p>
+{% if perms.companies.view_company %}
+<form action="{% url 'admin:companies_company_changelist' %}" method="get">
+<label for="jw-company-search">پیدا کردن شرکت</label>
+<input type="search" id="jw-company-search" name="q" placeholder="مثلاً: اسنپ، شیپور" maxlength="90">
+<button class="button default" type="submit">پیدا کن</button>
+</form>
+{% endif %}
+{% if jw_counts %}
+<div class="jw-overview" aria-label="آمار ثبت‌شده">
+<div><strong>{{ jw_counts.experiences }}</strong><span>تجربهٔ واردشده</span></div>
+<div><strong>{{ jw_counts.checkpoint }}</strong><span>پروندهٔ شش‌معیاری</span></div>
+<div><strong>{{ jw_counts.reviewed }}</strong><span>بررسی‌شده</span></div>
+<div><strong>{{ jw_counts.pending }}</strong><span>در انتظار بازبینی</span></div>
+</div>
+{% endif %}
+</section>
+<div class="jw-links">
+{% if perms.criteria_v2.view_criteriaanalysis and perms.experiences.view_publicexperience %}
+<a href="{% url 'admin:companies_company_checkpoint_queue' %}">
+<strong>۱. شرکت‌ها و قدم بعدی</strong><span>تمام مسیرهای تأیید و انتشار، به تفکیک شرکت</span></a>
+{% endif %}
+{% if perms.experiences.view_publicexperience %}
+<a href="{% url 'admin:experiences_publicexperience_changelist' %}">
+<strong>۲. تجربه‌ها و مصاحبه‌ها</strong><span>جست‌وجوی متن، بررسی GPT-6 و نتیجهٔ Claude</span></a>
+{% endif %}
+{% if perms.companies.view_company %}
+<a href="{% url 'admin:companies_company_changelist' %}">
+<strong>۳. مدیریت شرکت‌ها</strong><span>اطلاعات، تأیید هویت و نقشه در صورت نیاز</span></a>
+{% endif %}
+</div>
+<p class="jw-hint">ورود فایل جدیدِ نظرات و checkpoint فعلاً از فرایند import کنترل‌شدهٔ سرور انجام می‌شود؛ این صفحه دکمهٔ آپلود مستقیم ندارد.
+بررسی Claude اختیاری است و برای استفاده از سرویس خارجی نیاز به مجوز معتبر متن و فعال‌سازی جداگانه دارد.</p>
+<details>
+<summary>امکانات فنی و تاریخچهٔ حسابرسی</summary>
+<p>جداول زیر برای بررسی تخصصی و نگهداری سوابق‌اند. استفادهٔ روزمره از سه مسیر بالای صفحه آسان‌تر است.</p>
+{% for app in app_list %}
+<div class="app-{{ app.app_label }} module">
+<table>
+<caption>{{ app.name }}</caption>
+{% for model in app.models %}
+<tr class="model-{{ model.object_name|lower }}">
+<th scope="row">{% if model.admin_url %}<a href="{{ model.admin_url }}">{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}</th>
+<td>{% if model.add_url %}<a href="{{ model.add_url }}">ثبت رویداد مستند</a>{% endif %}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+{% endfor %}
+</details>
 </div>
 {% endblock %}
