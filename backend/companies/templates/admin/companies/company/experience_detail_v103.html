@@ -4,7 +4,7 @@
 {% block content %}
 <main class="wi-x" dir="rtl">
   <div class="wi-x-bar"><div><p class="wi-x-over">متن کامل محتوای واردشده · فقط مدیران</p><h1>{{ experience.title }}</h1><p>{{ company.display_name }} · {{ experience.get_source_kind_display }}{% if experience.job_title %} · {{ experience.job_title }}{% endif %}</p></div>
-    <div class="wi-x-nav"><a href="{{ company_experiences_url }}">بازگشت به نظرهای شرکت</a><a href="{{ company_change_url }}">مشخصات شرکت</a>{% if experience.safe_source_url %}<a href="{{ experience.safe_source_url }}" target="_blank" rel="noopener noreferrer">منبع اصلی ↗</a>{% endif %}</div></div>
+    <div class="wi-x-nav"><a href="{{ company_experiences_url }}">بازگشت به نظرهای شرکت</a>{% if can_view_claude %}<a class="button default" href="{% url 'admin:companies_company_experience_claude' company.pk experience.pk %}">{% if last_claude %}دیدن نتیجهٔ Claude{% else %}بررسی با Claude{% endif %}</a>{% endif %}<a href="{{ company_change_url }}">مشخصات شرکت</a>{% if experience.safe_source_url %}<a href="{{ experience.safe_source_url }}" target="_blank" rel="noopener noreferrer">منبع اصلی ↗</a>{% endif %}</div></div>
   <div class="wi-x-detail-grid">
     <section class="wi-x-panel"><h2>متن تجربه / مصاحبه</h2>
       <dl class="wi-x-meta"><div><dt>تاریخ انتشار در منبع</dt><dd>{{ experience.published_jalali|default:'نامشخص' }}</dd></div><div><dt>دوره اشتغال</dt><dd>{{ experience.employment_period_jalali|default:'نامشخص' }}</dd></div><div><dt>زمان ورود به Jobiew</dt><dd>{{ experience.imported_at|date:'Y/m/d H:i' }}</dd></div></dl>
@@ -24,7 +24,11 @@
   </div>
   <section class="wi-x-panel wi-x-ai" id="six-axes">
     <h2>ارزیابی ۶معیاری GPT-6 — {% if experience.source_kind == 'work' %}شرایط کاری{% else %}مصاحبهٔ استخدام{% endif %}</h2>
-    <p class="wi-x-note">چارچوب اختصاصی شامل دقیقاً ۶ محور برای همین نوع تجربه است. نمره‌های فاقد شاهد «نامشخص» هستند، نه صفر. تأیید AI با مجوز بازنشر منبع متفاوت است.</p>
+    <p class="wi-x-note">برای این نوع تجربه دقیقاً شش معیار مستقل بررسی می‌شود. «بدون شاهد» به معنی صفر نیست؛ بازبینی امتیاز و مجوز انتشار جدا هستند.</p>
+    {% if can_view_claude %}
+      <p><a class="button default" href="{% url 'admin:companies_company_experience_claude' company.pk experience.pk %}">{% if last_claude %}دیدن مقایسهٔ GPT-6 و Claude{% else %}درخواست بررسی مستقل با Claude{% endif %}</a>
+      {% if last_claude %}<small>آخرین مقایسه: {{ last_claude.created_at|date:"Y/m/d H:i" }}</small>{% endif %}</p>
+    {% endif %}
     {% if not can_view_six %}
       <p role="status">نمایش پرونده‌های GPT-6 فقط برای بازبینِ مجاز در محیط خصوصی فعال است.</p>
     {% elif not six_run %}
@@ -58,6 +62,11 @@
     <p>برای تأیید حقوق استفاده از این منبع، انتساب و مستقل‌بودن روایت، هر تصمیم را جداگانه و با مدرک واقعی ثبت کنید:
     <a href="{% url 'admin:experiences_experiencereviewevent_add' %}?experience={{ experience.pk }}">ثبت بررسی منبع این تجربه</a>.</p>
   </section>
-
+  {% if legacy_assessment %}
+    <details class="wi-x-panel"><summary>سوابق قدیمی پنج‌معیاری (فقط برای مراجعه)</summary>
+      <p>فراخوانی جدید Claude در این چارچوب قدیمی متوقف شده است؛ نتایج تاریخی، در صورت وجود، حفظ شده‌اند.</p>
+      <a href="{% url 'admin:assessments_aiassessment_claude_detail' legacy_assessment.pk %}">صحت‌سنجی با Claude و مقایسهٔ پنج شاخص (آرشیوی)</a>
+    </details>
+  {% endif %}
 </main>
 {% endblock %}
