@@ -5,9 +5,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light">
+  {% if is_public_home %}
+  <meta name="description" content="جابیو؛ جست‌وجو و شناخت شرکت‌ها از طریق اطلاعات آرشیوی، وضعیت راستی‌آزمایی و نقشهٔ مکان‌های تأییدشده، بدون امتیازهای منتشرنشده.">
+  <title>جابیو | شناخت و مقایسه شرکت‌ها</title>
+  {% else %}
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="description" content="پیش‌نمایش خصوصی طراحی صفحه نخست جابیو با داده‌های قابل نمایش عمومی و بدون امتیاز تأییدنشده">
   <title>پیش‌نمایش صفحهٔ نخست | جابیو</title>
+  {% endif %}
   <link rel="icon" type="image/svg+xml" href="{% static 'companies/img/jobiew_symbol_home_v219.svg' %}">
   <link rel="stylesheet" href="{% static 'companies/css/jobiew_vazir_v110.css' %}">
   <link rel="stylesheet" href="{% static 'companies/css/homepage_preview_v219.css' %}">
@@ -18,7 +23,11 @@
       data-geojson-url="{% url 'verified-company-locations' %}"
       data-map-fallback-url="{% url 'company-map' %}">
   <a class="home-skip" href="#main-content">رفتن به محتوا</a>
+  {% if is_public_home %}
+  <p class="preview-note" role="note">نام‌ها و شمارنده‌ها از آرشیو قابل فهرست هستند؛ هویت شرکت‌ها و ارزیابی‌های شش‌معیاری وضعیت تأیید مستقل دارند. تا زمان انتشار مجاز، امتیازی نشان داده نمی‌شود.</p>
+  {% else %}
   <p class="preview-note" role="status">پیش‌نمایش خصوصی طراحی؛ نام‌ها از آرشیو فعلی و شمارنده‌ها فقط از تجربه‌های قابل فهرست عمومی هستند؛ این‌ها امتیاز تأییدشده نیستند. هیچ امتیاز شرکت منتشر نشده است.</p>
+  {% endif %}
   <header class="top">
     <div class="brand"><a href="{% url 'company-index' %}" aria-label="جابیو، بازگشت به فهرست فعلی"><img class="brand-logo" src="{% static 'companies/img/jobiew_logo_home_v219.svg' %}" alt="جابیو" width="142" height="45"></a></div>
     <nav aria-label="ناوبری صفحه">
@@ -27,7 +36,7 @@
       <a href="#about-framework">راهنمای ارزیابی</a>
       <a href="#about-data">جابیو چطور کار می‌کند؟</a>
     </nav>
-    <div class="actions"><a class="btn" href="{% url 'company-index' %}">فهرست فعلی</a><a class="btn primary" href="{% url 'company-map' %}">نقشهٔ تأییدشده</a></div>
+    <div class="actions"><a class="btn" href="{{ company_directory_url }}">{% if is_public_home %}فهرست شرکت‌ها{% else %}فهرست فعلی{% endif %}</a><a class="btn primary" href="{% url 'company-map' %}">نقشهٔ تأییدشده</a></div>
   </header>
   <main id="main-content">
     <section class="intro">
@@ -39,7 +48,7 @@
     </section>
 
     <section class="searchrow" aria-label="جست‌وجو و فیلتر">
-      <form method="get" action="{% url 'homepage-preview-v219' %}" role="search" id="homepage-search-form">
+      <form method="get" action="{{ homepage_action_url }}" role="search" id="homepage-search-form">
         <input type="hidden" name="mode" value="{{ mode }}">
         <input type="hidden" name="sort" value="{{ sort }}">
         {% if verified %}<input type="hidden" name="verified" value="1">{% endif %}
@@ -96,7 +105,7 @@
               </div>
             </a>
           {% empty %}
-            <div class="homepage-empty"><strong>شرکتی با این فیلترها پیدا نشد.</strong><p>جست‌وجو یا فیلترها را تغییر دهید.</p><a href="{% url 'homepage-preview-v219' %}">پاک‌کردن فیلترها</a></div>
+            <div class="homepage-empty"><strong>شرکتی با این فیلترها پیدا نشد.</strong><p>جست‌وجو یا فیلترها را تغییر دهید.</p><a href="{{ homepage_action_url }}">پاک‌کردن فیلترها</a></div>
           {% endfor %}
         </div>
         {% if page.paginator.num_pages > 1 %}
@@ -115,7 +124,7 @@
       <p>امتیازهای شرایط کاری و شرایط مصاحبه دو چارچوب مستقل هستند. نمودارهای خالی نشان‌دهندهٔ صفر یا ارزیابی منفی نیستند: هیچ امتیاز تأییدنشده‌ای در این صفحه استفاده نشده است. نمایش عمومیِ امتیازها نیازمند تأیید منبع، انتساب، کیفیت و تصمیم مستقل انتشار است.</p>
     </article>
     <article id="about-data"><h2>اطلاعات شرکت‌ها از کجا می‌آیند؟</h2>
-      <p>نام شرکت‌ها از آرشیو دارای منشأ خارجی می‌آید و شمار تجربه‌های این فهرست فقط رکوردهای قابل فهرست عمومی، پس از حذف موارد ردشده، مسدودشده و تکراری، را دربر می‌گیرد. این فرایند به معنی تأیید هویت یا کیفیت شرکت نیست. نقشه فقط نقاط تأییدشده را می‌خواند. برای شناخت محدودیت‌های هر شرکت، <a href="{% url 'company-index' %}">فهرست و پروفایل‌های فعلی</a> را ببینید.</p>
+      <p>نام شرکت‌ها از آرشیو دارای منشأ خارجی می‌آید و شمار تجربه‌های این فهرست فقط رکوردهای قابل فهرست عمومی، پس از حذف موارد ردشده، مسدودشده و تکراری، را دربر می‌گیرد. این فرایند به معنی تأیید هویت یا کیفیت شرکت نیست. نقشه فقط نقاط تأییدشده را می‌خواند. برای شناخت محدودیت‌های هر شرکت، <a href="{{ company_directory_url }}">فهرست و پروفایل‌های شرکت‌ها</a> را ببینید.</p>
     </article>
   </section>
   <footer class="site-footer">
@@ -124,13 +133,13 @@
       <div class="footer-group"><h2>دربارهٔ جابیو</h2><a href="#about-data">منشأ اطلاعات</a><a href="{% url 'company-index' %}">فهرست شرکت‌ها</a></div>
       <div class="footer-group"><h2>راهنما و شفافیت</h2><a href="#about-framework">چارچوب ارزیابی ۶+۶</a><a href="{% url 'company-map' %}">نقشهٔ مکان‌های تأییدشده</a></div>
     </div>
-    <div class="footer-bottom"><span>© جابیو · پیش‌نمایش خصوصی صفحهٔ نخست · بدون انتشار امتیازهای تأییدنشده</span></div>
+    <div class="footer-bottom"><span>© جابیو · {% if not is_public_home %}پیش‌نمایش خصوصی صفحهٔ نخست · {% endif %}بدون انتشار امتیازهای تأییدنشده</span></div>
   </footer>
 
   <div class="scrim" id="scrim" hidden></div>
   <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="filter-title" inert>
     <div class="dhead"><div><h2 id="filter-title">فیلتر شرکت‌ها</h2><p>فیلترهای قابل اتکا روی آرشیو فعلی</p></div><button type="button" class="close" id="close" aria-label="بستن فیلترها">×</button></div>
-    <div class="dcontent"><form method="get" action="{% url 'homepage-preview-v219' %}" class="filters-form">
+    <div class="dcontent"><form method="get" action="{{ homepage_action_url }}" class="filters-form">
       <input type="hidden" name="mode" value="{{ mode }}"><input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="q" value="{{ q }}">
       <p class="warning">فیلتر امتیازهای شش‌محوری هنوز فعال نیست، چون دادهٔ تأییدشدهٔ قابل انتشار نداریم. فیلترهای زیر فقط بر اساس وضعیت ثبت و راستی‌آزمایی شرکت‌ها کار می‌کنند.</p>
       <fieldset><legend>راستی‌آزمایی و آرشیو</legend>
@@ -141,7 +150,7 @@
         <ul class="six-criteria">{% for axis in criteria_axes %}<li>{{ axis.label }}</li>{% endfor %}</ul>
         <p>فیلتر حداقل نمره تنها پس از تأیید داده‌ها فعال خواهد شد.</p>
       </fieldset>
-      <button class="apply" type="submit">اعمال فیلترهای مجاز</button><a class="reset" href="{% url 'homepage-preview-v219' %}?mode={{ mode }}">حذف فیلترها</a>
+      <button class="apply" type="submit">اعمال فیلترهای مجاز</button><a class="reset" href="{{ homepage_action_url }}?mode={{ mode }}">حذف فیلترها</a>
     </form></div>
   </aside>
 </body>
