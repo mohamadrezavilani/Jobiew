@@ -29,19 +29,29 @@ from .registry import version_for
 MAX_RELEASE_RUNS = 1000
 
 
-def _latest_rights(exp):
+def _missing_source_rights(exp):
+    """Check all three source predicates, even when the company is not approved.
+
+    Aggregate blockers are independent, so a missing company identity cannot
+    mask 39 pending copyright decisions in the UI.
+    """
     required = (('copyright', 'approved', exp.copyright_review),
                 ('attribution', 'verified', exp.company_attribution_status),
                 ('independence', 'verified', exp.independence_status))
-    for field, expected, status in required:
-        if status != expected:
-            return False
-        event = (ExperienceReviewEvent.objects.filter(experience_id=exp.pk, review_field=field)
-                 .order_by('-created_at', '-pk').first())
-        if (event is None or event.decision != expected or
-                not isinstance(event.evidence_url, str) or not event.evidence_url.strip()):
-            return False
-    return True
+    missing = []
+    for field, expected, value in required:
+        event = (ExperienceReviewEvent.objects.filter(
+            experience_id=exp.pk, review_field=field
+        ).order_by('-created_at', '-pk').first())
+        if (value != expected or event is None or event.decision != expected
+                or not isinstance(event.evidence_url, str)
+                or not event.evidence_url.strip()):
+            missing.append(field)
+    return missing
+
+
+def _latest_rights(exp):
+    return not _missing_source_rights(exp)
 
 
 def _current_classification(exp):
@@ -66,10 +76,17 @@ def publication_candidates(company):
         .order_by('experience_id', '-created_at', '-pk'))
     seen = set()
     proofs = {}
-    status = {'pending': 0, 'human_reviewed': 0, 'cleared': 0,
-              'blocked_provenance': 0, 'invalid_or_changed': 0,
-              'company_verified': (company.identity_status == 'verified'
-                                   and company.tech_status == 'verified')}
+    status = {
+        'pending': 0, 'human_reviewed': 0, 'cleared': 0,
+        'blocked_provenance': 0, 'invalid_or_changed': 0, 'no_numeric': 0,
+        'copyright_missing': 0, 'attribution_missing': 0,
+        'independence_missing': 0, 'classification_missing': 0,
+        'source_examples': [],
+        'company_identity_missing': company.identity_status != 'verified',
+        'company_tech_missing': company.tech_status != 'verified',
+        'company_verified': (company.identity_status == 'verified'
+                             and company.tech_status == 'verified'),
+    }
     for run in qs:
         exp = run.experience
         if exp.pk in seen:
@@ -82,13 +99,28 @@ def publication_candidates(company):
             continue
         if run.review_status == 'no_evaluable_scores':
             status['human_reviewed'] += 1
+            status['no_numeric'] += 1
             continue
         if run.review_status != 'approved':
             status['invalid_or_changed'] += 1
             continue
         status['human_reviewed'] += 1
-        if (not status['company_verified'] or not _latest_rights(exp) or
-                not _current_classification(exp)):
+        source_gaps = _missing_source_rights(exp)
+        if not _current_classification(exp):
+            source_gaps.append('classification')
+        for field in source_gaps:
+            status[field + '_missing'] += 1
+        if source_gaps and len(status['source_examples']) < 12:
+            status['source_examples'].append({
+                'experience_id': exp.pk,
+                'source_kind': exp.source_kind,
+                'gaps': [
+                    dict(copyright='مجوز انتشار منبع', attribution='انتساب به شرکت',
+                         independence='استقلال روایت', classification='دسته‌بندی تجربه')[key]
+                    for key in source_gaps
+                ],
+            })
+        if not status['company_verified'] or source_gaps:
             status['blocked_provenance'] += 1
             continue
         if not checkpoint_release_ready(run):

@@ -20,17 +20,79 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 <div class="notice">انتشار شرکت با تأیید گروهی نمره‌ها فرق دارد. فقط پرونده‌هایی که شش معیارشان بازبینی شده و مجوز انتشار، انتساب، استقلال و دسته‌بندی آن‌ها جداگانه با سند ثبت شده، قابل انتشار هستند. متن خام نظرها در این مرحله عمومی نمی‌شود.</div>
 {% for message in messages %}<p>{{ message }}</p>{% endfor %}
 <section>
-<h2>وضعیت بررسی</h2>
+<h2>وضعیت شرکت و امتیازها</h2>
 <table>
-<tr><th>نمره‌های قابل انتشار با مدارک کامل</th><td>{{ eligible_count }}</td></tr>
-<tr><th>در انتظار بازبینی نمره</th><td>{{ stats.pending }}</td></tr>
-<tr><th>دارای بازبینی انسانی</th><td>{{ stats.human_reviewed }}</td></tr>
-<tr><th>فاقد تأییدهای منبع/شرکت</th><td>{{ stats.blocked_provenance }}</td></tr>
+<tr><th>نمره‌های قابل انتشار با مدارک کامل</th><td><strong>{{ eligible_count }}</strong></td></tr>
+<tr><th>بازبینی انسانی انجام‌شده</th><td>{{ stats.human_reviewed }}</td></tr>
+<tr><th>در انتظار تأیید امتیاز</th><td>{{ stats.pending }}</td></tr>
+<tr><th>فاقد نمرهٔ عددی (abstain)</th><td>{{ stats.no_numeric }}</td></tr>
+<tr><th>فاقد دست‌کم یکی از شرایط انتشار</th><td>{{ stats.blocked_provenance }}</td></tr>
 <tr><th>نامعتبر یا تغییرکرده</th><td>{{ stats.invalid_or_changed }}</td></tr>
-<tr><th>هویت و حوزهٔ شرکت تأیید شده</th><td>{% if stats.company_verified %}بله{% else %}خیر{% endif %}</td></tr>
 <tr><th>آخرین تصمیم انتشار</th><td>{% if current %}{{ current.get_decision_display }}{% else %}هنوز تصمیمی ثبت نشده{% endif %}</td></tr>
-<tr><th>گیت‌های نمایش در سایت</th><td>{% if public_enabled %}فعال{% else %}غیرفعال؛ حتی پس از ثبت تصمیم، نمره عمومی نمی‌شود{% endif %}</td></tr>
-</table></section>
+<tr><th>گیت‌های نمایش در سایت</th><td>{% if public_enabled %}فعال{% else %}غیرفعال؛ حتی پس از ثبت تصمیم، امتیاز عمومی نمی‌شود{% endif %}</td></tr>
+</table>
+</section>
+<section id="release-blockers">
+<h2>چرا همهٔ امتیازها هنوز قابل انتشار نیستند؟</h2>
+<p>موارد زیر <strong>مستقل از هم</strong> شمرده شده‌اند؛ ممکن است یک تجربه هم‌زمان چند مدرک کم داشته باشد. تأیید ۶ معیار با مجوز استفاده از منبع یکسان نیست.</p>
+{% if stats.company_identity_missing or stats.company_tech_missing %}
+<div class="notice" role="status">
+<h3>قدم ۱: تأیید خود شرکت</h3>
+<p>
+هویت شرکت: {% if stats.company_identity_missing %}<strong>هنوز تأیید نشده</strong>{% else %}تأییدشده{% endif %}
+· فعالیت فناوری: {% if stats.company_tech_missing %}<strong>هنوز تأیید نشده</strong>{% else %}تأییدشده{% endif %}
+</p>
+<p>برای انتشار نمره‌ها تأیید تهران و موقعیت دفتر لازم نیست. در صفحهٔ کوتاه زیر، لینک مدرک پیشنهاد می‌شود و نیازی به نوشتن توضیح تکراری نیست.</p>
+<p><a class="button" href="{% url 'admin:companies_company_checkpoint_verify' company.pk %}"><strong>بررسی و تأیید آسان شرکت</strong></a></p>
+</div>
+{% else %}
+<p><strong>هویت و حوزهٔ فناوری شرکت تأیید شده‌اند.</strong>
+<a href="{% url 'admin:companies_company_checkpoint_verify' company.pk %}">مشاهدهٔ تأییدهای شرکت</a></p>
+{% endif %}
+{% if stats.copyright_missing or stats.attribution_missing or stats.independence_missing or stats.classification_missing %}
+<div class="notice" role="status">
+<h3>قدم ۲: مدارک تجربه‌ها و نظرات</h3>
+<p>از میان پرونده‌های تأییدشده و نمره‌دار، تعداد مواردی که این تأییدهای مستقل را ندارند:</p>
+<table>
+<tr><th>مجوز واقعی استفاده و انتشار منبع</th><td><strong>{{ stats.copyright_missing }}</strong></td></tr>
+<tr><th>انتساب درست تجربه به این شرکت</th><td><strong>{{ stats.attribution_missing }}</strong></td></tr>
+<tr><th>غیرتکراری و مستقل بودن تجربه</th><td><strong>{{ stats.independence_missing }}</strong></td></tr>
+<tr><th>تأیید نوع تجربه (کاری یا مصاحبه)</th><td><strong>{{ stats.classification_missing }}</strong></td></tr>
+</table>
+<p>لینک منبع به‌تنهایی مجوز بازنشر نیست. فقط برای تجربه‌هایی که واقعاً مدرک دارند، در پنل رویداد بررسی ثبت کن.</p>
+<p><a class="button" href="{% url 'admin:companies_company_experiences' company.pk %}">دیدن تجربه‌های این شرکت و مدارکشان</a>
+&nbsp; <a href="{% url 'dual-criteria-review-queue' %}">صف تأیید نوع تجربه‌ها</a></p>
+{% if stats.source_examples %}
+<details>
+<summary>نمایش نمونهٔ پرونده‌های دارای مدارک ناقص</summary>
+<table>
+<thead><tr><th>شناسه</th><th>مانع‌ها</th><th>مسیر بررسی</th></tr></thead>
+<tbody>
+{% for item in stats.source_examples %}
+<tr>
+<td>{{ item.experience_id }}</td>
+<td>{% for gap in item.gaps %}{{ gap }}{% if not forloop.last %}، {% endif %}{% endfor %}</td>
+<td>
+<a href="{% url 'admin:companies_company_experience_detail' company.pk item.experience_id %}">مشاهدهٔ تجربه</a>
+· <a href="{% url 'admin:experiences_experiencereviewevent_add' %}?experience={{ item.experience_id }}">ثبت رویداد بررسی منبع</a>
+</td></tr>
+{% endfor %}
+</tbody></table>
+</details>
+{% endif %}
+</div>
+{% else %}
+<p>برای پرونده‌های نمره‌دار، نقصی در تأییدهای چهارگانهٔ منبع و دسته‌بندی گزارش نشده است.</p>
+{% endif %}
+{% if stats.no_numeric %}
+<p>{{ stats.no_numeric }} پرونده بدون شاهد عددی هستند؛ با تأیید شرکت هم نمره‌ای برای انتشار نخواهند داشت.</p>
+{% endif %}
+{% if eligible_count %}
+<p><strong>{{ eligible_count }} پرونده آمادهٔ تصمیم انتشار هستند.</strong> در بخش پایین تنها همین پرونده‌ها منتشر می‌شوند.</p>
+{% else %}
+<p><strong>هنوز هیچ پرونده‌ای مجاز به انتشار نیست.</strong> دکمهٔ انتشار تا تکمیل مدارک غیرفعال خواهد ماند.</p>
+{% endif %}
+</section>
 <section><h2>ثبت تصمیم انتشار شرکت</h2>
 <form method="post" action="">{% csrf_token %}
 <input type="hidden" name="snapshot" value="{{ token }}">
