@@ -4,41 +4,73 @@
 {% block content %}
 <main class="wi-x" dir="rtl">
   <div class="wi-x-bar">
-    <div><p class="wi-x-over">مدیریت محتوای گردآوری‌شده · دسترسی فقط برای مدیران</p><h1>{{ company.display_name }}</h1><p>تجربه‌های کاری و مصاحبه‌های واردشده به پایگاه دادهٔ Jobiew</p></div>
-    <div class="wi-x-nav"><a href="{{ company_change_url }}">مشخصات شرکت</a><a href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">تأیید گروهی GPT-6</a><a href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">انتشار و موانع آن</a><a href="{% url 'admin:companies_company_changelist' %}">فهرست شرکت‌ها</a></div>
+    <div><p class="wi-x-over">مرحلهٔ ۱ از ۳ · مشاهدهٔ نظرها و شواهد</p>
+      <h1>تجربه‌های {{ company.display_name }}</h1>
+      <p>متن تجربه، نتیجهٔ شش معیار و نظر مستقل Claude در یک مسیر</p>
+    </div>
+    <nav class="wi-x-nav">
+      <a href="{{ company_change_url }}">پروندهٔ شرکت</a>
+      {% if can_view_six %}
+        <a href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">مرحلهٔ ۲: تأیید GPT-6</a>
+        <a href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">مرحلهٔ ۳: انتشار</a>
+      {% endif %}
+    </nav>
   </div>
   <div class="wi-x-stats">
-    <div><strong>{{ totals.total }}</strong><span>کل مطالب واردشده</span></div>
-    <div><strong>{{ totals.work }}</strong><span>تجربه کاری</span></div>
-    <div><strong>{{ totals.interview }}</strong><span>تجربه مصاحبه</span></div>
-    <div><strong>{{ page_obj.paginator.count }}</strong><span>نتیجه مطابق فیلتر</span></div>
+    <div><strong>{{ totals.total }}</strong><span>همهٔ تجربه‌ها</span></div>
+    <div><strong>{{ totals.work }}</strong><span>تجربهٔ کاری</span></div>
+    <div><strong>{{ totals.interview }}</strong><span>مصاحبه</span></div>
+    <div><strong>{{ page_obj.paginator.count }}</strong><span>نتیجهٔ جست‌وجو</span></div>
   </div>
-  <div class="wi-x-note">این شمارش فقط از دیتابیس فعلی Jobiew است و لزوماً برابر شمارش سایت مبدأ یا SQLite ویندوز نیست. متن اصلی و اطلاعات پژوهشی در این پنل خصوصی‌اند.</div>
-  <form method="get" class="wi-x-filter" aria-label="جست‌وجو و فیلتر مطالب">
-    <label>جست‌وجو در عنوان، متن، عنوان شغلی و لینک منبع<input type="search" name="q" value="{{ q }}" maxlength="120" placeholder="مثلاً: پشتیبانی، حقوق، مهندس نرم‌افزار"></label>
-    <label>نوع محتوا<select name="kind">{% for value,label in kind_filters.items %}<option value="{{ value }}" {% if kind == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-    <label>انتساب به شرکت<select name="attribution">{% for value,label in attribution_filters.items %}<option value="{{ value }}" {% if attribution == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-    <label>استقلال نظر<select name="independence">{% for value,label in independence_filters.items %}<option value="{{ value }}" {% if independence == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-    <label>وضعیت حقوقی<select name="copyright">{% for value,label in copyright_filters.items %}<option value="{{ value }}" {% if copyright_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-    <div class="wi-x-actions"><button type="submit" class="button default">اعمال فیلتر</button><a href="{{ company_experiences_url }}">پاک‌کردن فیلترها</a></div>
+  <form method="get" class="wi-x-filter" aria-label="جست‌وجوی تجربه‌ها">
+    <label>جست‌وجو در متن، عنوان یا لینک<input type="search" name="q" value="{{ q }}" maxlength="120" placeholder="عبارتی از نظر یا عنوان شغلی"></label>
+    <label>نوع<select name="kind">{% for value,label in kind_filters.items %}<option value="{{ value }}" {% if kind == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <div class="wi-x-actions"><button type="submit" class="button default">جست‌وجو</button><a href="{{ company_experiences_url }}">حذف فیلترها</a></div>
+    <details class="wi-x-advanced" {% if attribution != 'all' or independence != 'all' or copyright_status != 'all' %}open{% endif %}>
+      <summary>فیلترهای تکمیلی: انتساب، استقلال و حقوق منبع</summary>
+      <div class="wi-x-advanced-fields">
+        <label>انتساب<select name="attribution">{% for value,label in attribution_filters.items %}<option value="{{ value }}" {% if attribution == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>استقلال<select name="independence">{% for value,label in independence_filters.items %}<option value="{{ value }}" {% if independence == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>حقوق منبع<select name="copyright">{% for value,label in copyright_filters.items %}<option value="{{ value }}" {% if copyright_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      </div>
+    </details>
   </form>
   {% if page_obj.object_list %}
   <div class="wi-x-table-wrap"><table class="wi-x-table">
-    <thead><tr><th>عنوان و متن</th><th>نوع / تاریخ منبع</th><th>وضعیت بررسی منبع</th><th>GPT-6 (۶ معیار متناسب با نوع)</th><th>منبع</th><th>جزئیات</th></tr></thead>
+    <thead><tr><th>نظر</th><th>ارزیابی فعلی</th><th>اقدام بعدی</th><th>منبع و جزئیات</th></tr></thead>
     <tbody>{% for exp in page_obj.object_list %}<tr>
-      <td><strong>{{ exp.title|truncatechars:120 }}</strong>{% if exp.job_title %}<small>عنوان شغلی: {{ exp.job_title }}</small>{% endif %}<p>{{ exp.body|default:'بدون متن'|truncatechars:220 }}</p></td>
-      <td>{{ exp.get_source_kind_display }}<small>{{ exp.published_jalali|default:'تاریخ نامشخص' }}</small></td>
-      <td><small>انتساب: {{ exp.company_attribution_status }}</small><small>استقلال: {{ exp.independence_status }}</small><small>حقوقی: {{ exp.copyright_review }}</small></td>
-      <td><strong>{{ exp.six_state }}</strong></td>
-      <td>{% if exp.safe_source_url %}<a href="{{ exp.safe_source_url }}" target="_blank" rel="noopener noreferrer">صفحهٔ اصلی ↗</a>{% else %}بدون لینک معتبر{% endif %}</td>
-      <td><a class="button" href="{% url 'admin:companies_company_experience_detail' company.pk exp.pk %}">متن و شش معیار</a></td>
+      <td>
+        <strong>{{ exp.title|truncatechars:115 }}</strong>
+        <small>{{ exp.get_source_kind_display }}{% if exp.job_title %} · {{ exp.job_title }}{% endif %} · {{ exp.published_jalali|default:'بدون تاریخ' }}</small>
+        <p>{{ exp.body|default:'بدون متن'|truncatechars:225 }}</p>
+      </td>
+      <td>
+        <strong>{{ exp.six_state }}</strong>
+        {% if can_view_claude %}
+          <small>Claude: {% if exp.claude_check %}بررسی شده · {{ exp.claude_check.created_at|date:"Y/m/d" }}{% else %}هنوز بررسی نشده{% endif %}</small>
+        {% endif %}
+      </td>
+      <td class="wi-x-quick-actions">
+        <a class="button default" href="{% url 'admin:companies_company_experience_detail' company.pk exp.pk %}">متن و شش معیار</a>
+        {% if can_view_claude %}<a class="button" href="{% url 'admin:companies_company_experience_claude' company.pk exp.pk %}">{% if exp.claude_check %}نتیجهٔ Claude{% else %}بررسی با Claude{% endif %}</a>{% endif %}
+      </td>
+      <td>
+        {% if exp.safe_source_url %}<a href="{{ exp.safe_source_url }}" target="_blank" rel="noopener noreferrer">منبع اصلی</a>{% else %}لینک معتبر ندارد{% endif %}
+        <details><summary>وضعیت اصالت و حقوق</summary>
+          <small>انتساب: {{ exp.get_company_attribution_status_display }}</small>
+          <small>استقلال: {{ exp.get_independence_status_display }}</small>
+          <small>حقوق منبع: {{ exp.get_copyright_review_display }}</small>
+        </details>
+      </td>
     </tr>{% endfor %}</tbody>
   </table></div>
-  {% else %}<p class="wi-x-empty">در این شرکت نتیجه‌ای با فیلترهای انتخاب‌شده پیدا نشد.</p>{% endif %}
+  {% else %}<p class="wi-x-empty">نتیجه‌ای یافت نشد. فیلترها را پاک کنید یا عبارت دیگری جست‌وجو کنید.</p>{% endif %}
   {% if page_obj.paginator.num_pages > 1 %}
-  <nav class="wi-x-pages" aria-label="صفحه‌بندی"><span>صفحه {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_previous %}<a href="?{{ page_query }}page=1">ابتدا</a><a href="?{{ page_query }}page={{ page_obj.previous_page_number }}">قبلی</a>{% endif %}
-    {% if page_obj.has_next %}<a href="?{{ page_query }}page={{ page_obj.next_page_number }}">بعدی</a><a href="?{{ page_query }}page={{ page_obj.paginator.num_pages }}">انتها</a>{% endif %}
+  <nav class="wi-x-pages" aria-label="صفحه‌بندی">
+    <span>صفحهٔ {{ page_obj.number }} از {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_previous %}<a href="?{{ page_query }}page=1">اول</a><a href="?{{ page_query }}page={{ page_obj.previous_page_number }}">قبلی</a>{% endif %}
+    {% if page_obj.has_next %}<a href="?{{ page_query }}page={{ page_obj.next_page_number }}">بعدی</a><a href="?{{ page_query }}page={{ page_obj.paginator.num_pages }}">آخر</a>{% endif %}
   </nav>{% endif %}
+  <p class="wi-x-note">نمایش وضعیت و نتیجهٔ Claude فقط برای کاربران مجاز است. بررسی مستقل Claude جای تأیید انسانی و مدارک حقوقی انتشار را نمی‌گیرد.</p>
 </main>
 {% endblock %}
