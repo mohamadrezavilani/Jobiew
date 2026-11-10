@@ -19,7 +19,7 @@ jobs:
         run: |
           python -m compileall -q backend crawler scripts
           python -m unittest discover -s tests -v
-          (cd backend && python -m unittest criteria_v2.test_checkpoint_contract_v218 criteria_v2.test_checkpoint_archive_v218 criteria_v2.test_checkpoint_sampling_v218 -v)
+          (cd backend && python -m unittest criteria_v2.test_checkpoint_contract_v218 criteria_v2.test_checkpoint_archive_v218 criteria_v2.test_checkpoint_sampling_v218 criteria_v2.test_checkpoint_cumulative_v221 -v)
           (cd crawler && python -m unittest discover -s tests -v)
       - name: Django local SQLite schema and smoke
         env:
@@ -71,4 +71,4 @@ jobs:
         run: |
           cd backend
           python manage.py check
-          python manage.py test criteria_v2.test_checkpoint_stage_db_v218 companies.test_homepage_preview_v219 companies.test_homepage_public_v220 --noinput -v 2
+          python manage.py test criteria_v2.test_checkpoint_stage_db_v218 criteria_v2.test_checkpoint_cumulative_db_v221 companies.test_homepage_preview_v219 companies.test_homepage_public_v220 --noinput -v 2
