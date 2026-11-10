@@ -144,7 +144,7 @@ class SixAxisAdminExperienceV227Tests(TestCase):
         self.assertNotContains(response, 'five_v1')
         listing = self.get(self.list_url)
         self.assertContains(listing, 'هنوز در checkpoint پردازش نشده')
-        self.assertContains(listing, 'نمره‌های ۶معیاری')
+        self.assertContains(listing, 'پیشنهاد خصوصی GPT-6؛ هنوز تأیید نشده')
         self.assertNotContains(listing, 'حمایت مدیر از متن پنج معیار قدیمی')
         self.assertNotContains(listing, self.foreign.title)
         self.assertEqual(listing.context['page_obj'].paginator.count, 3)
