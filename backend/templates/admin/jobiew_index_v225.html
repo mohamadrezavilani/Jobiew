@@ -1,36 +1,57 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
 {% block content %}
-<div id="content-main" dir="rtl">
-  <section class="module" style="margin-bottom:24px;padding:18px;line-height:2;">
-    <h2>مسیر اصلی کار: یک شرکت، از بررسی تا انتشار</h2>
-    <p>نمره‌های خصوصی را از اینجا برای هر شرکت مرور و گروهی تأیید کنید. انتشار عمومی یک تصمیم جداگانه است و فقط با حقوق منبع، انتساب، استقلال و شواهد ثبت‌شده انجام می‌شود.</p>
-    {% if perms.criteria_v2.view_criteriaanalysis and perms.experiences.view_publicexperience %}
-      <p><a class="button" href="{% url 'admin:companies_company_checkpoint_queue' %}">پرونده‌های شرکت‌ها و تأیید گروهی GPT-6</a></p>
-    {% endif %}
-    {% if perms.companies.view_company %}
-      <p><a href="{% url 'admin:companies_company_changelist' %}">مدیریت و جست‌وجوی همهٔ شرکت‌ها</a></p>
-    {% endif %}
-    {% if perms.experiences.view_publicexperience %}
-      <p><a href="{% url 'admin:experiences_publicexperience_changelist' %}">فهرست تجربه‌ها و مصاحبه‌ها</a></p>
-    {% endif %}
-    <p style="color:var(--body-quiet-color)">منوی زیر فقط امکانات موردنیاز را نشان می‌دهد. داده‌ها، سوابق نسخه‌های قبلی و تاریخچهٔ حسابرسی حذف نشده‌اند.</p>
+<main id="content-main" class="wi-admin-home" dir="rtl">
+  <header>
+    <p class="wi-muted">داشبورد مدیریت جابیو</p>
+    <h1>از نظر تازه تا امتیاز منتشرشده</h1>
+    <p>سه مرحلهٔ اصلی؛ هر تأیید قبلی در تاریخچه باقی می‌ماند و لازم نیست دوباره انجام شود.</p>
+  </header>
+  <section class="wi-admin-steps" aria-label="مسیر اصلی">
+    <article class="wi-admin-step">
+      <span class="wi-step-num">۱</span><h2>پیدا کردن شرکت و نظرها</h2>
+      <p>نظرهای کاری و مصاحبه‌ها را پیدا کنید؛ متن، شش معیار و در صورت نیاز مقایسهٔ Claude کنار هم هستند.</p>
+      {% if perms.companies.view_company %}
+        <a class="wi-cta" href="{% url 'admin:companies_company_changelist' %}">انتخاب شرکت</a>
+      {% elif perms.experiences.view_publicexperience %}
+        <a class="wi-cta" href="{% url 'admin:experiences_publicexperience_changelist' %}">دیدن نظرها</a>
+      {% endif %}
+    </article>
+    <article class="wi-admin-step">
+      <span class="wi-step-num">۲</span><h2>تأیید دسته‌ای شش معیار</h2>
+      <p>تجربه‌های آماده را برای هر شرکت در یک مرحله مرور کنید. فقط پرونده‌های دارای شواهد معتبر تأیید می‌شوند.</p>
+      {% if perms.criteria_v2.view_criteriaanalysis and perms.experiences.view_publicexperience %}
+        <a class="wi-cta" href="{% url 'admin:companies_company_checkpoint_queue' %}">صف بررسی شرکت‌ها</a>
+      {% endif %}
+    </article>
+    <article class="wi-admin-step">
+      <span class="wi-step-num">۳</span><h2>بررسی موانع و انتشار</h2>
+      <p>از پروندهٔ شرکت، مجوز منبع و انتساب را بازبینی کنید؛ سپس تصمیم انتشار را ثبت و وضعیت عمومی را ببینید.</p>
+      {% if perms.companies.view_company %}
+        <a class="wi-cta" href="{% url 'admin:companies_company_changelist' %}">انتخاب برای انتشار</a>
+      {% endif %}
+    </article>
   </section>
-  {% for app in app_list %}
-    <div class="app-{{ app.app_label }} module">
-      <table>
-        <caption><a href="{{ app.app_url }}" class="section" title="{{ app.name }}">{{ app.name }}</a></caption>
-        {% for model in app.models %}
+  <div class="wi-admin-home wi-secondary">
+    <strong>نکتهٔ مهم:</strong> انتشار شش معیار، با بازنشر متن نظر متفاوت است. Claude فقط نظر دوم اختیاری است و هیچ امتیاز یا مجوزی را خودکار تأیید نمی‌کند.
+  </div>
+  <details class="wi-secondary">
+    <summary>بخش‌های تکمیلی و سوابق قدیمی</summary>
+    <p class="wi-muted">جزئیات شرکت، مدارک، تنظیمات و سوابق حسابرسی در دسترس می‌مانند؛ فقط از نمای اصلی کنار گذاشته شده‌اند.</p>
+    <div class="wi-models">
+      {% for app in app_list %}
+      <div class="app-{{ app.app_label }} module">
+        <table>
+          <caption><a href="{{ app.app_url }}" class="section">{{ app.name }}</a></caption>
+          {% for model in app.models %}
           <tr class="model-{{ model.object_name|lower }}">
-            <th scope="row">
-              {% if model.admin_url %}<a href="{{ model.admin_url }}">{{ model.name }}</a>
-              {% else %}{{ model.name }}{% endif %}
-            </th>
+            <th scope="row">{% if model.admin_url %}<a href="{{ model.admin_url }}">{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}</th>
             <td>{% if model.add_url %}<a href="{{ model.add_url }}">افزودن</a>{% endif %}</td>
           </tr>
-        {% endfor %}
-      </table>
+          {% endfor %}
+        </table>
+      </div>
+      {% endfor %}
     </div>
-  {% endfor %}
-</div>
+  </details>
+</main>
 {% endblock %}
