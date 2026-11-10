@@ -273,6 +273,7 @@ class PrivateProductionImportGuardTests(TestCase):
             {'JOBIEW_PRIVATE_CHECKPOINT_REVIEW_ENABLED':'0'},
             {'JOBIEW_DUAL6_PUBLICATION_ENABLED':'1'},
             {'JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED':'1'},
+            {'JOBIEW_COMPANY_RELEASE_ONLY_ENABLED':'0'},
             {'JOBIEW_CHECKPOINT_STAGING_ENABLED':'1'},
         ):
             with patch('criteria_v2.management.commands.stage_checkpoint_private_prod_v224.connection',
@@ -287,3 +288,70 @@ class PrivateProductionImportGuardTests(TestCase):
                        SimpleNamespace(settings_dict={**cfg, **override})), patch.dict('os.environ', flags):
                 with self.assertRaises(CommandError):
                     guard_private_production('jobiew')
+
+
+class SingleCommandCumulativeImportTests(TestCase):
+    """Run the actual one-shot import path on synthetic source/ZIP, never user data."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.company = Company.objects.create(
+            id='synthetic-company',
+            source_name='synthetic',
+            source_url='https://example.invalid/cumulative-v221',
+            display_name='شرکت تست خصوصی')
+        cls.exp = PublicExperience.objects.create(
+            pk=1, company=cls.company,
+            source_url='https://example.invalid/cumulative-v221/e1',
+            source_kind='work',
+            title='عنوان محرمانهٔ ساختگی',
+            body='یک روایت ساختگی صرفاً برای تست اعتبارسنجی فرمت و نقل قول.',
+            content_sha256='a' * 64)
+
+    def test_full_archive_preflight_then_idempotent_private_write(self):
+        import json
+        import tempfile
+        from pathlib import Path
+        from io import StringIO
+        from django.core.management import call_command
+        from criteria_v2.test_checkpoint_cumulative_v221 import synthetic, archive, SOURCE_SHA
+        from criteria_v2.management.commands.stage_checkpoint_private_prod_v224 import Command
+        payload = synthetic()
+        ledger = [json.loads(line) for line in payload['ledger.jsonl'].splitlines()]
+        first = json.loads(payload['assistant_predictions.jsonl'])
+        digest = story_digest(story_from_experience(self.exp))
+        ledger[0]['story_sha256'] = digest
+        first['story_sha256'] = digest
+        payload['ledger.jsonl'] = b'\n'.join(
+            json.dumps(row, ensure_ascii=False).encode() for row in ledger)
+        payload['assistant_predictions.jsonl'] = json.dumps(
+            first, ensure_ascii=False).encode()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'synthetic-checkpoint.zip'
+            checksum = archive(path, payload)
+            args = {
+                'checkpoint': str(path), 'expected_db': 'jobiew',
+                'expected_checkpoint_sha256': checksum,
+                'expected_source_sha256': SOURCE_SHA, 'all_batches': True,
+                'max_total': 3000, 'limit': 100,
+            }
+            with patch.object(Command, 'guard_database', return_value='jobiew'):
+                output = StringIO()
+                call_command('stage_checkpoint_private_prod_v224',
+                             stdout=output, **args)
+                self.assertIn('DRY_RUN_READ_ONLY', output.getvalue())
+                self.assertEqual(CriteriaAnalysis.objects.count(), 0)
+                output = StringIO()
+                call_command('stage_checkpoint_private_prod_v224',
+                             stdout=output, apply=True,
+                             acknowledge_unverified_private_data=True, **args)
+                self.assertIn('PRIVATE_STAGE_UNVERIFIED', output.getvalue())
+                self.assertEqual(CriteriaAnalysis.objects.count(), 1)
+                self.assertEqual(CriteriaAnalysis.objects.get().review_status, 'pilot_unverified')
+                self.assertFalse(CriteriaScoreReviewEvent.objects.exists())
+                output = StringIO()
+                call_command('stage_checkpoint_private_prod_v224',
+                             stdout=output, apply=True,
+                             acknowledge_unverified_private_data=True, **args)
+                self.assertIn('"inserted": 0', output.getvalue())
+                self.assertEqual(CriteriaAnalysis.objects.count(), 1)
