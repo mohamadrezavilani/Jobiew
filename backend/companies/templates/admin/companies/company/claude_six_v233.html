@@ -12,13 +12,18 @@
   <p><strong>قبلاً اجرا شده:</strong> {{ existing.get_status_display }} ·
   {{ existing.created_at|date:"Y/m/d H:i" }} ·
   مدل {{ existing.model_id }} · {{ existing.requested_by }}</p>
+  <p><strong>نتیجهٔ بررسی مستقل Claude:</strong> {{ existing.get_status_display }}
+  {% if existing.completed_at %} · پایان: {{ existing.completed_at|date:"Y/m/d H:i" }}{% endif %}
+  · توکن ورودی: {{ existing.input_tokens }} · توکن خروجی: {{ existing.output_tokens }}</p>
   {% if not current %}
   <p role="alert"><strong>متن یا تحلیل منبع بعد از اجرای Claude تغییر کرده است.</strong>
   نتیجهٔ قبلی تاریخی است و به‌جای نتیجهٔ فعلی نمایش داده نمی‌شود.</p>
   {% elif existing.status == 'failed' %}
   <p>اجرای قبلی موفق نبود ({{ existing.error_type }}). اجرای خودکار یا تکرار هزینه‌دار فعال نیست.</p>
   {% elif existing.status == 'needs_review' %}
-  <p>Claude نوع تجربه را با اطمینان کافی تأیید نکرده است؛ نمره‌های آن پذیرفته نشده‌اند.</p>
+  <p><strong>نتیجه: نیازمند بازبینی دسته‌بندی.</strong>
+  نوع تشخیص‌داده‌شده توسط Claude: <strong>{{ existing.detected_kind|default:"نامشخص" }}</strong>.
+  چون تشخیص نوع روایت با نوع ثبت‌شده سازگار یا بااطمینان نبود، شش نمرهٔ Claude پذیرفته و نمایش داده نشده‌اند. نتیجه و زمان درخواست در حسابرسی محفوظ است.</p>
   {% elif existing.status == 'running' %}
   <p>درخواست قبلی ثبت شده است. اگر وضعیت مدت زیادی تغییر نکرد، بررسی فنی لازم است؛ دوباره اجرا نکن.</p>
   {% endif %}
@@ -28,7 +33,7 @@
 </section>
 {% if existing and current and valid_analysis and existing.status == 'completed' %}
 <section class="module" style="padding:16px;overflow-x:auto">
-<h2>مقایسهٔ شش معیار — GPT-6 در برابر Claude</h2>
+<h2>نتیجهٔ بررسی مستقل Claude: مقایسهٔ شش معیار</h2>
 <table><thead><tr><th>معیار</th><th>GPT-6</th><th>Claude</th><th>اختلاف</th><th>شاهد و توضیح Claude</th></tr></thead>
 <tbody>{% for row in rows %}
 <tr>

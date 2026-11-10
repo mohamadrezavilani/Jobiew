@@ -233,3 +233,39 @@ class TaskFirstAdminV233Tests(TestCase):
         self.assertNotContains(detail, 'five_v1')
         self.assertNotContains(detail, 'صحت‌سنجی با Claude و مقایسهٔ پنج شاخص')
         self.assertContains(detail, self.claude)
+
+
+    @patch('companies.claude_six_v233.call_claude')
+    def test_claude_needs_review_exposes_outcome_without_fabricating_scores(self, paid):
+        """A paid mismatch must remain visible with zero published or accepted axes."""
+        ExperienceReviewEvent.objects.create(
+            experience=self.exp, review_field='copyright', decision='approved',
+            evidence_url='https://example.invalid/external-processing-right',
+            rationale='حق پردازش مستقل روایت توسط بازبین بررسی و مستند شد.',
+            reviewer=self.staff)
+        paid.return_value = {
+            'stop_reason': 'end_turn',
+            'content': [{'type': 'text', 'text': json.dumps({
+                'detected_kind': 'interview',
+                'kind_confidence': 91,
+                'dimensions': {},
+            })}],
+            'usage': {'input_tokens': 123, 'output_tokens': 45},
+        }
+        self.get(self.claude)
+        out = self.post(self.claude, {
+            'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value,
+            'confirm_paid': 'yes', 'confirm_external_rights': 'yes',
+        })
+        self.assertEqual(out.status_code, 302)
+        result = CriteriaClaudeComparison.objects.get()
+        self.assertEqual(result.status, 'needs_review')
+        self.assertEqual(result.claude_axes, {})
+        page = self.get(self.claude)
+        self.assertContains(page, 'نوع تشخیص‌داده‌شده توسط Claude')
+        self.assertContains(page, 'interview')
+        self.assertContains(page, 'توکن ورودی')
+        self.assertContains(page, '123')
+        self.assertFalse(CriteriaScoreReviewEvent.objects.exists())
+        self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
+        paid.assert_called_once()
