@@ -202,7 +202,7 @@ class CriteriaCompanyReleaseEvent(models.Model):
                                 related_name='dual_score_release_events')
     reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     decision = models.CharField(max_length=16, choices=DECISIONS)
-    approved_runs = models.JSONField(default=dict)
+    approved_runs = models.JSONField(default=dict, blank=True)
     note = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 

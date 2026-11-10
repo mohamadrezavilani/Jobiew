@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
                 ('decision', models.CharField(max_length=16,
                     choices=[('published', 'انتشار امتیازهای تأییدشده'),
                              ('held', 'توقف انتشار امتیازهای شرکت')])),
-                ('approved_runs', models.JSONField(default=dict)),
+                ('approved_runs', models.JSONField(default=dict, blank=True)),
                 ('note', models.TextField()),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('company', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT,
