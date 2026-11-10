@@ -11,6 +11,7 @@ from django.db.models import Count, Q
 from django.http import Http404
 from django.http.request import validate_host
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 from .models import Company
@@ -40,10 +41,10 @@ def authorize_home_preview(request):
         raise PermissionDenied('Staff company-view permission required')
 
 
-@never_cache
-@require_GET
-def preview(request):
-    authorize_home_preview(request)
+
+
+def homepage_context(request):
+    """Public-listable Company metadata only; no score or private review query."""
     q = (request.GET.get('q') or '').strip()[:100]
     mode = request.GET.get('mode', 'work')
     mode = mode if mode in ('work', 'interview') else 'work'
@@ -75,16 +76,13 @@ def preview(request):
     else:
         queryset = queryset.order_by('display_name', 'pk')
     page = Paginator(queryset, 24).get_page(request.GET.get('page'))
-    response = render(request, 'companies/homepage_preview_v219.html', {
+    return {
         'page': page, 'q': q, 'mode': mode, 'sort': sort,
         'verified': verified, 'has_records': has_records,
         'criteria_axes': axes_for(mode),
-    })
-    response['Cache-Control'] = 'private, no-store, no-cache, must-revalidate'
-    response['Pragma'] = 'no-cache'
-    response['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
-    response['Referrer-Policy'] = 'no-referrer'
-    response['Content-Security-Policy'] = (
+    }
+
+HOME_CSP = (
         "default-src 'self'; img-src 'self' data: blob:; "
         "script-src 'self' https://unpkg.com; "
         "style-src 'self' 'unsafe-inline' https://unpkg.com; "
@@ -93,4 +91,28 @@ def preview(request):
         "worker-src 'self' blob:; base-uri 'none'; frame-ancestors 'none'; "
         "form-action 'self'; object-src 'none'"
     )
+
+
+def apply_homepage_headers(response, *, private):
+    """Avoid caching or indexing unreviewed company profiles during rollout."""
+    response['Cache-Control'] = 'private, no-store, no-cache, must-revalidate' if private else 'no-store, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['X-Robots-Tag'] = 'noindex, nofollow, noarchive' if private else 'noindex, noarchive'
+    response['Referrer-Policy'] = 'no-referrer'
+    response['Content-Security-Policy'] = HOME_CSP
     return response
+
+
+@never_cache
+@require_GET
+def preview(request):
+    authorize_home_preview(request)
+    context = homepage_context(request)
+    context.update({
+        'is_public_home': False,
+        'homepage_action_url': reverse('homepage-preview-v219'),
+        'company_directory_url': reverse('company-index'),
+    })
+    return apply_homepage_headers(
+        render(request, 'companies/homepage_preview_v219.html', context), private=True
+    )
