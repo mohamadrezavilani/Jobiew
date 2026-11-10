@@ -16,6 +16,23 @@ from .pilot_dashboard_v213 import _authorize, _PRIVATE_PERMISSIONS
 def authorize_checkpoint(request):
     if settings.DEBUG:
         return _authorize(request)
+    if os.environ.get('JOBIEW_PRIVATE_CHECKPOINT_REVIEW_ENABLED', '0') == '1':
+        # An explicit, permission-controlled HTTPS back-office on the public
+        # domain. This does NOT authorize public access to checkpoint data.
+        # Remains accessible after selected companies become public.
+        if os.environ.get('JOBIEW_CHECKPOINT_STAGING_ENABLED', '0') != '0':
+            raise Http404('Conflicting private-review environments')
+        expected = os.environ.get('JOBIEW_CHECKPOINT_PUBLIC_HOST', '').strip().lower()
+        actual = request.get_host().split(':')[0].lower()
+        if (not expected or '/' in expected or ':' in expected or
+                expected != actual or expected not in settings.ALLOWED_HOSTS or
+                not request.is_secure()):
+            raise Http404('Private review requires explicit HTTPS public host')
+        user = request.user
+        if not (user.is_authenticated and user.is_active and user.is_staff and
+                all(user.has_perm(p) for p in _PRIVATE_PERMISSIONS)):
+            raise PermissionDenied('Private review staff permissions required')
+        return
     if (os.environ.get('JOBIEW_CHECKPOINT_STAGING_ENABLED', '0') != '1' or
         os.environ.get('JOBIEW_DUAL6_PUBLICATION_ENABLED', '0') != '0'):
         raise Http404('Private staging disabled')

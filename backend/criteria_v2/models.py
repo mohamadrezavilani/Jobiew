@@ -188,3 +188,54 @@ class CheckpointApprovalReceipt(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError('Approval receipts are append-only')
+
+
+class CriteriaCompanyReleaseEvent(models.Model):
+    """Append-only owner decision to publish a fixed, reviewed company score set.
+
+    Every public read rechecks its score digest and the source rights; a new
+    private import or later approval is never published by an older event.
+    """
+    DECISIONS = [('published', 'انتشار امتیازهای تأییدشده'),
+                 ('held', 'توقف انتشار امتیازهای شرکت')]
+    company = models.ForeignKey('companies.Company', on_delete=models.PROTECT,
+                                related_name='dual_score_release_events')
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    decision = models.CharField(max_length=16, choices=DECISIONS)
+    approved_runs = models.JSONField(default=dict, blank=True)
+    note = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at', '-pk')
+
+    def clean(self):
+        super().clean()
+        import re
+        errors = {}
+        if self.pk is not None:
+            errors['decision'] = 'Company release audit is append-only.'
+        if self.decision not in ('published', 'held'):
+            errors['decision'] = 'Unknown release decision.'
+        if (not isinstance(self.approved_runs, dict) or len(self.approved_runs) > 1000
+                or any(not isinstance(k, str) or not k.isdecimal() or
+                       not isinstance(v, str) or
+                       re.fullmatch(r'[0-9a-f]{64}', v) is None
+                       for k, v in self.approved_runs.items())):
+            errors['approved_runs'] = 'Invalid immutable score approvals.'
+        if (self.decision == 'held' and self.approved_runs) or (
+                self.decision == 'published' and not self.approved_runs):
+            errors['approved_runs'] = 'Published decisions need scores; holds are empty.'
+        if not 20 <= len((self.note or '').strip()) <= 1200:
+            errors['note'] = 'Human publication rationale must be 20..1200 chars.'
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError('Company releases are append-only')
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError('Company releases are append-only')

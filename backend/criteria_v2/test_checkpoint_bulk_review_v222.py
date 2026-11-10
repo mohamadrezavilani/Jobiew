@@ -9,11 +9,11 @@ from django.core.management.base import CommandError
 from companies.models import Company
 from experiences.models import PublicExperience, ExperienceReviewEvent
 from criteria_v2.models import (CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent,
-                                CriteriaReviewEvent, CheckpointApprovalReceipt)
+                                CriteriaReviewEvent, CheckpointApprovalReceipt, CriteriaCompanyReleaseEvent)
 from criteria_v2.engine_v207 import story_from_experience, story_digest
 from criteria_v2.management.commands.stage_dual6_checkpoint_v218 import stage_one
 from criteria_v2.registry import axes_for, version_for
-from criteria_v2.checkpoint_receipt_v222 import checkpoint_release_ready
+from criteria_v2.checkpoint_receipt_v222 import checkpoint_release_ready, approved_checkpoint_digest
 from criteria_v2.sufficiency_v208 import company_public_sufficiency
 from criteria_v2.management.commands.stage_checkpoint_staging_v222 import guard_dedicated_staging
 
@@ -168,6 +168,15 @@ class BulkCheckpointV222Tests(TestCase):
         with patch.dict('os.environ', {'JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED': '0'}):
             self.assertEqual(company_public_sufficiency(self.company)['work']['axes'][0]['dimension_experience_count'], 0)
         with patch.dict('os.environ', {'JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED': '1'}):
+            # Two global switches no longer publish checkpoint scores without
+            # an explicit, immutable owner release for this company.
+            out = company_public_sufficiency(self.company)['work']['axes'][0]
+            self.assertEqual(out['dimension_experience_count'], 0)
+            run = CriteriaAnalysis.objects.get(review_status='approved')
+            CriteriaCompanyReleaseEvent.objects.create(
+                company=self.company, reviewer=self.staff, decision='published',
+                approved_runs={str(run.pk): approved_checkpoint_digest(run)},
+                note='بازبینی و انتشار مستقل شرکت پس از اثبات حقوق منبع.')
             out = company_public_sufficiency(self.company)['work']['axes'][0]
             self.assertEqual(out['dimension_experience_count'], 1)
             self.assertEqual(out['score'], 3.0)

@@ -10,7 +10,8 @@ from .registry import VERSIONS, axes_for
 from .sufficiency_contract_v208 import MIN_SUFFICIENT_EXPERIENCES, make_sufficiency
 from experiences.models import PublicExperience, ExperienceReviewEvent
 from .checkpoint_contract_v218 import ENGINE as CHECKPOINT_ENGINE
-from .checkpoint_receipt_v222 import checkpoint_release_ready
+from .checkpoint_receipt_v222 import checkpoint_release_ready, approved_checkpoint_digest
+from .company_release_v224 import effective_release_proofs
 
 
 def publication_enabled():
@@ -62,6 +63,7 @@ def _approved_dimension_rows(company, kind):
     if company.identity_status != 'verified' or company.tech_status != 'verified':
         return []  # Additional publication safety, not a sufficiency threshold.
     latest_reviews = _latest_classifications(company, kind)
+    released_proofs = effective_release_proofs(company)
     analyses = (CriteriaAnalysis.objects.filter(
         experience__company=company, experience__source_kind=kind,
         criteria_version=VERSIONS[kind], review_status='approved',
@@ -84,8 +86,11 @@ def _approved_dimension_rows(company, kind):
         if analysis.source_content_sha256 != exp.content_sha256:
             continue
         engine = analysis.raw_payload.get('engine')
+        if os.environ.get('JOBIEW_COMPANY_RELEASE_ONLY_ENABLED', '0') == '1' and engine != CHECKPOINT_ENGINE:
+            continue
         if engine == CHECKPOINT_ENGINE:
-            if (os.environ.get('JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED', '0') != '1'
+            if (released_proofs.get(str(analysis.pk)) != approved_checkpoint_digest(analysis) or
+                    os.environ.get('JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED', '0') != '1'
                     or exp.independence_status != 'verified'
                     or not _checkpoint_rights_provenance_valid(exp)
                     or not checkpoint_release_ready(analysis)):
