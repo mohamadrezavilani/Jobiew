@@ -1,0 +1,150 @@
+{% load static %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="description" content="پیش‌نمایش خصوصی طراحی صفحه نخست جابیو با داده‌های قابل نمایش عمومی و بدون امتیاز تأییدنشده">
+  <title>پیش‌نمایش صفحهٔ نخست | جابیو</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'companies/img/jobiew_symbol_home_v219.svg' %}">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="{% static 'companies/css/jobiew_vazir_v110.css' %}">
+  <link rel="stylesheet" href="{% static 'companies/css/homepage_preview_v219.css' %}">
+  <script defer src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+  <script defer src="{% static 'companies/js/homepage_preview_v219.js' %}"></script>
+  <script defer src="{% static 'companies/js/persian_digits_v22.js' %}"></script>
+</head>
+<body class="homepage-v219" data-evaluation="{{ mode }}"
+      data-geojson-url="{% url 'verified-company-locations' %}"
+      data-map-fallback-url="{% url 'company-map' %}">
+  <a class="home-skip" href="#main-content">رفتن به محتوا</a>
+  <p class="preview-note" role="status">پیش‌نمایش خصوصی طراحی؛ اعداد و نام‌ها از آرشیو فعلی هستند، نه امتیازهای تأییدشده. هیچ امتیاز شرکت منتشر نشده است.</p>
+  <header class="top">
+    <div class="brand"><a href="{% url 'company-index' %}" aria-label="جابیو، بازگشت به فهرست فعلی"><img class="brand-logo" src="{% static 'companies/img/jobiew_logo_home_v219.svg' %}" alt="جابیو" width="142" height="45"></a></div>
+    <nav aria-label="ناوبری صفحه">
+      <a href="#main-content" aria-current="page">کشف شرکت‌ها</a>
+      <a href="{% url 'company-map' %}">نقشهٔ شرکت‌ها</a>
+      <a href="#about-framework">راهنمای ارزیابی</a>
+      <a href="#about-data">جابیو چطور کار می‌کند؟</a>
+    </nav>
+    <div class="actions"><a class="btn" href="{% url 'company-index' %}">فهرست فعلی</a><a class="btn primary" href="{% url 'company-map' %}">نقشهٔ تأییدشده</a></div>
+  </header>
+  <main id="main-content">
+    <section class="intro">
+      <div class="intro-identity">
+        <img class="intro-mark" src="{% static 'companies/img/jobiew_symbol_home_v219.svg' %}" alt="" width="62" height="71">
+        <div><h1>شناخت بهتر، انتخاب آگاهانه‌تر</h1><p>قبل از انتخاب، شرکت‌ها را بر اساس داده‌های قابل بررسی بشناس و مقایسه کن.</p></div>
+      </div>
+      <div class="coverage"><i aria-hidden="true"></i>آرشیو شرکت‌ها · در حال راستی‌آزمایی</div>
+    </section>
+
+    <section class="searchrow" aria-label="جست‌وجو و فیلتر">
+      <form method="get" action="{% url 'homepage-preview-v219' %}" role="search" id="homepage-search-form">
+        <input type="hidden" name="mode" value="{{ mode }}">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        {% if verified %}<input type="hidden" name="verified" value="1">{% endif %}
+        {% if has_records %}<input type="hidden" name="has_records" value="1">{% endif %}
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+          <input name="q" id="search" type="search" maxlength="100" value="{{ q }}" placeholder="نام شرکت موردنظرت را جست‌وجو کن..." aria-label="نام شرکت">
+          <button type="submit" aria-label="جست‌وجو">جست‌وجو</button>
+        </label>
+      </form>
+      <button type="button" class="tool" id="open" aria-controls="drawer" aria-expanded="false" aria-haspopup="dialog">فیلترها{% if verified or has_records %} <span class="count">فعال</span>{% endif %}</button>
+      <a class="tool" href="?mode={{ mode }}&amp;q={{ q|urlencode }}&amp;sort={% if sort == 'most' %}name{% else %}most{% endif %}{% if verified %}&amp;verified=1{% endif %}{% if has_records %}&amp;has_records=1{% endif %}" aria-label="تغییر ترتیب فهرست">{% if sort == 'most' %}مرتب‌سازی: تعداد تجربه بیشتر{% else %}مرتب‌سازی: نام شرکت{% endif %} ⌄</a>
+    </section>
+
+    <section class="workspace panel" aria-label="پیش‌نمایش کشف شرکت‌ها">
+      <div class="maptop workspace-title">
+        <div><div class="workspace-title-label"><b>{% if verified %}شرکت‌های فناوری تهران، تأییدشده{% else %}شرکت‌های ثبت‌شده در آرشیو{% endif %}</b><span class="count" id="company-count">{{ page.paginator.count }} شرکت</span></div><div class="sub">نقشه فقط مکان‌های تأییدشدهٔ شرکت‌های همین صفحه را نشان می‌دهد.</div></div>
+        <div class="workspace-heading-actions"><p class="mode-caption">{% if mode == 'work' %}آرشیو تجربه‌های کاری{% else %}آرشیو تجربه‌های مصاحبه{% endif %}</p>
+          <div class="evaluation-switch" role="group" aria-label="نوع تجربه">
+            <a class="mode-button{% if mode == 'work' %} selected{% endif %}" href="?mode=work&amp;q={{ q|urlencode }}&amp;sort={{ sort }}{% if verified %}&amp;verified=1{% endif %}{% if has_records %}&amp;has_records=1{% endif %}" {% if mode == 'work' %}aria-current="true"{% endif %}>شرایط کاری</a>
+            <a class="mode-button{% if mode == 'interview' %} selected{% endif %}" href="?mode=interview&amp;q={{ q|urlencode }}&amp;sort={{ sort }}{% if verified %}&amp;verified=1{% endif %}{% if has_records %}&amp;has_records=1{% endif %}" {% if mode == 'interview' %}aria-current="true"{% endif %}>شرایط مصاحبه</a>
+          </div>
+        </div>
+      </div>
+      <section class="mapbox" aria-label="نقشه موقعیت‌های تأییدشده">
+        <div class="map">
+          <div id="home-map" role="application" aria-label="نقشه شرکت‌های دارای موقعیت تأییدشده" hidden></div>
+          <div class="map-empty" id="map-empty" role="status" aria-live="polite">
+            <div class="map-empty-content"><strong id="map-status-title">در حال بررسی موقعیت‌های تأییدشده…</strong>
+              <p id="map-status-text">فقط مکان‌هایی نمایش داده می‌شوند که هویت، زمینهٔ فعالیت، ارتباط با تهران و مختصاتشان مستقل تأیید شده باشد.</p>
+              <a href="{% url 'company-map' %}">نمایش نقشهٔ مستقل جابیو</a>
+            </div>
+          </div>
+          <div class="map-credit">دادهٔ نقشه: OpenFreeMap / OpenStreetMap · تنها مکان‌های تأییدشده · بدون موقعیت ساختگی</div>
+        </div>
+      </section>
+      <section class="companies-panel" aria-label="فهرست شرکت‌ها">
+        <div class="list" id="list">
+          <div class="listtitles"><span>شرکت</span><span>نمای شش معیار</span><span>امتیاز کل از ۱۰</span></div>
+          {% for company in page.object_list %}
+            <a class="company" href="{% url 'company-detail' company.pk %}" data-company-id="{{ company.pk }}">
+              <div class="logo" aria-hidden="true">{{ company.display_name|slice:':1' }}</div>
+              <div><div class="cname">{{ company.display_name }}</div>
+                <div class="meta"><span>{{ company.experience_count }} تجربهٔ {% if mode == 'work' %}کاری{% else %}مصاحبه{% endif %} در آرشیو منبع</span>
+                  {% if company.identity_status == 'verified' and company.tech_status == 'verified' and company.tehran_status == 'verified' %}<span>هویت، فناوری و تهران: بررسی‌شده</span>{% else %}<span>انتساب یا دسته‌بندی در انتظار تأیید</span>{% endif %}</div>
+              </div>
+              <div class="companypreview">
+                <svg class="miniradar" viewBox="0 0 80 80" role="img" aria-label="شش معیار، بدون امتیاز عمومی">
+                  <polygon points="40,8 67.7,24 67.7,56 40,72 12.3,56 12.3,24" fill="none" stroke="#d9e5ef" stroke-width="1.5"/>
+                  <polygon points="40,24 53.9,32 53.9,48 40,56 26.1,48 26.1,32" fill="none" stroke="#e7edf3"/>
+                  <path d="M40 8V72 M12.3 24L67.7 56 M67.7 24L12.3 56" stroke="#e4ebf2" stroke-width="1"/>
+                </svg>
+                <div class="score" aria-label="امتیاز منتشر نشده">—<small>امتیاز موجود نیست</small><span class="scorestatus">منتشر نشده</span></div>
+              </div>
+            </a>
+          {% empty %}
+            <div class="homepage-empty"><strong>شرکتی با این فیلترها پیدا نشد.</strong><p>جست‌وجو یا فیلترها را تغییر دهید.</p><a href="{% url 'homepage-preview-v219' %}">پاک‌کردن فیلترها</a></div>
+          {% endfor %}
+        </div>
+        {% if page.paginator.num_pages > 1 %}
+          <nav class="pagination" aria-label="صفحه‌بندی شرکت‌ها">
+            {% if page.has_previous %}<a href="?mode={{ mode }}&amp;sort={{ sort }}&amp;q={{ q|urlencode }}{% if verified %}&amp;verified=1{% endif %}{% if has_records %}&amp;has_records=1{% endif %}&amp;page={{ page.previous_page_number }}">صفحهٔ پیش</a>{% endif %}
+            <span>صفحهٔ {{ page.number }} از {{ page.paginator.num_pages }}</span>
+            {% if page.has_next %}<a href="?mode={{ mode }}&amp;sort={{ sort }}&amp;q={{ q|urlencode }}{% if verified %}&amp;verified=1{% endif %}{% if has_records %}&amp;has_records=1{% endif %}&amp;page={{ page.next_page_number }}">صفحهٔ بعد</a>{% endif %}
+          </nav>
+        {% endif %}
+      </section>
+    </section>
+  </main>
+
+  <section class="explanation" aria-label="شفافیت درباره داده‌ها">
+    <article id="about-framework"><h2>۶ معیار کاری + ۶ معیار مصاحبه</h2>
+      <p>امتیازهای شرایط کاری و شرایط مصاحبه دو چارچوب مستقل هستند. نمودارهای خالی نشان‌دهندهٔ صفر یا ارزیابی منفی نیستند: هیچ امتیاز تأییدنشده‌ای در این صفحه استفاده نشده است. نمایش عمومیِ امتیازها نیازمند تأیید منبع، انتساب، کیفیت و تصمیم مستقل انتشار است.</p>
+    </article>
+    <article id="about-data"><h2>اطلاعات شرکت‌ها از کجا می‌آیند؟</h2>
+      <p>نام شرکت‌ها و شمار تجربه‌ها از رکوردهای آرشیویِ دارای منشأ خارجی می‌آیند و لزوماً تأیید هویت یا کیفیت شرکت نیستند. نقشه فقط نقاط تأییدشده را می‌خواند. برای شناخت محدودیت‌های هر شرکت، <a href="{% url 'company-index' %}">فهرست و پروفایل‌های فعلی</a> را ببینید.</p>
+    </article>
+  </section>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand"><img src="{% static 'companies/img/jobiew_logo_home_v219.svg' %}" alt="جابیو" width="120"><p>شناخت بهتر، انتخاب آگاهانه‌تر</p><p>شناخت شرکت‌ها بر مبنای دادهٔ قابل بررسی و وضعیت واقعی اعتبارسنجی</p></div>
+      <div class="footer-group"><h2>دربارهٔ جابیو</h2><a href="#about-data">منشأ اطلاعات</a><a href="{% url 'company-index' %}">فهرست شرکت‌ها</a></div>
+      <div class="footer-group"><h2>راهنما و شفافیت</h2><a href="#about-framework">چارچوب ارزیابی ۶+۶</a><a href="{% url 'company-map' %}">نقشهٔ مکان‌های تأییدشده</a></div>
+    </div>
+    <div class="footer-bottom"><span>© جابیو · پیش‌نمایش خصوصی صفحهٔ نخست · بدون انتشار امتیازهای تأییدنشده</span></div>
+  </footer>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="filter-title" inert>
+    <div class="dhead"><div><h2 id="filter-title">فیلتر شرکت‌ها</h2><p>فیلترهای قابل اتکا روی آرشیو فعلی</p></div><button type="button" class="close" id="close" aria-label="بستن فیلترها">×</button></div>
+    <div class="dcontent"><form method="get" action="{% url 'homepage-preview-v219' %}" class="filters-form">
+      <input type="hidden" name="mode" value="{{ mode }}"><input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="q" value="{{ q }}">
+      <p class="warning">فیلتر امتیازهای شش‌محوری هنوز فعال نیست، چون دادهٔ تأییدشدهٔ قابل انتشار نداریم. فیلترهای زیر فقط بر اساس وضعیت ثبت و راستی‌آزمایی شرکت‌ها کار می‌کنند.</p>
+      <fieldset><legend>راستی‌آزمایی و آرشیو</legend>
+        <label><input type="checkbox" name="verified" value="1" {% if verified %}checked{% endif %}><span>فقط شرکت‌هایی که هویت، فناوری و ارتباطشان با تهران تأیید شده است</span></label>
+        <label><input type="checkbox" name="has_records" value="1" {% if has_records %}checked{% endif %}><span>فقط شرکت‌های دارای تجربهٔ {% if mode == 'work' %}کاری{% else %}مصاحبه{% endif %} در آرشیو</span></label>
+      </fieldset>
+      <fieldset disabled><legend>شش معیار {% if mode == 'work' %}شرایط کاری{% else %}مصاحبه{% endif %} (در انتظار انتشار)</legend>
+        <ul class="six-criteria">{% for axis in criteria_axes %}<li>{{ axis.label }}</li>{% endfor %}</ul>
+        <p>فیلتر حداقل نمره تنها پس از تأیید داده‌ها فعال خواهد شد.</p>
+      </fieldset>
+      <button class="apply" type="submit">اعمال فیلترهای مجاز</button><a class="reset" href="{% url 'homepage-preview-v219' %}?mode={{ mode }}">حذف فیلترها</a>
+    </form></div>
+  </aside>
+</body>
+</html>
