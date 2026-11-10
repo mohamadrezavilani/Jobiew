@@ -1,75 +1,91 @@
 {% extends "admin/base_site.html" %}
 {% block content %}
-<div id="content-main" dir="rtl" style="max-width:1250px;line-height:1.9">
+<div id="content-main" dir="rtl" style="max-width:1240px;line-height:1.9">
 <h1>بررسی گروهی مدارک: {{ company.display_name }}</h1>
-<p><a href="{{ release_url }}">بازگشت به موانع انتشار</a> ·
-<a href="{{ bulk_url }}">بازبینی نمره‌های شش‌معیاری</a></p>
-<section class="module" style="padding:16px;line-height:2;margin-bottom:20px">
-<h2>چرا این صفحه لازم است؟</h2>
-<p>نمره‌های GPT-6 قبلاً بررسی شده‌اند. اینجا فقط <strong>انتساب، استقلال، دسته‌بندی و مجوز واقعی استفاده از منبع</strong>
-را برای تجربه‌هایی که شخصاً خوانده‌ای، ثبت می‌کنی. چهار بررسی مستقل‌اند و هیچ‌کدام به‌طور پیش‌فرض انتخاب نشده‌اند.</p>
-<p><strong>{{ available }} تجربهٔ قابل بررسی گروهی</strong> در این شرکت باقی مانده است. موارد ردشده یا تکراریِ صریح در این صفحه قابل تأیید گروهی نیستند و باید جداگانه رسیدگی شوند.</p>
-<p>لینک تجربهٔ اصلی برای انتساب و مقایسهٔ تکراری‌ها ثبت می‌شود؛ <strong>این لینک به‌تنهایی حق استفاده یا انتشار نمی‌دهد.</strong>
-برای تأیید مجوز منبع باید سند جداگانه و واقعی ارائه کنی.</p>
+<p><a href="{{ release_url }}">بازگشت به وضعیت انتشار</a> ·
+<a href="{{ bulk_url }}">بازبینی نمره‌های ۶معیاری</a></p>
+<section class="module" style="padding:15px;line-height:2;margin-bottom:16px">
+  <p><strong>{{ available }} تجربهٔ قابل‌بررسی</strong> — این موارد برای راحتی تو از ابتدا انتخاب شده‌اند.
+  قبل از ثبت، هر تجربه‌ای را که متن یا مدرکش را شخصاً بررسی نکرده‌ای، از انتخاب خارج کن.</p>
+  <p>تأیید سه مورد «نوع تجربه، انتساب، استقلال» از <strong>مجوز استفاده از منبع</strong> جداست.
+  برای ثبت بررسی‌های عادی هیچ سند حقوقی لازم نیست؛ اما همچنان امتیازی عمومی نمی‌شود.</p>
 </section>
+{% if error %}
+<div role="alert" style="border:2px solid #b42318;border-radius:8px;padding:14px;margin:14px 0">
+<strong>ثبت انجام نشد:</strong> {{ error }}
+</div>
+{% endif %}
 {% if rows %}
 <form action="" method="post">{% csrf_token %}
 <input type="hidden" name="snapshot" value="{{ snapshot }}">
-<div class="module" style="padding:14px;overflow-x:auto">
-<h2>۱. تجربه‌هایی را که واقعاً بررسی کرده‌ای انتخاب کن</h2>
+<section class="module" style="padding:14px;overflow-x:auto;margin-bottom:16px">
+<h2>۱. تجربه‌ها (موارد واجدشرایط از قبل انتخاب شده‌اند)</h2>
 <table style="width:100%">
-<thead><tr><th>انتخاب</th><th>شناسه</th><th>نوع و متن منبع</th><th>بررسی‌های ناقص</th><th>لینک‌ها</th></tr></thead>
+<thead><tr><th>انتخاب</th><th>شناسه</th><th>نوع و خلاصهٔ متن</th><th>بررسی‌های باقی‌مانده</th><th>مشاهده</th></tr></thead>
 <tbody>
 {% for row in rows %}
 <tr>
-<td>
-{% if row.eligible %}
-<label><input type="checkbox" name="selected" value="{{ row.exp.pk }}"> انتخاب</label>
-{% else %}<strong>مسدود</strong>{% endif %}
-</td>
+<td>{% if row.eligible %}
+<label><input type="checkbox" name="selected" value="{{ row.exp.pk }}" {% if row.exp.pk in selected_ids %}checked{% endif %}> انتخاب‌شده</label>
+{% else %}<strong>ردشده / مسدود</strong>{% endif %}</td>
 <td>{{ row.exp.pk }}</td>
 <td><strong>{{ row.exp.get_source_kind_display }}</strong>
 <p>{{ row.exp.body|truncatechars:230 }}</p></td>
 <td>{% for gap in row.gap_labels %}{{ gap }}{% if not forloop.last %}، {% endif %}{% endfor %}</td>
-<td><a href="{% url 'admin:companies_company_experience_detail' company.pk row.exp.pk %}" target="_blank" rel="noopener">متن کامل و شش معیار</a>
-· {% if row.source_href %}<a href="{{ row.source_href }}" target="_blank" rel="noopener noreferrer">منبع اصلی</a>{% else %}<span>لینک معتبر ندارد</span>{% endif %}
+<td><a href="{% url 'admin:companies_company_experience_detail' company.pk row.exp.pk %}" target="_blank" rel="noopener">متن و معیارهای ۶گانه</a>
+{% if row.source_href %} · <a href="{{ row.source_href }}" target="_blank" rel="noopener noreferrer">منبع اصلی</a>{% endif %}
 </td>
 </tr>
 {% endfor %}
-</tbody>
-</table>
-</div>
-<section class="module" style="padding:16px;margin:18px 0">
-<h2>۲. کدام موارد را مستقلاً تأیید کرده‌ای؟</h2>
-<p>هر گزینه فقط روی تجربه‌های انتخاب‌شده اعمال می‌شود. اگر مدرک کافی نداری، آن را انتخاب نکن.</p>
-<label style="display:block;margin:10px 0"><input type="checkbox" name="checks" value="classification">
-نوع تجربه (کاری/مصاحبه) را از متن بررسی کرده‌ام.</label>
-<label style="display:block;margin:10px 0"><input type="checkbox" name="checks" value="attribution">
-از منبع اصلی، انتساب تجربه به همین شرکت را بررسی کرده‌ام.</label>
-<label style="display:block;margin:10px 0"><input type="checkbox" name="checks" value="independence">
-متن‌ها و تکراری‌ها را مقایسه کرده‌ام و این تجربه‌ها را مستقل تشخیص داده‌ام.</label>
-<label style="display:block;margin:10px 0"><input type="checkbox" name="checks" value="copyright">
-برای استفاده از نتایج تحلیلی منبع، مجوز واقعی و مستند بررسی کرده‌ام.</label>
-<div style="padding:12px;border:1px solid #c5ccd7;border-radius:8px;margin:14px 0">
-<label for="rights_document_url"><strong>لینک سند مجوز</strong> (فقط در صورت انتخاب مجوز منبع)</label>
-<p>یک سند واقعی HTTPS شامل مجوز معتبر برای همین نوع استفاده؛ آدرس خود نظر، مدرک مجوز محسوب نمی‌شود.
-اگر همهٔ تجربه‌های انتخاب‌شده تحت یک مجوز نیستند، آن‌ها را در دسته‌های جداگانه تأیید کن.</p>
-<input id="rights_document_url" name="rights_document_url" type="url" maxlength="1500"
-placeholder="https://example.com/licence-or-permission" style="width:100%;max-width:850px">
-<label style="display:block;margin:10px 0"><input type="checkbox" name="confirm_rights_scope" value="yes">
-من مدرک را مطالعه کرده‌ام و تأیید می‌کنم مجوز برای تمام تجربه‌های انتخابی و انتشار امتیازهای مشتق‌شده معتبر است.</label>
-</div>
-<label for="note"><strong>شرح کوتاه بررسی (یک‌بار برای همین گروه)</strong></label>
-<textarea id="note" name="note" rows="3" minlength="25" maxlength="1200" required
-placeholder="منابع را خواندم، نوع تجربه‌ها را سنجیدم و تطبیق انتساب یا استقلال را با روش ... انجام دادم." style="display:block;width:100%;max-width:900px"></textarea>
+</tbody></table>
+</section>
+<section class="module" style="padding:16px;margin:14px 0">
+<h2>۲. ثبت آسان بررسی‌های عادی</h2>
+<p>با ثبت این گزینه، برای تجربه‌های انتخابی فقط <strong>دسته‌بندی، انتساب و استقلال</strong> تأیید می‌شود؛
+آن هم در مواردی که هنوز چنین تأییدی ندارند. برای این کار باید واقعاً متن و ارتباط با شرکت و موارد تکراری را بررسی کرده باشی.</p>
+<details style="margin:12px 0">
+<summary>فقط بعضی از این سه مورد را بررسی کرده‌ام</summary>
+<label for="scope">محدودهٔ تأیید عادی</label>
+<select name="scope" id="scope">
+<option value="standard" {% if scope_value == 'standard' %}selected{% endif %}>هر سه مورد: دسته‌بندی، انتساب و استقلال</option>
+<option value="classification" {% if scope_value == 'classification' %}selected{% endif %}>فقط دسته‌بندی کاری / مصاحبه</option>
+<option value="attribution" {% if scope_value == 'attribution' %}selected{% endif %}>فقط انتساب به شرکت</option>
+<option value="independence" {% if scope_value == 'independence' %}selected{% endif %}>فقط استقلال / تکراری‌نبودن</option>
+</select>
+</details>
+<label for="note">توضیح اضافی (اختیاری)</label>
+<textarea name="note" id="note" rows="2" maxlength="1200"
+placeholder="اگر نکته‌ای در روش بازبینی داشتی، اینجا ثبت کن؛ لازم نیست متن تکراری بنویسی."
+style="display:block;width:100%;max-width:850px">{{ note_value }}</textarea>
 <label style="display:block;margin:16px 0">
 <input type="checkbox" name="confirm_manual" value="yes" required>
-<strong>خودم تمام موارد انتخاب‌شده را بررسی کرده‌ام و می‌دانم هیچ‌کدام از این تصمیم‌ها خودکار تولید نمی‌شود.</strong></label>
-<button type="submit" class="button default">ثبت بررسی‌های انتخاب‌شده و بازگشت به صفحهٔ انتشار</button>
-</section></form>
+<strong>تأیید می‌کنم تمام تجربه‌های انتخابی را واقعاً در محدودهٔ بررسی انتخاب‌شده بررسی کرده‌ام.</strong>
+</label>
+<button class="button default" name="action" value="standard" type="submit">
+ثبت بررسی‌های عادی (بدون تأیید مجوز انتشار)
+</button>
+<p><small>این دکمه به مجوز منبع نیاز ندارد، اما گیت انتشار عمومی را دور نمی‌زند.</small></p>
+</section>
+<details {% if rights_open %}open{% endif %} class="module" style="padding:16px;margin:14px 0">
+<summary><strong>۳. ثبت مجوز منبع با سند واقعی (اختیاری، مرحلهٔ مستقل)</strong></summary>
+<p>اگر سند قانونی یا مجوز معتبر داری که استفاده از امتیازهای تحلیلی مشتق‌شدهٔ
+<strong>همهٔ تجربه‌های انتخابی</strong> را پوشش می‌دهد، این بخش را تکمیل کن.
+لینک خود تجربه، سند مجوز نیست. اگر چنین سندی نداری، این بخش را خالی بگذار.</p>
+<label for="rights_document_url">آدرس HTTPS سند مجوز انتشار</label>
+<input id="rights_document_url" name="rights_document_url" type="url" maxlength="1500"
+value="{{ rights_document_url }}" placeholder="https://example.com/licence-or-permission"
+style="display:block;width:100%;max-width:850px;margin:8px 0">
+<p><strong>با زدن دکمهٔ زیر صراحتاً اعلام می‌کنی سند را خوانده‌ای و اعتبار و شمول آن را برای تمام موارد انتخابی بررسی کرده‌ای.</strong>
+تیک تأیید بررسی شخصی در قسمت بالا نیز لازم است.</p>
+<button class="button" name="action" value="rights" type="submit">
+ثبت فقط مجوز منبع برای تجربه‌های انتخابی
+</button>
+</details>
+</form>
 {% else %}
 <p>پروندهٔ جدیدی با امتیاز معتبر و نقصِ قابل بررسی گروهی باقی نمانده است.</p>
 {% endif %}
-<p>این صفحه فقط رویدادهای بررسی خصوصی ثبت می‌کند. برای انتشار امتیازها باید در صفحهٔ انتشار شرکت، تصمیم جداگانه بگیری. متن خام تجربه‌ها در این مسیر منتشر نمی‌شود.</p>
+<p>هیچ‌یک از این دکمه‌ها نمرهٔ GPT-6 را تغییر یا منتشر نمی‌کند. انتشار فقط در
+<a href="{{ release_url }}">صفحهٔ مستقل انتشار شرکت</a> امکان‌پذیر است و بدون سند حقوقی معتبر مسدود می‌ماند.</p>
 </div>
 {% endblock %}
