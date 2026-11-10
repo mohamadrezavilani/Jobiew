@@ -6,7 +6,7 @@ comments, old ratings, and source text are not editable here.
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent, CheckpointApprovalReceipt, CriteriaCompanyReleaseEvent
+from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent, CheckpointApprovalReceipt, CriteriaCompanyReleaseEvent, CriteriaClaudeValidationRun
 
 
 class AuditOnlyAdmin(admin.ModelAdmin):
@@ -51,7 +51,20 @@ class CriteriaAxisScoreInline(admin.TabularInline):
 @admin.register(CriteriaAnalysis)
 class CriteriaAnalysisAdmin(AuditOnlyAdmin):
     inlines = (CriteriaAxisScoreInline,)
-    list_display = ('experience', 'criteria_version', 'model_name', 'run_id', 'review_status', 'review_company')
+    list_display = ('experience', 'criteria_version', 'model_name', 'run_id',
+                    'review_status', 'review_company', 'claude_six_link')
+
+    def get_list_display(self, request):
+        cols = list(self.list_display)
+        if not request.user.has_perm('criteria_v2.view_criteriaclaudevalidationrun'):
+            cols.remove('claude_six_link')
+        return cols
+
+    @admin.display(description='نظر مستقل Claude')
+    def claude_six_link(self, obj):
+        return format_html('<a href="{}">مقایسه ۶معیاری</a>',
+            reverse('admin:companies_company_experience_claude',
+                    args=[obj.experience.company_id, obj.experience_id]))
 
     @admin.display(description='بازبینی گروهی خصوصی')
     def review_company(self, obj):
@@ -82,3 +95,12 @@ class CriteriaCompanyReleaseEventAdmin(AuditOnlyAdmin):
     list_display = ('company', 'decision', 'reviewer', 'created_at')
     list_filter = ('decision', 'created_at')
     list_select_related = ('company', 'reviewer')
+
+
+@admin.register(CriteriaClaudeValidationRun)
+class CriteriaClaudeValidationRunAdmin(AuditOnlyAdmin):
+    list_display = ('analysis', 'status', 'model_id', 'requested_by', 'created_at', 'finished_at')
+    list_filter = ('status', 'model_id', 'created_at')
+    search_fields = ('analysis__experience__company__display_name',
+                     'analysis__experience__source_url')
+    list_select_related = ('analysis', 'requested_by')
