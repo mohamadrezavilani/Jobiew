@@ -32,7 +32,7 @@
 <p>{{ row.exp.body|truncatechars:230 }}</p></td>
 <td>{% for gap in row.gap_labels %}{{ gap }}{% if not forloop.last %}، {% endif %}{% endfor %}</td>
 <td><a href="{% url 'admin:companies_company_experience_detail' company.pk row.exp.pk %}" target="_blank" rel="noopener">متن کامل و شش معیار</a>
-· <a href="{{ row.exp.source_url }}" target="_blank" rel="noopener noreferrer">منبع اصلی</a>
+· {% if row.source_href %}<a href="{{ row.source_href }}" target="_blank" rel="noopener noreferrer">منبع اصلی</a>{% else %}<span>لینک معتبر ندارد</span>{% endif %}
 </td>
 </tr>
 {% endfor %}

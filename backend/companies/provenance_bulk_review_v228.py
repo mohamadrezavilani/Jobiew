@@ -194,8 +194,9 @@ def provenance_review(admin_view, request, object_id):
     checks = request.POST.getlist('checks')
     note = (request.POST.get('note') or '').strip()
     rights_doc = (request.POST.get('rights_document_url') or '').strip()
-    if (request.POST.get('snapshot') != snapshot or
-            request.POST.get('confirm_manual') != 'yes' or
+    if request.POST.get('snapshot') != snapshot:
+        return HttpResponse('STALE_SOURCE_REVIEW_RELOAD', status=409)
+    if (request.POST.get('confirm_manual') != 'yes' or
             selected is None or
             not checks or len(checks) != len(set(checks)) or
             any(check not in FIELDS for check in checks) or
