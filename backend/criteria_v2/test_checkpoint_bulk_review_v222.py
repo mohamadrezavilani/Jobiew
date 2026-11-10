@@ -78,6 +78,8 @@ class BulkCheckpointV222Tests(TestCase):
     def approve_data(self, response):
         return {'snapshot': response.context['token'],
                 'ready_count': str(response.context['ready_count']),
+                'selected': [str(row['run'].pk) for row in response.context['rows']
+                             if not row['reason']],
                 'confirm_reviewed': 'yes', 'confirm_private': 'yes',
                 'note': 'همه شواهد و محورهای این تجربه‌ها جداگانه بررسی و تطبیق داده شد.'}
 
@@ -182,6 +184,32 @@ class BulkCheckpointV222Tests(TestCase):
         self.assertTrue(checkpoint_release_ready(run))
         CriteriaAxisScore.objects.filter(analysis=run, score=3).update(score=7)
         self.assertFalse(checkpoint_release_ready(CriteriaAnalysis.objects.get(pk=run.pk)))
+
+    def test_select_subset_then_approve_remaining_later(self):
+        response = self.get_ready()
+        data = self.approve_data(response)
+        first = data['selected'][0]
+        data['selected'] = [first]
+        with patch.dict('os.environ', FLAGS):
+            result = self.client.post(self.url, data)
+        self.assertEqual(result.status_code, 302)
+        self.assertEqual(CriteriaScoreReviewEvent.objects.count(), 1)
+        self.assertEqual(CriteriaAnalysis.objects.filter(review_status='pilot_unverified').count(), 1)
+        next_response = self.get_ready()
+        self.assertEqual(next_response.context['ready_count'], 1)
+        self.assertEqual(self.approve(next_response).status_code, 302)
+        self.assertEqual(CriteriaScoreReviewEvent.objects.count(), 2)
+
+    def test_reject_unknown_duplicate_or_empty_bulk_selection(self):
+        response = self.get_ready()
+        data = self.approve_data(response)
+        examples = ([], ['9999999'], [data['selected'][0], data['selected'][0]])
+        for selected in examples:
+            with self.subTest(selected=selected):
+                with patch.dict('os.environ', FLAGS):
+                    actual = self.client.post(self.url, {**data, 'selected': selected})
+                self.assertEqual(actual.status_code, 400)
+                self.assertEqual(CriteriaScoreReviewEvent.objects.count(), 0)
 
     def test_stale_snapshot_aborts_without_any_write(self):
         r = self.get_ready()
