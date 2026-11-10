@@ -73,7 +73,9 @@ class Command(CumulativeCommand):
             selected = [row for row in rows if
                         row['experience_id'] > opts['after_id'] and
                         ledger[row['experience_id']].get('exact_duplicate_of_experience_id') is None]
-            excluded = len(rows) - len(selected)
+            excluded = sum(1 for row in rows if
+                           row['experience_id'] > opts['after_id'] and
+                           ledger[row['experience_id']].get('exact_duplicate_of_experience_id') is not None)
             if len(selected) > opts['max_total']:
                 raise CommandError('MAX_TOTAL_EXCEEDED_USE_SMALLER_CURSORS')
             # Verify every source and every quote BEFORE the first write.

@@ -268,6 +268,13 @@ class PrivateProductionImportGuardTests(TestCase):
             self.assertEqual(guard_private_production('jobiew'), 'jobiew')
             with self.assertRaises(CommandError):
                 guard_private_production('other')
+        # Follow-up batches must remain importable without hiding already
+        # rights-cleared, explicitly released company scores.
+        with patch('criteria_v2.management.commands.stage_checkpoint_private_prod_v224.connection',
+                   SimpleNamespace(settings_dict=cfg)), patch.dict('os.environ', {
+                       **flags, 'JOBIEW_DUAL6_PUBLICATION_ENABLED':'1',
+                       'JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED':'1'}):
+            self.assertEqual(guard_private_production('jobiew'), 'jobiew')
         for override in (
             {'JOBIEW_PRIVATE_CHECKPOINT_IMPORT_ENABLED':'0'},
             {'JOBIEW_PRIVATE_CHECKPOINT_REVIEW_ENABLED':'0'},
