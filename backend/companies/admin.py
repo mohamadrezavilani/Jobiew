@@ -5,6 +5,7 @@ from .review_dashboard_v47 import review_dashboard
 from .company_experiences_admin_v103 import company_experiences, company_experience_detail
 from .pilot_review_queue_v48 import pilot_review_queue
 from .checkpoint_admin_queue_v225 import checkpoint_review_queue
+from .quick_company_review_v226 import quick_company_review
 from criteria_v2.checkpoint_bulk_review_v222 import company_bulk_review
 from criteria_v2.company_release_v224 import company_release
 from .models import Company, CompanyVerificationEvent
@@ -38,6 +39,9 @@ class CompanyAdmin(admin.ModelAdmin):
         return [
             path('checkpoints/', self.admin_site.admin_view(self.checkpoint_queue_view),
                  name='companies_company_checkpoint_queue'),
+            path('<path:object_id>/checkpoint/verify/',
+                 self.admin_site.admin_view(self.quick_company_review_view),
+                 name='companies_company_checkpoint_verify'),
             path('<path:object_id>/checkpoint/bulk/',
                  self.admin_site.admin_view(self.checkpoint_bulk_view),
                  name='companies_company_checkpoint_bulk'),
@@ -55,6 +59,9 @@ class CompanyAdmin(admin.ModelAdmin):
             path('<path:object_id>/review/', self.admin_site.admin_view(self.review_view),
                  name='companies_company_review'),
         ] + super().get_urls()
+
+    def quick_company_review_view(self, request, object_id):
+        return quick_company_review(self, request, object_id)
 
     def checkpoint_queue_view(self, request):
         return checkpoint_review_queue(request)
@@ -107,6 +114,8 @@ class CompanyAdmin(admin.ModelAdmin):
             request.user.has_perm('criteria_v2.view_criteriaanalysis'))
         extra_context['wi_checkpoint_bulk_url'] = reverse(
             'admin:companies_company_checkpoint_bulk', args=[object_id])
+        extra_context['wi_checkpoint_verify_url'] = reverse(
+            'admin:companies_company_checkpoint_verify', args=[object_id])
         extra_context['wi_checkpoint_release_url'] = reverse(
             'admin:companies_company_checkpoint_release', args=[object_id])
         return super().change_view(request, object_id, form_url, extra_context)

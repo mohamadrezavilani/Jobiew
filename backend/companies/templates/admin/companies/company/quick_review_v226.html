@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div id="content-main" dir="rtl" style="max-width:870px;line-height:1.9">
+<h1>تأیید سادهٔ شرکت: {{ company.display_name }}</h1>
+<p><a href="{{ release_url }}">بازگشت به وضعیت انتشار و علت‌های مسدودبودن</a></p>
+<section class="module" style="padding:16px;border-radius:10px;margin:16px 0">
+<h2>۱. وضعیت فعلی</h2>
+<p>هویت شرکت: <strong>{{ company.get_identity_status_display }}</strong> ·
+فعالیت فناوری: <strong>{{ company.get_tech_status_display }}</strong></p>
+<p>فقط این دو تأیید برای «تأیید خود شرکت جهت امتیازهای شش‌معیاری» لازم‌اند.
+تأیید تهران و موقعیت نقشه برای انتشار نمره‌ها لازم نیست.</p>
+</section>
+<section class="module" style="padding:16px;border-radius:10px;margin:16px 0">
+<h2>۲. مدرک را بررسی کن</h2>
+{% if suggested_url %}
+<p><a href="{{ suggested_url }}" rel="noopener noreferrer" target="_blank">باز کردن صفحهٔ منبع مربوط به شرکت</a></p>
+{% endif %}
+<p>آدرس منبع فقط به عنوان پیشنهاد پر شده است. اگر آن صفحه برای اثبات هویت یا فعالیت فناوری کافی نیست، مدرک دقیق‌تری وارد کن یا آن گزینه را تأیید نکن.</p>
+<form method="post" action="">{% csrf_token %}
+<input type="hidden" name="snapshot" value="{{ snapshot }}">
+{{ form.non_field_errors }}
+<div style="margin:14px 0"><label for="{{ form.evidence_url.id_for_label }}">{{ form.evidence_url.label }}</label>
+{{ form.evidence_url }} {{ form.evidence_url.errors }}</div>
+<div style="margin:14px 0">
+<label>{{ form.verify_identity }} {{ form.verify_identity.label }}</label>{{ form.verify_identity.errors }}
+<label>{{ form.verify_tech }} {{ form.verify_tech.label }}</label>{{ form.verify_tech.errors }}
+</div>
+<div style="margin:14px 0">
+<label>{{ form.confirm_evidence }} <strong>{{ form.confirm_evidence.label }}</strong></label>
+{{ form.confirm_evidence.errors }}</div>
+<button class="button default" type="submit">ثبت تأییدهای انتخاب‌شده و بازگشت به انتشار</button>
+</form>
+</section>
+<p>با این اقدام هیچ مجوز بازنشر نظر، تأیید استقلال تجربه یا انتشار عمومی به‌طور خودکار ثبت نمی‌شود. اطلاعات قبلی شرکت حذف نمی‌شود؛ تصمیم‌ها در تاریخچهٔ حسابرسی محفوظ می‌مانند.</p>
+</div>
+{% endblock %}
