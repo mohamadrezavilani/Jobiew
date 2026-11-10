@@ -70,7 +70,7 @@ class HomepagePublicCutoverV220Tests(TestCase):
         self.assertTemplateUsed(directory, 'companies/index.html')
         self.assertEqual(gated_preview.status_code, 404)
         self.assertContains(home, 'شرکت کاندید صفحه اول')
-        self.assertContains(home, '۱ تجربهٔ کاری')
+        self.assertContains(home, '1 تجربهٔ کاری')
         self.assertContains(home, 'امتیاز موجود نیست')
         self.assertNotContains(home, 'پیش‌نمایش خصوصی')
         for sentinel in ('PRIVATE_TITLE_220', 'PRIVATE_BODY_220', 'PRIVATE_BLOCKED_220',

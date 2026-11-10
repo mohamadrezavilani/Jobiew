@@ -29,7 +29,7 @@
   <p class="preview-note" role="status">پیش‌نمایش خصوصی طراحی؛ نام‌ها از آرشیو فعلی و شمارنده‌ها فقط از تجربه‌های قابل فهرست عمومی هستند؛ این‌ها امتیاز تأییدشده نیستند. هیچ امتیاز شرکت منتشر نشده است.</p>
   {% endif %}
   <header class="top">
-    <div class="brand"><a href="{% url 'company-index' %}" aria-label="جابیو، بازگشت به فهرست فعلی"><img class="brand-logo" src="{% static 'companies/img/jobiew_logo_home_v219.svg' %}" alt="جابیو" width="142" height="45"></a></div>
+    <div class="brand"><a href="{% url 'company-index' %}" aria-label="جابیو، {% if is_public_home %}صفحهٔ اول{% else %}بازگشت به فهرست فعلی{% endif %}"><img class="brand-logo" src="{% static 'companies/img/jobiew_logo_home_v219.svg' %}" alt="جابیو" width="142" height="45"></a></div>
     <nav aria-label="ناوبری صفحه">
       <a href="#main-content" aria-current="page">کشف شرکت‌ها</a>
       <a href="{% url 'company-map' %}">نقشهٔ شرکت‌ها</a>
@@ -63,7 +63,7 @@
       <a class="tool" href="?mode={{ mode }}&amp;q={{ q|urlencode }}&amp;sort={% if sort == 'most' %}name{% else %}most{% endif %}{% if verified %}&amp;verified=1{% endif %}{% if has_records %}&amp;has_records=1{% endif %}" aria-label="تغییر ترتیب فهرست">{% if sort == 'most' %}مرتب‌سازی: تعداد تجربه بیشتر{% else %}مرتب‌سازی: نام شرکت{% endif %} ⌄</a>
     </section>
 
-    <section class="workspace panel" aria-label="پیش‌نمایش کشف شرکت‌ها">
+    <section class="workspace panel" aria-label="{% if is_public_home %}کشف شرکت‌ها{% else %}پیش‌نمایش کشف شرکت‌ها{% endif %}">
       <div class="maptop workspace-title">
         <div><div class="workspace-title-label"><b>{% if verified %}شرکت‌های فناوری تهران، تأییدشده{% else %}شرکت‌های ثبت‌شده در آرشیو{% endif %}</b><span class="count" id="company-count">{{ page.paginator.count }} شرکت</span></div><div class="sub">نقشه فقط مکان‌های تأییدشدهٔ شرکت‌های همین صفحه را نشان می‌دهد.</div></div>
         <div class="workspace-heading-actions"><p class="mode-caption">{% if mode == 'work' %}آرشیو تجربه‌های کاری{% else %}آرشیو تجربه‌های مصاحبه{% endif %}</p>
