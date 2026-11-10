@@ -4,8 +4,8 @@
 {% block content %}
 <main class="wi-x" dir="rtl">
   <div class="wi-x-bar">
-    <div><p class="wi-x-over">مدیریت محتوای گردآوری‌شده · دسترسی فقط برای مدیران</p><h1>{{ company.display_name }}</h1><p>تجربه‌های کاری و مصاحبه‌های واردشده به پایگاه دادهٔ Jobiew</p></div>
-    <div class="wi-x-nav"><a href="{{ company_change_url }}">مشخصات شرکت</a><a href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">تأیید گروهی GPT-6</a><a href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">انتشار و موانع آن</a><a href="{% url 'admin:companies_company_changelist' %}">فهرست شرکت‌ها</a></div>
+    <div><p class="wi-x-over">متن‌های خصوصی · پنل ۶+۶</p><h1>تجربه‌های {{ company.display_name }}</h1><p>هر تجربه را باز کن تا شش معیار و نتیجهٔ بررسی مستقل Claude را ببینی.</p></div>
+    <div class="wi-x-nav"><a class="button" href="{% url 'admin:companies_company_workflow' company.pk %}">وضعیت و قدم بعدی شرکت</a><a href="{% url 'admin:companies_company_changelist' %}">فهرست شرکت‌ها</a></div>
   </div>
   <div class="wi-x-stats">
     <div><strong>{{ totals.total }}</strong><span>کل مطالب واردشده</span></div>
@@ -17,9 +17,12 @@
   <form method="get" class="wi-x-filter" aria-label="جست‌وجو و فیلتر مطالب">
     <label>جست‌وجو در عنوان، متن، عنوان شغلی و لینک منبع<input type="search" name="q" value="{{ q }}" maxlength="120" placeholder="مثلاً: پشتیبانی، حقوق، مهندس نرم‌افزار"></label>
     <label>نوع محتوا<select name="kind">{% for value,label in kind_filters.items %}<option value="{{ value }}" {% if kind == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-    <label>انتساب به شرکت<select name="attribution">{% for value,label in attribution_filters.items %}<option value="{{ value }}" {% if attribution == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <details style="grid-column:1/-1"><summary>فیلترهای تخصصیِ مدارک منبع</summary>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:12px">
+        <label>انتساب به شرکت<select name="attribution">{% for value,label in attribution_filters.items %}<option value="{{ value }}" {% if attribution == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
     <label>استقلال نظر<select name="independence">{% for value,label in independence_filters.items %}<option value="{{ value }}" {% if independence == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
     <label>وضعیت حقوقی<select name="copyright">{% for value,label in copyright_filters.items %}<option value="{{ value }}" {% if copyright_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    </div></details>
     <div class="wi-x-actions"><button type="submit" class="button default">اعمال فیلتر</button><a href="{{ company_experiences_url }}">پاک‌کردن فیلترها</a></div>
   </form>
   {% if page_obj.object_list %}
@@ -29,9 +32,12 @@
       <td><strong>{{ exp.title|truncatechars:120 }}</strong>{% if exp.job_title %}<small>عنوان شغلی: {{ exp.job_title }}</small>{% endif %}<p>{{ exp.body|default:'بدون متن'|truncatechars:220 }}</p></td>
       <td>{{ exp.get_source_kind_display }}<small>{{ exp.published_jalali|default:'تاریخ نامشخص' }}</small></td>
       <td><small>انتساب: {{ exp.company_attribution_status }}</small><small>استقلال: {{ exp.independence_status }}</small><small>حقوقی: {{ exp.copyright_review }}</small></td>
-      <td><strong>{{ exp.six_state }}</strong></td>
+      <td><strong>{{ exp.six_state }}</strong>{% if can_view_claude and exp.claude_status %}
+<small>Claude: {{ exp.claude_status }}</small>{% endif %}</td>
       <td>{% if exp.safe_source_url %}<a href="{{ exp.safe_source_url }}" target="_blank" rel="noopener noreferrer">صفحهٔ اصلی ↗</a>{% else %}بدون لینک معتبر{% endif %}</td>
-      <td><a class="button" href="{% url 'admin:companies_company_experience_detail' company.pk exp.pk %}">متن و شش معیار</a></td>
+      <td><a class="button" href="{% url 'admin:companies_company_experience_detail' company.pk exp.pk %}">مشاهدهٔ نظر و نتیجه</a>
+{% if can_view_claude and exp.six_run %}<small><a href="{% url 'admin:companies_company_claude_six' company.pk exp.pk %}">{% if exp.claude_status %}نتیجهٔ Claude{% else %}بررسی با Claude{% endif %}</a></small>{% endif %}
+</td>
     </tr>{% endfor %}</tbody>
   </table></div>
   {% else %}<p class="wi-x-empty">در این شرکت نتیجه‌ای با فیلترهای انتخاب‌شده پیدا نشد.</p>{% endif %}

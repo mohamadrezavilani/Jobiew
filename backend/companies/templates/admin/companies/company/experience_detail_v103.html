@@ -48,11 +48,28 @@
         </tbody>
       </table>
     {% endif %}
+    {% if can_view_claude and six_run and six_integrity_ok %}
+    <section class="wi-x-claude-shortcut" aria-label="بررسی مستقل با Claude" style="border:1px solid var(--hairline-color);border-radius:10px;padding:16px;margin:16px 0">
+      <h3>نظر دوم Claude برای همین شش معیار</h3>
+      {% if claude_result %}
+      <p>نتیجهٔ قبلی موجود است: <strong>{{ claude_result.get_status_display }}</strong>
+      · {{ claude_result.created_at|date:"Y/m/d H:i" }}.
+      نیازی به هزینهٔ دوباره نیست.</p>
+      <a class="button" href="{{ claude_url }}">نمایش نتیجه و مقایسهٔ GPT-6 با Claude</a>
+      {% else %}
+      <p>اگر مجوز استفادهٔ خارجی از متن ثبت شده باشد، یک بار می‌توانی Claude را به‌صورت مستقل اجرا کنی.
+      این کار اختیاری، پولی و بدون تغییر خودکار نمره‌هاست.</p>
+      <a class="button" href="{{ claude_url }}">بررسی شش‌معیاری با Claude</a>
+      {% endif %}
+    </section>
+    {% endif %}
     {% if can_view_six %}
       <p class="wi-x-nav">
-        <a class="button" href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">بازبینی و تأیید گروهی شرکت</a>
-        <a class="button" href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">دلایل عدم انتشار و تصمیم نهایی</a>
-        <a href="{% url 'dual-criteria-review-queue' %}">بررسی نوع تجربه (کاری یا مصاحبه)</a>
+        <a class="button" href="{{ workflow_url }}">وضعیت و قدم بعدی شرکت</a>
+        <details style="margin:10px 0"><summary>پیوندهای تخصصی</summary>
+        <a href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">بازبینی گروهی نمره‌ها</a> ·
+        <a href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">تصمیم انتشار</a> ·
+        <a href="{% url 'dual-criteria-review-queue' %}">بررسی نوع تجربه</a></details>
       </p>
     {% endif %}
     <p>برای تأیید حقوق استفاده از این منبع، انتساب و مستقل‌بودن روایت، هر تصمیم را جداگانه و با مدرک واقعی ثبت کنید:

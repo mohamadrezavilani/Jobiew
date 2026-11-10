@@ -1,0 +1,68 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<main dir="rtl" style="max-width:1060px;line-height:1.9;margin:0 auto">
+<h1>مقایسهٔ مستقل GPT-6 با Claude</h1>
+<p><a href="{{ detail_url }}">بازگشت به متن تجربه و شش معیار</a> ·
+<a href="{% url 'admin:companies_company_workflow' company.pk %}">مسیر مدیریت {{ company.display_name }}</a></p>
+<section class="module" style="padding:18px;margin:14px 0">
+<h2>{{ experience.title|truncatechars:110 }}</h2>
+<p>{{ company.display_name }} · {{ experience.get_source_kind_display }} · شش معیار مستقل همین نوع تجربه</p>
+<p>این بررسی <strong>اختیاری و پولی</strong> است. نتیجهٔ Claude فقط نظر دوم برای بازبینی انسانی است؛
+نمرهٔ GPT-6، وضعیت تأیید یا انتشار عمومی را خودکار تغییر نمی‌دهد.</p>
+{% if not integrity %}<p role="alert"><strong>شواهد GPT-6 یا متن منبع تغییر کرده‌اند. اجرای Claude و نمایش نتایج قبلی مسدود است.</strong></p>{% endif %}
+{% if not rights %}<p role="status"><strong>مجوز مستند استفادهٔ خارجی از متن هنوز ثبت نشده است.</strong>
+بدون بررسی و اجازهٔ معتبر، متن خصوصی برای Claude ارسال نمی‌شود.</p>{% endif %}
+</section>
+{% if previous %}
+<section class="module" style="padding:18px;margin:14px 0">
+<h2>نتیجهٔ ثبت‌شدهٔ قبلی Claude</h2>
+<p>وضعیت: <strong>{{ previous.get_status_display }}</strong> · مدل: {{ previous.model_id }} ·
+زمان: {{ previous.created_at|date:"Y/m/d H:i" }} · اجراکننده: {{ previous.requested_by }}</p>
+<p>توکن‌های ورودی: {{ previous.input_tokens }} · خروجی: {{ previous.output_tokens }}.
+اجرای دوباره برای همین تحلیل مسدود است تا ناخواسته دوباره هزینه ایجاد نشود.</p>
+{% if not current %}
+<p role="alert">متن تجربه یا محتوای تحلیل GPT-6 تغییر کرده است؛ نتیجهٔ Claude قبلی به این نسخه قابل انتساب نیست.</p>
+{% elif previous.status == 'completed' %}
+<table style="width:100%">
+<thead><tr><th>معیار</th><th>GPT-6</th><th>Claude</th><th>اختلاف</th><th>شاهد و توضیح Claude</th></tr></thead>
+<tbody>{% for row in rows %}
+<tr>
+<th scope="row">{{ row.label }}</th>
+<td>{{ row.gpt|default_if_none:"بدون امتیاز" }}</td>
+<td>{{ row.claude|default_if_none:"بدون امتیاز" }}</td>
+<td>{% if row.different %}<strong>متفاوت</strong>{% else %}هم‌نظر{% endif %}{% if row.delta != None %} ({{ row.delta }}){% endif %}</td>
+<td>{% for evidence in row.evidence %}<blockquote>{{ evidence }}</blockquote>{% empty %}فاقد شاهد{% endfor %}
+<p>{{ row.explanation }}</p></td>
+</tr>{% endfor %}</tbody>
+</table>
+{% elif previous.status == 'needs_review' %}
+<p>Claude نوع تجربه را متفاوت یا نامطمئن تشخیص داده است. هیچ امتیاز شش‌معیاریِ غیرهم‌نوعی جایگزین GPT-6 نشده است.</p>
+{% elif previous.status == 'failed' %}
+<p>فراخوانی ناموفق بود؛ کد وضعیت: {{ previous.error_code|default:"نامشخص" }}.
+برای جلوگیری از هزینهٔ تکراری، اجرای مجدد همین تحلیل از این صفحه ممکن نیست.</p>
+{% else %}
+<p>درخواست ثبت شده و در حالت انتظار نتیجه است. صفحه را بعداً تازه کن؛
+اجرای هم‌زمان یا درخواست تکراری انجام نمی‌شود.</p>
+{% endif %}
+</section>
+{% else %}
+<section class="module" style="padding:18px;margin:14px 0">
+<h2>بررسی جدید با Claude</h2>
+<p>سهمیهٔ استفاده‌شده: {{ used }} از {{ quota }} · وضعیت سرویس:
+{% if enabled %}آماده{% else %}غیرفعال یا بدون کلید API{% endif %}</p>
+{% if can_run %}
+<form method="post" action="{{ same_url }}">{% csrf_token %}
+<label style="display:block;margin:15px 0">
+<input type="checkbox" name="confirm_external" value="yes" required>
+<strong>اجازهٔ واقعی پردازش خارجی این متن را بررسی کرده‌ام و با ارسال نسخهٔ بدون شناسه‌های آشکار به Claude و هزینهٔ یک درخواست موافقم.</strong></label>
+<button type="submit" class="button default">اجرای یک‌بارهٔ Claude و مشاهدهٔ نتیجه</button>
+</form>
+{% else %}
+<p>برای فعال‌شدن دکمه، مجوز مستقل متن، اعتبار تحلیل GPT-6، دسترسی بازبین، کلید API،
+فعال‌بودن گزینهٔ Claude و سهمیهٔ باقی‌مانده ضروری‌اند. اجرای خودکار نداریم.</p>
+{% endif %}
+</section>
+{% endif %}
+<p>داده‌های این مقایسه خصوصی‌اند؛ به کاربران سایت نشان داده نمی‌شوند و نتیجهٔ قبلی قابل‌حذف یا جایگزینی خودکار نیست.</p>
+</main>
+{% endblock %}

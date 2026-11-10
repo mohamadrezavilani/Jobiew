@@ -20,6 +20,7 @@ from criteria_v2.checkpoint_contract_v218 import ENGINE
 from criteria_v2.checkpoint_private_v218 import _private_run_valid
 from criteria_v2.engine_v207 import story_from_experience
 from criteria_v2.models import CriteriaAnalysis
+from criteria_v2.claude_six_models_v233 import ClaudeSixCheck
 from criteria_v2.registry import axes_for
 
 # New 6+6 workflow only. Historical five_v1 data remains in its own DB
@@ -144,10 +145,18 @@ def company_experiences(admin_view, request, object_id):
     page.object_list = list(page.object_list)
     can_six = _can_inspect_six(request)
     latest = _six_runs(page.object_list) if can_six else {}
+    can_claude = can_six and request.user.has_perm('criteria_v2.view_claudesixcheck')
+    check_status = {}
+    if can_claude:
+        for check in (ClaudeSixCheck.objects.filter(
+                analysis_id__in=[run.pk for run in latest.values()])
+                .order_by('-created_at', '-pk')):
+            check_status.setdefault(check.analysis_id, check.get_status_display())
     for exp in page.object_list:
         exp.safe_source_url = _safe_source_url(exp.source_url)
         exp.six_run = latest.get(exp.pk)
         exp.six_state = _six_state(exp.six_run) if can_six else 'فقط برای بازبین مجاز'
+        exp.claude_status = check_status.get(exp.six_run.pk) if can_claude and exp.six_run else None
     params = {'q': q, 'kind': kind, 'copyright': copyright_status,
               'attribution': attribution, 'independence': independence}
     query = urlencode({k: v for k, v in params.items() if v and v != 'all'})
@@ -161,6 +170,7 @@ def company_experiences(admin_view, request, object_id):
         'independence_filters': INDEPENDENCE_FILTERS,
         'page_query': (query + '&') if query else '',
         'can_view_six': can_six,
+        'can_view_claude': can_claude,
     })
     return TemplateResponse(request, 'admin/companies/company/experiences_list_v103.html', ctx)
 
@@ -176,6 +186,9 @@ def company_experience_detail(admin_view, request, object_id, experience_id):
     latest = _six_runs([exp]).get(exp.pk) if can_six else None
     integrity_ok = (bool(latest) and _private_run_valid(
         latest, story_from_experience(exp))) if can_six else False
+    can_claude = (can_six and request.user.has_perm('criteria_v2.view_claudesixcheck'))
+    claude_result = (ClaudeSixCheck.objects.filter(analysis=latest).first()
+                     if latest and can_claude else None)
     axis_rows = []
     if latest is not None and integrity_ok:
         score_rows = {row.key: row for row in latest.axis_scores.all()}
@@ -189,5 +202,9 @@ def company_experience_detail(admin_view, request, object_id, experience_id):
         'six_state': _six_state(latest),
         'six_integrity_ok': integrity_ok,
         'six_axes': axis_rows,
+        'can_view_claude': can_claude,
+        'claude_result': claude_result,
+        'claude_url': reverse('admin:companies_company_claude_six', args=[company.pk, exp.pk]),
+        'workflow_url': reverse('admin:companies_company_workflow', args=[company.pk]),
     })
     return TemplateResponse(request, 'admin/companies/company/experience_detail_v103.html', ctx)

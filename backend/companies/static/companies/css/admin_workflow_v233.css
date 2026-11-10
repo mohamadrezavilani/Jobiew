@@ -1,0 +1,42 @@
+/* Focused right-to-left back office, inheriting Django admin light/dark palette. */
+.jw-admin{max-width:1180px;margin:0 auto;line-height:1.8}
+.jw-admin *{box-sizing:border-box}
+.jw-admin a{word-break:break-word}
+.jw-breadcrumb{margin:0 0 18px;color:var(--body-quiet-color)}
+.jw-hero{padding:23px 25px;border:1px solid var(--hairline-color);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.jw-kicker{font-size:12px;font-weight:800;letter-spacing:.02em;color:var(--body-quiet-color);margin:0 0 4px!important}
+.jw-hero h1{font-size:24px;margin:0 0 6px;color:var(--body-fg)}
+.jw-hero p{margin:0}
+.jw-link{display:inline-block;border:1px solid var(--hairline-color);padding:7px 14px;border-radius:8px}
+.jw-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:20px 0}
+.jw-overview>div{padding:16px;border:1px solid var(--hairline-color);border-radius:11px;background:var(--darkened-bg)}
+.jw-overview strong{display:block;font-size:24px;line-height:1.5;color:var(--body-fg)}
+.jw-overview span{color:var(--body-quiet-color);font-size:13px}
+.jw-next{padding:20px;border-radius:11px;border:2px solid var(--link-fg);margin:20px 0}
+.jw-next h2{margin:0 0 12px!important;color:var(--body-fg)}
+.jw-steps{border:1px solid var(--hairline-color);border-radius:11px;padding:17px 20px}
+.jw-steps h2{margin:0 0 16px}
+.jw-steps ol{padding:0;margin:0;list-style:none}
+.jw-step{border-top:1px solid var(--hairline-color);padding:14px 3px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.jw-step-main{min-width:0;flex:1}
+.jw-step-heading{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.jw-step-heading h3{font-size:16px;margin:0;color:var(--body-fg)}
+.jw-step p{margin:4px 0 0;color:var(--body-quiet-color)}
+.jw-status{display:inline-block;border-radius:30px;padding:2px 10px;font-size:12px;font-weight:750}
+.jw-ok{color:#165a38;background:#ddf2e6}
+.jw-pending{color:#79520d;background:#fff0cd}
+.jw-hint{font-size:13px;color:var(--body-quiet-color);margin:13px 0}
+.jw-secondary{margin:18px 0;padding:14px 18px;border:1px solid var(--hairline-color);border-radius:11px}
+.jw-secondary summary{cursor:pointer;font-weight:700}
+.jw-home .jw-intro{padding:20px;border:1px solid var(--hairline-color);border-radius:12px;margin-bottom:18px}
+.jw-home .jw-intro h2{font-size:22px;margin-top:0}
+.jw-home .jw-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:15px}
+.jw-home .jw-links a{display:block;border:1px solid var(--hairline-color);border-radius:10px;padding:14px 16px;text-decoration:none}
+.jw-home .jw-links strong{display:block;font-size:15px}
+.jw-home .jw-links span{display:block;color:var(--body-quiet-color);font-size:12px;margin-top:5px}
+.jw-home form{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:15px 0}
+.jw-home input[type=search]{min-width:min(100%,280px);max-width:100%}
+.jw-home details{margin:18px 0;border:1px solid var(--hairline-color);border-radius:10px;padding:14px}
+.jw-home details summary{cursor:pointer;font-weight:750}
+@media(max-width:750px){.jw-overview{grid-template-columns:repeat(2,minmax(0,1fr))}.jw-home .jw-links{grid-template-columns:1fr}.jw-step{align-items:start;flex-direction:column}}
+@media(prefers-color-scheme:dark){.jw-ok{color:#bcf5d4;background:#18482d}.jw-pending{color:#ffe6a0;background:#51401b}}
