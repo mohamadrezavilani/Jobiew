@@ -52,6 +52,8 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 {% if stats.copyright_missing or stats.attribution_missing or stats.independence_missing or stats.classification_missing %}
 <div class="notice" role="status">
 <h3>قدم ۲: مدارک تجربه‌ها و نظرات</h3>
+<p><a class="button" href="{% url 'admin:companies_company_checkpoint_sources' company.pk %}"><strong>بررسی گروهی مدارک و دسته‌بندی این شرکت</strong></a></p>
+<p>به‌جای چندین فرم مجزا، تجربه‌های واقعاً بررسی‌شده را انتخاب کن و تأییدهای مستقل را با یک یادداشت ثبت کن. مجوز منبع فقط با سند جداگانه پذیرفته می‌شود.</p>
 <p>از میان پرونده‌های تأییدشده و نمره‌دار، تعداد مواردی که این تأییدهای مستقل را ندارند:</p>
 <table>
 <tr><th>مجوز واقعی استفاده و انتشار منبع</th><td><strong>{{ stats.copyright_missing }}</strong></td></tr>
