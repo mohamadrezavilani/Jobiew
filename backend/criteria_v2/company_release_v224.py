@@ -15,6 +15,7 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from companies.models import Company
 from experiences.models import PublicExperience, ExperienceReviewEvent
@@ -117,6 +118,7 @@ def _token(company, proofs, status):
 
 
 @never_cache
+@ensure_csrf_cookie
 @require_http_methods(['GET', 'POST'])
 def company_release(request, pk):
     authorize_checkpoint(request)
@@ -133,6 +135,7 @@ def company_release(request, pk):
         import os
         return _private(request, 'criteria_v2/company_release_v224.html', {
             'company': company, 'stats': stats, 'eligible_count': len(proofs),
+            'admin_mode': request.resolver_match.url_name == 'companies_company_checkpoint_release',
             'current': current, 'token': token,
             'public_enabled': (os.environ.get('JOBIEW_DUAL6_PUBLICATION_ENABLED') == '1'
                 and os.environ.get('JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED') == '1'
@@ -164,4 +167,6 @@ def company_release(request, pk):
     messages.success(request, ('انتشار امتیازهای تأییدشدهٔ این شرکت ثبت شد. '
         if action == 'published' else 'انتشار امتیازهای این شرکت متوقف شد. ') +
         'نمایش عمومی فقط با گیت‌های جداگانه و بازبینی زندهٔ مجوز منبع ممکن است.')
+    if request.resolver_match.url_name == 'companies_company_checkpoint_release':
+        return redirect('admin:companies_company_checkpoint_release', object_id=pk)
     return redirect('dual-company-release-v224', pk=pk)

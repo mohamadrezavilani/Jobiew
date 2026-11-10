@@ -4,13 +4,17 @@ from django.utils.html import format_html
 from .review_dashboard_v47 import review_dashboard
 from .company_experiences_admin_v103 import company_experiences, company_experience_detail
 from .pilot_review_queue_v48 import pilot_review_queue
+from .checkpoint_admin_queue_v225 import checkpoint_review_queue
+from criteria_v2.checkpoint_bulk_review_v222 import company_bulk_review
+from criteria_v2.company_release_v224 import company_release
 from .models import Company, CompanyVerificationEvent
 
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
     list_display = ('display_name', 'identity_status', 'tech_status', 'tehran_status',
-                    'source_work_count', 'source_interview_count', 'vote_enabled', 'experiences_link', 'review_link')
+                    'source_work_count', 'source_interview_count', 'vote_enabled', 'experiences_link', 'review_link',
+                    'checkpoint_bulk_link', 'checkpoint_release_link')
     list_filter = ('identity_status', 'tech_status', 'tehran_status', 'vote_enabled')
     search_fields = ('display_name', 'source_url', 'source_name')
     readonly_fields = ('id', 'source_url', 'source_name', 'identity_status', 'tech_status',
@@ -21,12 +25,25 @@ class CompanyAdmin(admin.ModelAdmin):
     change_list_template = 'admin/companies/company/change_list_v48.html'
 
     def get_list_display(self, request):
-        if request.user.has_perm('experiences.view_publicexperience'):
-            return self.list_display
-        return tuple(field for field in self.list_display if field != 'experiences_link')
+        fields = list(self.list_display)
+        if not request.user.has_perm('experiences.view_publicexperience'):
+            fields.remove('experiences_link')
+        if not (request.user.has_perm('criteria_v2.view_criteriaanalysis') and
+                request.user.has_perm('experiences.view_publicexperience')):
+            fields.remove('checkpoint_bulk_link')
+            fields.remove('checkpoint_release_link')
+        return tuple(fields)
 
     def get_urls(self):
         return [
+            path('checkpoints/', self.admin_site.admin_view(self.checkpoint_queue_view),
+                 name='companies_company_checkpoint_queue'),
+            path('<path:object_id>/checkpoint/bulk/',
+                 self.admin_site.admin_view(self.checkpoint_bulk_view),
+                 name='companies_company_checkpoint_bulk'),
+            path('<path:object_id>/checkpoint/release/',
+                 self.admin_site.admin_view(self.checkpoint_release_view),
+                 name='companies_company_checkpoint_release'),
             path('<path:object_id>/experiences/<int:experience_id>/',
                  self.admin_site.admin_view(self.experience_detail_view),
                  name='companies_company_experience_detail'),
@@ -38,6 +55,25 @@ class CompanyAdmin(admin.ModelAdmin):
             path('<path:object_id>/review/', self.admin_site.admin_view(self.review_view),
                  name='companies_company_review'),
         ] + super().get_urls()
+
+    def checkpoint_queue_view(self, request):
+        return checkpoint_review_queue(request)
+
+    def checkpoint_bulk_view(self, request, object_id):
+        return company_bulk_review(request, pk=object_id)
+
+    def checkpoint_release_view(self, request, object_id):
+        return company_release(request, pk=object_id)
+
+    @admin.display(description='تأیید گروهی GPT-6')
+    def checkpoint_bulk_link(self, obj):
+        return format_html('<a href="{}">بازبینی و تأیید</a>',
+                           reverse('admin:companies_company_checkpoint_bulk', args=[obj.pk]))
+
+    @admin.display(description='انتشار شرکت')
+    def checkpoint_release_link(self, obj):
+        return format_html('<a href="{}">انتشار / توقف</a>',
+                           reverse('admin:companies_company_checkpoint_release', args=[obj.pk]))
 
     def experiences_view(self, request, object_id):
         return company_experiences(self, request, object_id)
@@ -66,6 +102,13 @@ class CompanyAdmin(admin.ModelAdmin):
         extra_context['wi_review_url'] = reverse('admin:companies_company_review', args=[object_id])
         extra_context['wi_experiences_url'] = reverse('admin:companies_company_experiences', args=[object_id])
         extra_context['wi_can_see_experiences'] = request.user.has_perm('experiences.view_publicexperience')
+        extra_context['wi_can_review_checkpoint'] = (
+            request.user.has_perm('experiences.view_publicexperience') and
+            request.user.has_perm('criteria_v2.view_criteriaanalysis'))
+        extra_context['wi_checkpoint_bulk_url'] = reverse(
+            'admin:companies_company_checkpoint_bulk', args=[object_id])
+        extra_context['wi_checkpoint_release_url'] = reverse(
+            'admin:companies_company_checkpoint_release', args=[object_id])
         return super().change_view(request, object_id, form_url, extra_context)
 
     def has_add_permission(self, request):

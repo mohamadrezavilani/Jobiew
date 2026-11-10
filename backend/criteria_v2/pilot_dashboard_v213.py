@@ -45,7 +45,12 @@ def _private(request, template, context):
     response['Pragma'] = 'no-cache'
     response['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
     response['Referrer-Policy'] = 'no-referrer'
-    response['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'"
+    # Built-in admin assets remain same-origin only; permit genuine same-origin
+    # form submissions. No third-party scripts, frames or network access.
+    response['Content-Security-Policy'] = (
+        "default-src 'none'; style-src 'self' 'unsafe-inline'; "
+        "script-src 'self'; img-src 'self' data:; font-src 'self'; "
+        "form-action 'self'; base-uri 'none'; frame-ancestors 'none'")
     return response
 
 

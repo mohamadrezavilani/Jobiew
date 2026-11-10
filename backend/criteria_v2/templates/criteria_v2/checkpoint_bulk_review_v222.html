@@ -1,7 +1,17 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>بازبینی گروهی امتیازهای شرکت | جابیو</title><style>
-body{font:16px/1.95 Tahoma,system-ui;max-width:1160px;margin:25px auto;padding:0 18px;color:#173044;background:#f5f8fc}a{color:#115d91}h1{font-size:1.5rem}h2{font-size:1.1rem}table{width:100%;border-collapse:collapse;background:#fff}th,td{padding:11px;border-bottom:1px solid #dae1e8;text-align:right;vertical-align:top}th{background:#eaf0f8}.notice{background:#fff4e2;border-right:5px solid #b76c19;padding:16px;margin:15px 0}.ok{color:#116646}.bad{color:#9a303c}form{background:white;padding:20px;margin:25px 0;border:1px solid #d4dfe8;border-radius:12px}textarea{width:100%;box-sizing:border-box;font:inherit}button{background:#115a6b;color:white;border:0;border-radius:8px;font:inherit;font-weight:bold;padding:10px 20px}button:disabled{opacity:.5;cursor:not-allowed}label{display:block;margin:13px 0}p{overflow-wrap:anywhere}main{max-width:100%}
-</style></head><body><main>
-<p><a href="{% url 'dual-checkpoint-company-v218' company.pk %}">بازگشت به پیش‌نمایش شرکت</a> · <a href="{% url 'dual-checkpoint-dashboard-v218' %}">تمام شرکت‌ها</a></p>
+{% extends "admin/base_site.html" %}
+{% block title %}بازبینی گروهی امتیازهای شرکت | جابیو{% endblock %}
+{% block extrastyle %}{{ block.super }}<style>
+#content-main{font-size:15px;line-height:1.95;max-width:1200px;margin:0 auto;direction:rtl}a{color:#115d91}h1{font-size:1.5rem}h2{font-size:1.1rem}table{width:100%;border-collapse:collapse;background:#fff}th,td{padding:11px;border-bottom:1px solid #dae1e8;text-align:right;vertical-align:top}th{background:#eaf0f8}.notice{background:#fff4e2;border-right:5px solid #b76c19;padding:16px;margin:15px 0}.ok{color:#116646}.bad{color:#9a303c}form{background:white;padding:20px;margin:25px 0;border:1px solid #d4dfe8;border-radius:12px}textarea{width:100%;box-sizing:border-box;font:inherit}button{background:#115a6b;color:white;border:0;border-radius:8px;font:inherit;font-weight:bold;padding:10px 20px}button:disabled{opacity:.5;cursor:not-allowed}label{display:block;margin:13px 0}p{overflow-wrap:anywhere}main{max-width:100%}
+</style>{% endblock %}
+{% block content %}<main id="content-main">
+<p>{% if admin_mode %}
+<a href="{% url 'admin:companies_company_checkpoint_queue' %}">فهرست شرکت‌ها</a>
+· <a href="{% url 'admin:companies_company_change' company.pk %}">جزئیات شرکت</a>
+· <a href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">انتشار/توقف امتیازها</a>
+{% else %}
+<a href="{% url 'dual-checkpoint-company-v218' company.pk %}">پیش‌نمایش شرکت</a>
+· <a href="{% url 'dual-checkpoint-dashboard-v218' %}">تمام شرکت‌ها</a>
+{% endif %}</p>
 <h1>بازبینی گروهی امتیازهای خصوصی: {{ company.display_name }}</h1>
 <div class="notice"><strong>تأیید گروهی فقط دربارهٔ داوری شواهد شش‌معیاری است.</strong> قبل از ثبت باید محتوای هر تجربه و شواهد آن را واقعاً بررسی کنید. این کار به معنی تأیید هویت شرکت، مجوز حقوقی منبع، استقلال روایت یا انتشار نمره‌ها نیست. محورهای بدون شواهد با null/abstain باقی می‌مانند. هر پرونده یک رویداد حسابرسی مستقل دارد.</div>
 {% for message in messages %}<p role="status">{{ message }}</p>{% endfor %}
@@ -11,7 +21,7 @@ body{font:16px/1.95 Tahoma,system-ui;max-width:1160px;margin:25px auto;padding:0
 {% empty %}<tr><td colspan="7">پروندهٔ جدیدی برای تأیید گروهی وجود ندارد.</td></tr>{% endfor %}
 </tbody></table>
 {% if ready_count and can_approve %}
-<form method="post" id="bulk-approve-v223">{% csrf_token %}<input type="hidden" name="snapshot" value="{{ token }}"><input type="hidden" name="ready_count" value="{{ ready_count }}">
+<form method="post" action="" id="bulk-approve-v223">{% csrf_token %}<input type="hidden" name="snapshot" value="{{ token }}"><input type="hidden" name="ready_count" value="{{ ready_count }}">
 <h2>ثبت تصمیم شش‌معیاری برای پرونده‌های انتخاب‌شده (حداکثر {{ ready_count }} مورد)</h2>
 <p>همهٔ موارد واجدشرایط ابتدا انتخاب شده‌اند؛ مواردی را که هنوز بررسی نکرده‌اید یا با آن‌ها موافق نیستید از حالت انتخاب خارج کنید. موارد انتخاب‌نشده بدون تغییر باقی می‌مانند.</p>
 <label><input type="checkbox" name="confirm_reviewed" value="yes" required> متن روایت‌ها و شواهد شش‌محوری همهٔ پرونده‌های انتخاب‌شده را واقعاً بررسی کرده‌ام و به تصمیم هر محور متعهدم.</label>
@@ -20,4 +30,4 @@ body{font:16px/1.95 Tahoma,system-ui;max-width:1160px;margin:25px auto;padding:0
 <p>اگر حتی یک امتیاز نیاز به رد/تغییر دارد، آن شرکت را به‌صورت یک‌جا تأیید نکنید و پرونده‌ها را برای بازبینی اختصاصی نگه دارید.</p>
 <button type="submit">ثبت گروهی تصمیم‌ها فقط در پنل خصوصی</button></form>
 {% elif not can_approve %}<p>مجوز ثبت تصمیم ندارید. از مدیر سیستم دسترسی مخصوص بازبینی درخواست کنید.</p>{% endif %}
-</main></body></html>
+</main>{% endblock %}

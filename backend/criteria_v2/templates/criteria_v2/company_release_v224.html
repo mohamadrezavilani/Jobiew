@@ -1,16 +1,21 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow,noarchive">
-<title>انتشار کنترل‌شدهٔ شرکت | جابیو</title>
+{% extends "admin/base_site.html" %}
+{% block title %}انتشار کنترل‌شدهٔ شرکت | جابیو{% endblock %}
+{% block extrastyle %}{{ block.super }}
 <style>
-body{font:16px/1.9 Tahoma,system-ui;max-width:900px;margin:24px auto;padding:0 18px;color:#1b293e}
+#content-main{font-size:15px;line-height:1.9;max-width:980px;margin:0 auto;direction:rtl}
 a{color:#075e9a}section{border:1px solid #dae2e8;padding:18px;border-radius:12px;margin:18px 0}
 label{display:block;margin:12px 0}textarea{width:100%;max-width:100%;min-height:100px}
 button{font:inherit;padding:9px 20px;cursor:pointer}
 .notice{background:#fff2db;border-right:5px solid #ad680e;padding:15px}
 table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1px solid #dae2e8;padding:8px}
-</style></head><body>
+</style>{% endblock %}
+{% block content %}<div id="content-main">
+{% if admin_mode %}
+<a href="{% url 'admin:companies_company_checkpoint_queue' %}">فهرست شرکت‌ها</a>
+· <a href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">بازبینی گروهی نمره‌ها</a>
+{% else %}
 <a href="{% url 'dual-checkpoint-company-v218' company.pk %}">بازگشت به پروندهٔ شرکت</a>
+{% endif %}
 <h1>انتشار امتیازهای تأییدشده: {{ company.display_name }}</h1>
 <div class="notice">انتشار شرکت با تأیید گروهی نمره‌ها فرق دارد. فقط پرونده‌هایی که شش معیارشان بازبینی شده و مجوز انتشار، انتساب، استقلال و دسته‌بندی آن‌ها جداگانه با سند ثبت شده، قابل انتشار هستند. متن خام نظرها در این مرحله عمومی نمی‌شود.</div>
 {% for message in messages %}<p>{{ message }}</p>{% endfor %}
@@ -27,7 +32,7 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 <tr><th>گیت‌های نمایش در سایت</th><td>{% if public_enabled %}فعال{% else %}غیرفعال؛ حتی پس از ثبت تصمیم، نمره عمومی نمی‌شود{% endif %}</td></tr>
 </table></section>
 <section><h2>ثبت تصمیم انتشار شرکت</h2>
-<form method="post">{% csrf_token %}
+<form method="post" action="">{% csrf_token %}
 <input type="hidden" name="snapshot" value="{{ token }}">
 <label>یادداشت و دلیل تصمیم
 <textarea name="note" minlength="20" maxlength="1200" required></textarea></label>
@@ -39,4 +44,4 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 <button name="action" value="held" type="submit">توقف نمایش امتیازهای شرکت</button>
 </form>
 <p>تجربه‌های تازه در checkpointهای بعدی خودکار منتشر نمی‌شوند و باید مجدداً بررسی و به انتشار اضافه شوند.</p>
-</section></body></html>
+</section></div>{% endblock %}
