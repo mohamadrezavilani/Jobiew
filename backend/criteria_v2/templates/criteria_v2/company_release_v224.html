@@ -47,6 +47,17 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 <p>اگر تصمیم ثبت شده اما تعداد قابل نمایش صفر است، ممکن است داده‌های منبع، رسیدهای شش‌معیاری یا شرایط بازبینی بعداً تغییر کرده باشند. نمایش عمومی از گیت‌های زنده تبعیت می‌کند؛ تکرار دکمهٔ انتشار راه‌حل نیست.</p>
 {% endif %}
 </section>
+<section id="map-visibility-note">
+<h2>وضعیت مستقل نمایش مکان این شرکت روی نقشه</h2>
+<p>{% if map_state.visible %}<strong>پین شرکت در خروجی نقشهٔ عمومی موجود است.</strong>
+{% else %}<strong>پین شرکت هنوز در خروجی نقشهٔ عمومی موجود نیست.</strong>{% endif %}
+تأیید و انتشار امتیازهای ۶+۶ به‌تنهایی مکان دفتر را تأیید نمی‌کند.</p>
+{% if map_state.missing %}
+<p>شرط‌های ناقص:</p>
+<ul>{% for gate in map_state.missing %}<li>{{ gate.label }} — {{ gate.details }}</li>{% endfor %}</ul>
+{% endif %}
+<p><a class="button" href="{{ map_review_url }}">دیدن وضعیت دقیق و تکمیل تأیید مکان</a></p>
+</section>
 <section>
 <h2>وضعیت شرکت و امتیازها</h2>
 <table>

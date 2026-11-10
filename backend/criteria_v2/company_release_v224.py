@@ -173,8 +173,10 @@ def company_release(request, pk):
     if request.method == 'GET':
         # Import lazily: sufficiency depends on this module's rights predicates.
         from .publication_state_v231 import company_publication_state
+        from companies.map_visibility_v232 import company_map_status
         from django.urls import reverse
         public_state = company_publication_state(company, release=current)
+        map_state = company_map_status(company)
         snapshot_matches = bool(
             current is not None and current.decision == 'published'
             and current.approved_runs == proofs)
@@ -182,6 +184,8 @@ def company_release(request, pk):
         response = _private(request, 'criteria_v2/company_release_v224.html', {
             'company': company, 'stats': stats, 'eligible_count': len(proofs),
             'public_state': public_state,
+            'map_state': map_state,
+            'map_review_url': reverse('admin:companies_company_review', args=[company.pk]) + '#map-visibility',
             'snapshot_matches': snapshot_matches,
             'public_profile_url': reverse('company-detail', args=[company.pk]) + '?tab=ai#dual-criteria',
             'rights_only': rights_only,

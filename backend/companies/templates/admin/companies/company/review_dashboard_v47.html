@@ -31,11 +31,39 @@
     <p class="wi-review-note">صفحه منبع گردآوری‌شده لزوماً مدرک مستقل تأیید شرکت نیست؛ قبل از تأیید، شواهد واقعی را بررسی کنید.</p>
   </header>
 
-  {% if public_map_eligible %}
-    <p class="wi-review-ready" role="status">تمام پیش‌شرط‌های فعلی نمایش مکان در نقشه عمومی برقرارند. <a href="{% url 'company-map' %}" target="_blank" rel="noopener noreferrer">مشاهده نقشه عمومی</a></p>
-  {% else %}
-    <p class="wi-review-unready" role="status">این شرکت فعلاً تمام پیش‌شرط‌های نمایش در نقشه عمومی را ندارد. تأیید مکان به‌تنهایی کافی نیست.</p>
-  {% endif %}
+  <section class="module" id="map-visibility" style="padding:16px;line-height:2;margin-bottom:22px">
+    <h2>وضعیت واقعی نمایش {{ company.display_name }} روی نقشه</h2>
+    {% if public_map_eligible %}
+      <p class="wi-review-ready" role="status"><strong>پین این شرکت اکنون در خروجی عمومی نقشه وجود دارد.</strong>
+      <a href="{% url 'company-map' %}" target="_blank" rel="noopener noreferrer">نمایش نقشهٔ مستقل</a> ·
+      <a href="{% url 'company-index' %}?q={{ company.display_name|urlencode }}" target="_blank" rel="noopener noreferrer">جست‌وجوی همین شرکت در صفحهٔ اصلی</a></p>
+    {% else %}
+      <p class="wi-review-unready" role="status"><strong>پین این شرکت فعلاً در خروجی عمومی نقشه نیست.</strong>
+      در جدول زیر دقیقاً مشخص شده کدام شرط باقی مانده است. تأیید محل دفتر به‌تنهایی کافی نیست.</p>
+    {% endif %}
+    <table>
+      <thead><tr><th>شرط لازم</th><th>وضعیت ذخیره‌شده</th><th>اقدام</th></tr></thead>
+      <tbody>
+      {% for check in public_map_checks %}
+      <tr>
+        <td>{{ check.label }}</td>
+        <td>{% if check.ok %}<strong>تأییدشده</strong>{% else %}<strong>ناقص</strong>{% endif %} · {{ check.details }}</td>
+        <td>{% if check.code == 'identity' or check.code == 'tech' or check.code == 'tehran' %}
+        <a href="#review-{{ check.code }}">{% if check.ok %}مشاهدهٔ تصمیم{% else %}بازبینی و تأیید با مدرک{% endif %}</a>
+        {% else %}
+        <a href="#review-location">{% if check.ok %}مشاهدهٔ آخرین تصمیم مکان{% else %}بررسی مکان و مختصات{% endif %}</a>
+        {% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% if not public_map_consistent %}
+      <p role="alert"><strong>ناهماهنگی در وضعیت پین شناسایی شد.</strong>
+      بدون تغییر دستی رکوردها، وضعیت خروجی نقشه را برای بررسی فنی گزارش کنید.</p>
+    {% endif %}
+    <p class="wi-review-note">نقشهٔ صفحهٔ اصلی فقط شرکت‌های فهرست همان صفحه و همان فیلتر را نشان می‌دهد.
+    حتی اگر خروجی نقشه پین داشته باشد، با جست‌وجو، مرتب‌سازی و صفحه‌بندی ممکن است پین آن در نمای فعلی صفحهٔ اول دیده نشود.</p>
+  </section>
 
   <div class="wi-review-cards">
   {% for item in panels %}

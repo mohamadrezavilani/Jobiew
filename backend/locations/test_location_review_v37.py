@@ -57,6 +57,50 @@ class LocationReviewV37Tests(TestCase):
         self.assertEqual(data[0]['geometry']['coordinates'], [51.41, 35.71])
         self.assertEqual(set(data[0]['properties']), {'company_id', 'name'})
 
+    def test_admin_checklist_shows_missing_tehran_even_after_location_approval(self):
+        self.company_approve('identity')
+        self.company_approve('tech')
+        self.event()
+        self.client.force_login(self.user)
+        url = reverse('admin:companies_company_review', args=[self.co.pk])
+        result = self.client.get(url)
+        self.assertEqual(result.status_code, 200)
+        self.assertFalse(result.context['public_map_eligible'])
+        checks = {row['code']: row['ok'] for row in result.context['public_map_checks']}
+        self.assertTrue(checks['identity'])
+        self.assertTrue(checks['tech'])
+        self.assertTrue(checks['location'])
+        self.assertTrue(checks['coordinates'])
+        self.assertTrue(checks['latest_review'])
+        self.assertFalse(checks['tehran'])
+        self.assertContains(result, 'ارتباط شرکت با تهران (تأیید مستقل)')
+        self.assertContains(result, 'پین این شرکت فعلاً در خروجی عمومی نقشه نیست')
+        self.assertEqual(self.features(), [])
+
+        self.company_approve('tehran')
+        result = self.client.get(url)
+        self.assertTrue(result.context['public_map_eligible'])
+        self.assertEqual(len(result.context['public_map_missing']), 0)
+        self.assertContains(result, 'پین این شرکت اکنون در خروجی عمومی نقشه وجود دارد')
+        self.assertEqual(len(self.features()), 1)
+
+    def test_stale_coordinates_explain_why_previous_location_review_is_not_visible(self):
+        for field in ('identity', 'tech', 'tehran'):
+            self.company_approve(field)
+        self.event()
+        self.assertEqual(len(self.features()), 1)
+        CompanyLocation.objects.filter(company=self.co).update(
+            latitude=Decimal('35.720000'))
+        self.client.force_login(self.user)
+        result = self.client.get(
+            reverse('admin:companies_company_review', args=[self.co.pk]))
+        self.assertFalse(result.context['public_map_eligible'])
+        checks = {row['code']: row['ok'] for row in result.context['public_map_checks']}
+        self.assertFalse(checks['latest_review'])
+        self.assertTrue(checks['coordinates'])
+        self.assertContains(result, 'آخرین تصمیم مستند دربارهٔ مکان')
+        self.assertEqual(self.features(), [])
+
     def test_requires_complete_evidence_for_approval(self):
         for field, value in [('evidence_url', ''), ('address', ''), ('longitude', None),
                              ('latitude', Decimal('95.000000')), ('rationale', 'مختصر')]:

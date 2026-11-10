@@ -17,6 +17,7 @@ from django.urls import reverse
 
 from companies.models import Company, CompanyVerificationEvent
 from locations.models import CompanyLocation, CompanyLocationReviewEvent
+from companies.map_visibility_v232 import company_map_status
 
 
 class CompanyDecisionForm(forms.ModelForm):
@@ -155,20 +156,8 @@ def review_dashboard(admin_view, request, object_id):
         initial=initial_location,
     )
     loc_status = location.verification_status if location else 'unverified'
-    eligible = (
-        all(getattr(company, column) == 'verified' for column in columns.values())
-        and location is not None
-        and loc_status == 'verified'
-        and location.verified_at is not None
-        and location.latitude is not None
-        and location.longitude is not None
-        and bool(location.evidence_url)
-        and loc_latest is not None
-        and loc_latest.decision == 'verified'
-        and loc_latest.latitude == location.latitude
-        and loc_latest.longitude == location.longitude
-        and loc_latest.evidence_url == location.evidence_url
-    )
+    map_status = company_map_status(company, location=location, latest_event=loc_latest)
+    eligible = map_status['visible']
     recent = sorted([*company_events[:8], *location_events[:8]],
                     key=lambda x: (x.created_at, x.pk), reverse=True)[:12]
     ctx = {
@@ -184,6 +173,9 @@ def review_dashboard(admin_view, request, object_id):
         'can_company_review': can_company,
         'can_location_review': can_location,
         'public_map_eligible': eligible,
+        'public_map_checks': map_status['checks'],
+        'public_map_missing': map_status['missing'],
+        'public_map_consistent': map_status['consistent'],
         'recent_events': recent,
         'company_search_url': 'https://www.google.com/search?q=' + quote_plus(company.display_name + ' تماس با ما آدرس رسمی'),
         'opts': admin_view.model._meta,
