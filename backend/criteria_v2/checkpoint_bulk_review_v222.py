@@ -111,6 +111,12 @@ def company_bulk_review(request, pk):
             not request.POST.get('snapshot') or
             not request.POST.get('ready_count', '').isdigit()):
         return HttpResponse('EXPLICIT_HUMAN_REVIEW_ATTESTATION_REQUIRED', status=400)
+    selected_raw = request.POST.getlist('selected')
+    if (not selected_raw or len(selected_raw) > MAX_COMPANY_RUNS or
+            any(not x.isascii() or not x.isdecimal() or not x.isdigit() for x in selected_raw) or
+            len(selected_raw) != len(set(selected_raw))):
+        return HttpResponse('INVALID_BULK_REVIEW_SELECTION', status=400)
+    selected_ids = {int(x) for x in selected_raw}
     with transaction.atomic():
         # Serialize competing reviewers, and lock each source to prevent stale
         # company/source changes while human decisions are recorded.
@@ -121,6 +127,10 @@ def company_bulk_review(request, pk):
         if (not ready or current != request.POST['snapshot'] or
                 len(ready) != int(request.POST['ready_count'])):
             return HttpResponse('STALE_OR_INELIGIBLE_COMPANY_REVIEW', status=409)
+        ready_ids = {run.pk for run in ready}
+        if not selected_ids.issubset(ready_ids):
+            return HttpResponse('INVALID_OR_INELIGIBLE_BULK_SELECTION', status=400)
+        ready = [run for run in ready if run.pk in selected_ids]
         # The snapshot includes six complete quotes/scores, source identity
         # and previous-review state. Recheck once while source locks are held.
         approved_runs = 0

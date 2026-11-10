@@ -6,14 +6,15 @@ body{font:16px/1.95 Tahoma,system-ui;max-width:1160px;margin:25px auto;padding:0
 <div class="notice"><strong>تأیید گروهی فقط دربارهٔ داوری شواهد شش‌معیاری است.</strong> قبل از ثبت باید محتوای هر تجربه و شواهد آن را واقعاً بررسی کنید. این کار به معنی تأیید هویت شرکت، مجوز حقوقی منبع، استقلال روایت یا انتشار نمره‌ها نیست. محورهای بدون شواهد با null/abstain باقی می‌مانند. هر پرونده یک رویداد حسابرسی مستقل دارد.</div>
 {% for message in messages %}<p role="status">{{ message }}</p>{% endfor %}
 <p>پرونده‌های بررسی‌نشدهٔ این شرکت: <strong>{{ total_count }}</strong> · قابل‌ثبت پس از بازبینی انسانی: <strong>{{ ready_count }}</strong> · سقف عملیاتی یک درخواست: {{ cap }}</p>
-<table><thead><tr><th>شناسه تجربه</th><th>نوع</th><th>محور نمره‌دار</th><th>وضعیت ساختاری</th><th>مجوز / انتساب / استقلال</th><th>جزئیات و شواهد</th></tr></thead><tbody>
-{% for item in rows %}<tr><td>{{ item.run.experience_id }}</td><td>{{ item.run.experience.source_kind }}</td><td>{{ item.numeric }} از ۶</td><td>{% if item.reason %}<span class="bad">{{ item.reason }}</span>{% else %}<span class="ok">قابل داوری خصوصی</span>{% endif %}</td><td>{% if item.rights_ready %}مجوز بررسی‌شده{% else %}مجوز نامعلوم{% endif %} · {% if item.attribution_ready %}انتساب تأییدشده{% else %}انتساب تأییدنشده{% endif %} · {% if item.independence_ready %}مستقل تأییدشده{% else %}استقلال نامعلوم{% endif %}</td><td><a href="{% url 'dual-checkpoint-detail-v218' item.run.pk %}">دیدن متن و شش شاهد</a></td></tr>
-{% empty %}<tr><td colspan="6">پروندهٔ جدیدی برای تأیید گروهی وجود ندارد.</td></tr>{% endfor %}
+<table><thead><tr><th>انتخاب</th><th>شناسه تجربه</th><th>نوع</th><th>محور نمره‌دار</th><th>وضعیت ساختاری</th><th>مجوز / انتساب / استقلال</th><th>جزئیات و شواهد</th></tr></thead><tbody>
+{% for item in rows %}<tr><td>{% if not item.reason %}<input type="checkbox" name="selected" value="{{ item.run.pk }}" form="bulk-approve-v223" checked aria-label="انتخاب تجربهٔ {{ item.run.experience_id }}">{% else %}—{% endif %}</td><td>{{ item.run.experience_id }}</td><td>{{ item.run.experience.source_kind }}</td><td>{{ item.numeric }} از ۶</td><td>{% if item.reason %}<span class="bad">{{ item.reason }}</span>{% else %}<span class="ok">قابل داوری خصوصی</span>{% endif %}</td><td>{% if item.rights_ready %}مجوز بررسی‌شده{% else %}مجوز نامعلوم{% endif %} · {% if item.attribution_ready %}انتساب تأییدشده{% else %}انتساب تأییدنشده{% endif %} · {% if item.independence_ready %}مستقل تأییدشده{% else %}استقلال نامعلوم{% endif %}</td><td><a href="{% url 'dual-checkpoint-detail-v218' item.run.pk %}">دیدن متن و شش شاهد</a></td></tr>
+{% empty %}<tr><td colspan="7">پروندهٔ جدیدی برای تأیید گروهی وجود ندارد.</td></tr>{% endfor %}
 </tbody></table>
 {% if ready_count and can_approve %}
-<form method="post">{% csrf_token %}<input type="hidden" name="snapshot" value="{{ token }}"><input type="hidden" name="ready_count" value="{{ ready_count }}">
-<h2>ثبت یک‌جای تصمیم‌های شش‌معیاری برای {{ ready_count }} پرونده</h2>
-<label><input type="checkbox" name="confirm_reviewed" value="yes" required> متن روایت‌ها و شواهد شش‌محوری همهٔ پرونده‌های واجدشرایط بالا را واقعاً بررسی کرده‌ام و به تصمیم هر محور متعهدم.</label>
+<form method="post" id="bulk-approve-v223">{% csrf_token %}<input type="hidden" name="snapshot" value="{{ token }}"><input type="hidden" name="ready_count" value="{{ ready_count }}">
+<h2>ثبت تصمیم شش‌معیاری برای پرونده‌های انتخاب‌شده (حداکثر {{ ready_count }} مورد)</h2>
+<p>همهٔ موارد واجدشرایط ابتدا انتخاب شده‌اند؛ مواردی را که هنوز بررسی نکرده‌اید یا با آن‌ها موافق نیستید از حالت انتخاب خارج کنید. موارد انتخاب‌نشده بدون تغییر باقی می‌مانند.</p>
+<label><input type="checkbox" name="confirm_reviewed" value="yes" required> متن روایت‌ها و شواهد شش‌محوری همهٔ پرونده‌های انتخاب‌شده را واقعاً بررسی کرده‌ام و به تصمیم هر محور متعهدم.</label>
 <label><input type="checkbox" name="confirm_private" value="yes" required> می‌دانم این اقدام انتشار عمومی یا تأیید حق استفاده از منبع نیست و تنها تصمیم خصوصی ثبت می‌کند.</label>
 <label for="review-note">توضیح بازبین (حداقل ۲۰ نویسه)</label><textarea id="review-note" name="note" rows="4" minlength="20" maxlength="1200" required placeholder="چرا پس از بررسی شواهد، این پیشنهادها را تأیید می‌کنید؟"></textarea>
 <p>اگر حتی یک امتیاز نیاز به رد/تغییر دارد، آن شرکت را به‌صورت یک‌جا تأیید نکنید و پرونده‌ها را برای بازبینی اختصاصی نگه دارید.</p>
