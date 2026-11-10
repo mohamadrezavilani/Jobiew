@@ -4,6 +4,21 @@
 <h1>بررسی گروهی مدارک: {{ company.display_name }}</h1>
 <p><a href="{{ release_url }}">بازگشت به وضعیت انتشار</a> ·
 <a href="{{ bulk_url }}">بازبینی نمره‌های ۶معیاری</a></p>
+<section class="module" style="padding:14px;margin:14px 0">
+<h2>وضعیت فعلی شرکت (ثبت‌شده در دیتابیس)</h2>
+{% if public_state.is_published %}
+<p><strong>انتشار امتیازهای این شرکت قبلاً ثبت شده است</strong> ·
+{{ public_state.recorded_count }} پرونده در آخرین تصمیم انتشار.</p>
+{% elif public_state.release and public_state.release.decision == 'held' %}
+<p><strong>نمایش امتیازها متوقف شده است.</strong></p>
+{% else %}
+<p>هنوز برای این شرکت تصمیم انتشار ثبت نشده است.</p>
+{% endif %}
+<p><strong>{{ public_state.visible_experiences }} تجربه</strong> همین حالا در محاسبات عمومی استفاده می‌شوند.
+{{ public_state.reason }}</p>
+<p>برای دیدن وضعیت زندهٔ امتیازهای سایت و تغییر تصمیم،
+<a href="{{ release_url }}">به صفحهٔ انتشار برو</a>.</p>
+</section>
 <section class="module" style="padding:15px;line-height:2;margin-bottom:16px">
   <p><strong>{{ available }} تجربهٔ قابل‌بررسی</strong> — این موارد برای راحتی تو از ابتدا انتخاب شده‌اند.
   قبل از ثبت، هر تجربه‌ای را که متن یا مدرکش را شخصاً بررسی نکرده‌ای، از انتخاب خارج کن.</p>

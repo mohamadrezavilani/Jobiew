@@ -15,6 +15,22 @@
 <h1>بازبینی گروهی امتیازهای خصوصی: {{ company.display_name }}</h1>
 <div class="notice"><strong>تأیید گروهی فقط دربارهٔ داوری شواهد شش‌معیاری است.</strong> قبل از ثبت باید محتوای هر تجربه و شواهد آن را واقعاً بررسی کنید. این کار به معنی تأیید هویت شرکت، مجوز حقوقی منبع، استقلال روایت یا انتشار نمره‌ها نیست. محورهای بدون شواهد با null/abstain باقی می‌مانند. هر پرونده یک رویداد حسابرسی مستقل دارد.</div>
 {% for message in messages %}<p role="status">{{ message }}</p>{% endfor %}
+<section aria-label="وضعیت ذخیره‌شدهٔ بازبینی‌ها">
+<h2>وضعیت ثبت‌شدهٔ این شرکت</h2>
+<p><strong>{{ reviewed_count }} پروندهٔ بازبینی‌شده</strong>
+({{ approved_count }} دارای نمره، {{ no_numeric_count }} بدون شاهد عددی).
+این آمار از دیتابیس خوانده می‌شود و پس از ورود مجدد به سایت نیز باقی می‌ماند.</p>
+{% if latest_release %}
+<p>آخرین تصمیم انتشار: <strong>{{ latest_release.get_decision_display }}</strong>
+· {{ latest_release.created_at|date:"Y/m/d H:i" }}.
+<a href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">بررسی وضعیت نمایش عمومی</a></p>
+{% else %}
+<p>هنوز تصمیم انتشار ثبت نشده است. <a href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">بررسی مراحل باقی‌مانده</a></p>
+{% endif %}
+{% if not ready_count and reviewed_count %}
+<p><strong>بازبینی شش‌معیاریِ پرونده‌های موجود تکمیل شده است؛ نیازی به تأیید مجدد نیست.</strong></p>
+{% endif %}
+</section>
 <p>پرونده‌های بررسی‌نشدهٔ این شرکت: <strong>{{ total_count }}</strong> · قابل‌ثبت پس از بازبینی انسانی: <strong>{{ ready_count }}</strong> · سقف عملیاتی یک درخواست: {{ cap }}</p>
 <table><thead><tr><th>انتخاب</th><th>شناسه تجربه</th><th>نوع</th><th>محور نمره‌دار</th><th>وضعیت ساختاری</th><th>مجوز / انتساب / استقلال</th><th>جزئیات و شواهد</th></tr></thead><tbody>
 {% for item in rows %}<tr><td>{% if not item.reason %}<input type="checkbox" name="selected" value="{{ item.run.pk }}" form="bulk-approve-v223" checked aria-label="انتخاب تجربهٔ {{ item.run.experience_id }}">{% else %}—{% endif %}</td><td>{{ item.run.experience_id }}</td><td>{{ item.run.experience.source_kind }}</td><td>{{ item.numeric }} از ۶</td><td>{% if item.reason %}<span class="bad">{{ item.reason }}</span>{% else %}<span class="ok">قابل داوری خصوصی</span>{% endif %}</td><td>{% if item.rights_ready %}مجوز بررسی‌شده{% else %}مجوز نامعلوم{% endif %} · {% if item.attribution_ready %}انتساب تأییدشده{% else %}انتساب تأییدنشده{% endif %} · {% if item.independence_ready %}مستقل تأییدشده{% else %}استقلال نامعلوم{% endif %}</td><td><a href="{% url 'dual-checkpoint-detail-v218' item.run.pk %}">دیدن متن و شش شاهد</a></td></tr>

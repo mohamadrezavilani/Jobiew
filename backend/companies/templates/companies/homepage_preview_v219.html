@@ -24,7 +24,7 @@
       data-map-fallback-url="{% url 'company-map' %}">
   <a class="home-skip" href="#main-content">رفتن به محتوا</a>
   {% if is_public_home %}
-  <p class="preview-note" role="note">نام‌ها و شمارنده‌ها از آرشیو قابل فهرست هستند؛ هویت شرکت‌ها و ارزیابی‌های شش‌معیاری وضعیت تأیید مستقل دارند. تا زمان انتشار مجاز، امتیازی نشان داده نمی‌شود.</p>
+  <p class="preview-note" role="note">نام‌ها و شمارنده‌ها از آرشیو قابل فهرست هستند؛ هویت شرکت‌ها و ارزیابی‌های شش‌معیاری وضعیت تأیید مستقل دارند. فقط امتیازهای دارای تصمیم انتشار و تأییدهای لازم نمایش داده می‌شوند.</p>
   {% else %}
   <p class="preview-note" role="status">پیش‌نمایش خصوصی طراحی؛ نام‌ها از آرشیو فعلی و شمارنده‌ها فقط از تجربه‌های قابل فهرست عمومی هستند؛ این‌ها امتیاز تأییدشده نیستند. هیچ امتیاز شرکت منتشر نشده است.</p>
   {% endif %}
@@ -87,7 +87,7 @@
       </section>
       <section class="companies-panel" aria-label="فهرست شرکت‌ها">
         <div class="list" id="list">
-          <div class="listtitles"><span>شرکت</span><span>نمای شش معیار</span><span>امتیاز کل از ۱۰</span></div>
+          <div class="listtitles"><span>شرکت</span><span>نمای شش معیار</span><span>میانگین معیارهای دارای داده از ۱۰</span></div>
           {% for company in page.object_list %}
             <a class="company" href="{% url 'company-detail' company.pk %}" data-company-id="{{ company.pk }}">
               <div class="logo" aria-hidden="true">{{ company.display_name|slice:':1' }}</div>
@@ -96,12 +96,38 @@
                   {% if company.identity_status == 'verified' and company.tech_status == 'verified' and company.tehran_status == 'verified' %}<span>هویت، فناوری و تهران: بررسی‌شده</span>{% else %}<span>انتساب یا دسته‌بندی در انتظار تأیید</span>{% endif %}</div>
               </div>
               <div class="companypreview">
+                {% if is_public_home and company.public_rating %}
+                <svg class="miniradar" viewBox="0 0 260 220" role="img" aria-label="نمای امتیازهای تأییدشدهٔ شش معیار">
+                  <polygon points="130,20 210,66 210,158 130,204 50,158 50,66" fill="none" stroke="#d9e5ef" stroke-width="4"/>
+                  <polygon points="130,56 178,84 178,140 130,168 82,140 82,84" fill="none" stroke="#e7edf3"/>
+                  <g stroke="#e4ebf2"><line x1="130" y1="112" x2="130" y2="20"/><line x1="130" y1="112" x2="210" y2="66"/><line x1="130" y1="112" x2="210" y2="158"/><line x1="130" y1="112" x2="130" y2="204"/><line x1="130" y1="112" x2="50" y2="158"/><line x1="130" y1="112" x2="50" y2="66"/></g>
+                  {% if company.public_rating.scope.full_coverage %}
+                  <polygon points="{{ company.public_rating.scope.polygon_points }}" fill="#a9c5e5" fill-opacity=".5" stroke="#315a91" stroke-width="4"/>
+                  {% else %}
+                  {% for axis in company.public_rating.scope.axes %}
+                  {% if axis.score != None %}
+                  <line x1="130" y1="112" x2="{{ axis.chart_x }}" y2="{{ axis.chart_y }}" stroke="#315a91" stroke-width="3"/>
+                  {% endif %}
+                  {% endfor %}
+                  {% endif %}
+                  {% for axis in company.public_rating.scope.axes %}
+                  {% if axis.score != None %}
+                  <circle cx="{{ axis.chart_x }}" cy="{{ axis.chart_y }}" r="5" fill="#315a91"/>
+                  {% endif %}
+                  {% endfor %}
+                </svg>
+                <div class="score" aria-label="میانگین معیارهای دارای داده و منتشرشده">
+                  {{ company.public_rating.average }}<small>از ۱۰ · {{ company.public_rating.scored_axes }} معیار دارای داده</small>
+                  <span class="scorestatus">{{ company.public_rating.coverage }} تجربهٔ قابل‌ارزیابی · منتشرشده</span>
+                </div>
+                {% else %}
                 <svg class="miniradar" viewBox="0 0 80 80" role="img" aria-label="شش معیار، بدون امتیاز عمومی">
                   <polygon points="40,8 67.7,24 67.7,56 40,72 12.3,56 12.3,24" fill="none" stroke="#d9e5ef" stroke-width="1.5"/>
                   <polygon points="40,24 53.9,32 53.9,48 40,56 26.1,48 26.1,32" fill="none" stroke="#e7edf3"/>
                   <path d="M40 8V72 M12.3 24L67.7 56 M67.7 24L12.3 56" stroke="#e4ebf2" stroke-width="1"/>
                 </svg>
                 <div class="score" aria-label="امتیاز منتشر نشده">—<small>امتیاز موجود نیست</small><span class="scorestatus">منتشر نشده</span></div>
+                {% endif %}
               </div>
             </a>
           {% empty %}
@@ -121,7 +147,7 @@
 
   <section class="explanation" aria-label="شفافیت درباره داده‌ها">
     <article id="about-framework"><h2>۶ معیار کاری + ۶ معیار مصاحبه</h2>
-      <p>امتیازهای شرایط کاری و شرایط مصاحبه دو چارچوب مستقل هستند. نمودارهای خالی نشان‌دهندهٔ صفر یا ارزیابی منفی نیستند: هیچ امتیاز تأییدنشده‌ای در این صفحه استفاده نشده است. نمایش عمومیِ امتیازها نیازمند تأیید منبع، انتساب، کیفیت و تصمیم مستقل انتشار است.</p>
+      <p>امتیازهای شرایط کاری و شرایط مصاحبه دو چارچوب مستقل هستند. نمودارهای خالی نشان‌دهندهٔ صفر یا ارزیابی منفی نیستند: امتیازهای تأییدنشده در این صفحه استفاده نمی‌شوند. نمایش عمومیِ امتیازها نیازمند تأیید منبع، انتساب، کیفیت و تصمیم مستقل انتشار است.</p>
     </article>
     <article id="about-data"><h2>اطلاعات شرکت‌ها از کجا می‌آیند؟</h2>
       <p>نام شرکت‌ها از آرشیو دارای منشأ خارجی می‌آید و شمار تجربه‌های این فهرست فقط رکوردهای قابل فهرست عمومی، پس از حذف موارد ردشده، مسدودشده و تکراری، را دربر می‌گیرد. این فرایند به معنی تأیید هویت یا کیفیت شرکت نیست. نقشه فقط نقاط تأییدشده را می‌خواند. برای شناخت محدودیت‌های هر شرکت، <a href="{{ company_directory_url }}">فهرست و پروفایل‌های شرکت‌ها</a> را ببینید.</p>
@@ -141,7 +167,7 @@
     <div class="dhead"><div><h2 id="filter-title">فیلتر شرکت‌ها</h2><p>فیلترهای قابل اتکا روی آرشیو فعلی</p></div><button type="button" class="close" id="close" aria-label="بستن فیلترها">×</button></div>
     <div class="dcontent"><form method="get" action="{{ homepage_action_url }}" class="filters-form">
       <input type="hidden" name="mode" value="{{ mode }}"><input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="q" value="{{ q }}">
-      <p class="warning">فیلتر امتیازهای شش‌محوری هنوز فعال نیست، چون دادهٔ تأییدشدهٔ قابل انتشار نداریم. فیلترهای زیر فقط بر اساس وضعیت ثبت و راستی‌آزمایی شرکت‌ها کار می‌کنند.</p>
+      <p class="warning">فیلتر حداقل امتیاز هنوز فعال نشده است. در فهرست، فقط امتیازهایی نشان داده می‌شوند که تصمیم انتشار و مدارک لازم را دارند.</p>
       <fieldset><legend>راستی‌آزمایی و آرشیو</legend>
         <label><input type="checkbox" name="verified" value="1" {% if verified %}checked{% endif %}><span>فقط شرکت‌هایی که هویت، فناوری و ارتباطشان با تهران تأیید شده است</span></label>
         <label><input type="checkbox" name="has_records" value="1" {% if has_records %}checked{% endif %}><span>فقط شرکت‌های دارای تجربهٔ {% if mode == 'work' %}کاری{% else %}مصاحبه{% endif %} در آرشیو</span></label>

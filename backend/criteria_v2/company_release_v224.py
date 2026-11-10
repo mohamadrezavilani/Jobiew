@@ -171,9 +171,19 @@ def company_release(request, pk):
         and stats['pending'] == 0)
     current = CriteriaCompanyReleaseEvent.objects.filter(company=company).first()
     if request.method == 'GET':
+        # Import lazily: sufficiency depends on this module's rights predicates.
+        from .publication_state_v231 import company_publication_state
+        from django.urls import reverse
+        public_state = company_publication_state(company, release=current)
+        snapshot_matches = bool(
+            current is not None and current.decision == 'published'
+            and current.approved_runs == proofs)
         import os
         response = _private(request, 'criteria_v2/company_release_v224.html', {
             'company': company, 'stats': stats, 'eligible_count': len(proofs),
+            'public_state': public_state,
+            'snapshot_matches': snapshot_matches,
+            'public_profile_url': reverse('company-detail', args=[company.pk]) + '?tab=ai#dual-criteria',
             'rights_only': rights_only,
             'admin_mode': request.resolver_match.url_name == 'companies_company_checkpoint_release',
             'current': current, 'token': token,
@@ -205,6 +215,15 @@ def company_release(request, pk):
             return HttpResponse('STALE_COMPANY_RELEASE_SNAPSHOT', status=409)
         if action == 'published' and not confirmed:
             return HttpResponse('NO_RIGHTS_CLEARED_REVIEWED_SCORES_TO_PUBLISH', status=409)
+        latest = CriteriaCompanyReleaseEvent.objects.filter(company=company).first()
+        if ((action == 'published' and latest is not None
+             and latest.decision == 'published' and latest.approved_runs == confirmed)
+                or (action == 'held' and latest is not None and latest.decision == 'held')):
+            messages.info(
+                request, 'این تصمیم قبلاً ثبت شده است؛ نیازی به ثبت دوباره نیست.')
+            if request.resolver_match.url_name == 'companies_company_checkpoint_release':
+                return redirect('admin:companies_company_checkpoint_release', object_id=pk)
+            return redirect('dual-company-release-v224', pk=pk)
         CriteriaCompanyReleaseEvent.objects.create(
             company=company, reviewer=request.user, decision=action,
             approved_runs=confirmed if action == 'published' else {}, note=note)

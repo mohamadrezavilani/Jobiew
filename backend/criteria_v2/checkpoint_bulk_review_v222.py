@@ -9,6 +9,7 @@ import json
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Count, Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.cache import never_cache
@@ -21,7 +22,7 @@ from .checkpoint_access_v218 import authorize_checkpoint
 from .checkpoint_contract_v218 import ENGINE, PROMPT, STATUS
 from .engine_v207 import story_digest, story_from_experience
 from .models import (CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent,
-                     CheckpointApprovalReceipt)
+                     CheckpointApprovalReceipt, CriteriaCompanyReleaseEvent)
 from .pilot_dashboard_v213 import _private, _valid_analysis
 from .checkpoint_receipt_v222 import approved_checkpoint_digest
 
@@ -101,9 +102,24 @@ def company_bulk_review(request, pk):
     company = get_object_or_404(Company, pk=pk)
     if request.method == 'GET':
         rows, ready, token = _prepare(company)
+        persisted = (CriteriaAnalysis.objects.filter(
+            experience__company=company, raw_payload__engine=ENGINE)
+            .aggregate(
+                reviewed_count=Count('pk', filter=Q(
+                    review_status__in=('approved', 'no_evaluable_scores'))),
+                approved_count=Count('pk', filter=Q(review_status='approved')),
+                no_numeric_count=Count('pk', filter=Q(
+                    review_status='no_evaluable_scores')),
+            ))
+        latest_release = CriteriaCompanyReleaseEvent.objects.filter(
+            company=company).first()
         response = _private(request, 'criteria_v2/checkpoint_bulk_review_v222.html', {
             'company': company, 'rows': rows, 'ready_count': len(ready),
             'total_count': len(rows), 'token': token, 'cap': MAX_COMPANY_RUNS,
+            'reviewed_count': persisted['reviewed_count'],
+            'approved_count': persisted['approved_count'],
+            'no_numeric_count': persisted['no_numeric_count'],
+            'latest_release': latest_release,
             'can_approve': request.user.has_perm('criteria_v2.add_criteriascorereviewevent'),
             'admin_mode': request.resolver_match.url_name == 'companies_company_checkpoint_bulk',
         })

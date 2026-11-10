@@ -19,6 +19,34 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 <h1>انتشار امتیازهای تأییدشده: {{ company.display_name }}</h1>
 <div class="notice">انتشار شرکت با تأیید گروهی نمره‌ها فرق دارد. فقط پرونده‌هایی که شش معیارشان بازبینی شده و مجوز انتشار، انتساب، استقلال و دسته‌بندی آن‌ها جداگانه با سند ثبت شده، قابل انتشار هستند. متن خام نظرها در این مرحله عمومی نمی‌شود.</div>
 {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+<section id="publication-state" aria-labelledby="publication-state-title">
+<h2 id="publication-state-title">وضعیت ثبت‌شدهٔ انتشار (پس از ورود مجدد نیز حفظ می‌شود)</h2>
+{% if public_state.is_published %}
+<p><strong>تصمیم انتشار ثبت شده است.</strong>
+این یک وضعیت دائمی در تاریخچهٔ حسابرسی است، نه پیامی که فقط یک‌بار بعد از ثبت نمایش داده شود.</p>
+{% elif current and current.decision == 'held' %}
+<p><strong>انتشار این شرکت با تصمیم مدیر متوقف شده است.</strong></p>
+{% else %}
+<p><strong>برای این شرکت هنوز تصمیم انتشار ثبت نشده است.</strong></p>
+{% endif %}
+<table>
+<tr><th>آخرین تصمیم مدیر</th><td>{% if current %}{{ current.get_decision_display }}{% else %}ثبت نشده{% endif %}</td></tr>
+{% if current %}
+<tr><th>تاریخ و ساعت ثبت</th><td>{{ current.created_at|date:"Y/m/d H:i" }}</td></tr>
+<tr><th>ثبت‌کننده</th><td>{{ current.reviewer.get_username }}</td></tr>
+{% endif %}
+<tr><th>تعداد پرونده‌های ثبت‌شده در آخرین انتشار</th><td>{{ public_state.recorded_count }}</td></tr>
+<tr><th>تعداد تجربه‌های دارای امتیازِ قابل نمایش همین حالا</th><td><strong>{{ public_state.visible_experiences }}</strong></td></tr>
+<tr><th>آیا امتیازها واقعاً در پروفایل عمومی قابل نمایش‌اند؟</th><td>{% if public_state.visible_now %}<strong>بله</strong>{% else %}<strong>خیر</strong>{% endif %}</td></tr>
+</table>
+<p role="status"><strong>{{ public_state.reason }}</strong></p>
+{% if public_state.visible_now %}
+<p><a class="button" href="{{ public_profile_url }}">مشاهدهٔ امتیازهای واقعی در پروفایل عمومی این شرکت</a></p>
+<p>در صفحهٔ نخست نیز فقط همان امتیازهای معتبر و منتشرشده، برای نوع تجربهٔ انتخاب‌شده نمایش داده می‌شوند.</p>
+{% elif public_state.is_published and public_state.flags_enabled %}
+<p>اگر تصمیم ثبت شده اما تعداد قابل نمایش صفر است، ممکن است داده‌های منبع، رسیدهای شش‌معیاری یا شرایط بازبینی بعداً تغییر کرده باشند. نمایش عمومی از گیت‌های زنده تبعیت می‌کند؛ تکرار دکمهٔ انتشار راه‌حل نیست.</p>
+{% endif %}
+</section>
 <section>
 <h2>وضعیت شرکت و امتیازها</h2>
 <table>
@@ -33,7 +61,7 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 </table>
 </section>
 <section id="release-blockers">
-<h2>چرا همهٔ امتیازها هنوز قابل انتشار نیستند؟</h2>
+<h2>{% if snapshot_matches and public_state.visible_now %}بررسی وضعیت و شرایط انتشار{% elif snapshot_matches %}بررسی موانع نمایش امتیازهای ثبت‌شده{% else %}چرا همهٔ امتیازها هنوز قابل انتشار نیستند؟{% endif %}</h2>
 <p>موارد زیر <strong>مستقل از هم</strong> شمرده شده‌اند؛ ممکن است یک تجربه هم‌زمان چند مدرک کم داشته باشد. تأیید ۶ معیار با مجوز استفاده از منبع یکسان نیست.</p>
 {% if stats.company_identity_missing or stats.company_tech_missing %}
 <div class="notice" role="status">
@@ -101,8 +129,10 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 {% if stats.no_numeric %}
 <p>{{ stats.no_numeric }} پرونده بدون شاهد عددی هستند؛ با تأیید شرکت هم نمره‌ای برای انتشار نخواهند داشت.</p>
 {% endif %}
-{% if eligible_count %}
-<p><strong>{{ eligible_count }} پرونده آمادهٔ تصمیم انتشار هستند.</strong> در بخش پایین تنها همین پرونده‌ها منتشر می‌شوند.</p>
+{% if snapshot_matches %}
+<p><strong>انتشار همین {{ eligible_count }} پرونده قبلاً ثبت شده است.</strong> نیازی به تأیید مجدد نیست. برای تغییر تصمیم از «توقف انتشار» استفاده کن.</p>
+{% elif eligible_count %}
+<p><strong>{{ eligible_count }} پرونده آمادهٔ تصمیم انتشار جدید هستند.</strong> در صورت وجود موارد تازه، انتشار قبلی خودکار آن‌ها را شامل نمی‌شود.</p>
 {% else %}
 <p><strong>هنوز هیچ پرونده‌ای مجاز به انتشار نیست.</strong> دکمهٔ انتشار تا تکمیل مدارک غیرفعال خواهد ماند.</p>
 {% endif %}
@@ -116,7 +146,7 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 بررسی کرده‌ام که برای همهٔ پرونده‌های قابل انتشار، مجوز و مدارک معتبر به‌صورت جداگانه ثبت شده است.</label>
 <label><input type="checkbox" name="confirm_public" value="yes" required>
 می‌دانم این اقدام می‌تواند نمره‌های تأییدشدهٔ شرکت را در سایت عمومی نمایان کند؛ متن کامل تجربه‌ها جداگانه مجوز می‌خواهد.</label>
-<button name="action" value="published" type="submit" {% if not eligible_count %}disabled{% endif %}>انتشار همین {{ eligible_count }} پروندهٔ تأییدشده</button>
+<button name="action" value="published" type="submit" {% if not eligible_count or snapshot_matches %}disabled{% endif %}>{% if snapshot_matches %}این {{ eligible_count }} پرونده قبلاً منتشر شده‌اند{% else %}انتشار همین {{ eligible_count }} پروندهٔ تأییدشده{% endif %}</button>
 <button name="action" value="held" type="submit">توقف نمایش امتیازهای شرکت</button>
 </form>
 <p>تجربه‌های تازه در checkpointهای بعدی خودکار منتشر نمی‌شوند و باید مجدداً بررسی و به انتشار اضافه شوند.</p>

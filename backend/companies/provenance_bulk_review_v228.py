@@ -26,6 +26,7 @@ from criteria_v2.company_release_v224 import (
     _current_classification, _missing_source_rights,
 )
 from criteria_v2.models import CriteriaAnalysis, CriteriaReviewEvent
+from criteria_v2.publication_state_v231 import company_publication_state
 from criteria_v2.registry import version_for
 
 MAX_CASES = 1000
@@ -194,6 +195,7 @@ def provenance_review(admin_view, request, object_id):
             for row in rows if row['eligible'])
         rights_remaining = sum(
             'copyright' in row['gaps'] for row in rows if row['eligible'])
+        public_state = company_publication_state(company)
         ctx = {
             **admin_view.admin_site.each_context(request),
             'title': 'بررسی گروهی مدارک: ' + company.display_name,
@@ -208,6 +210,7 @@ def provenance_review(admin_view, request, object_id):
             'normal_remaining': normal_remaining,
             'rights_remaining': rights_remaining,
             'only_rights_left': normal_remaining == 0 and rights_remaining > 0,
+            'public_state': public_state,
             'selected_ids': selected_ids,
             'error': error,
             'note_value': (request.POST.get('note', '') if request.method == 'POST' else ''),
