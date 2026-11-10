@@ -195,6 +195,13 @@ def company_experience_detail(admin_view, request, object_id, experience_id):
     last_claude = (CriteriaClaudeValidationRun.objects.filter(
         analysis=latest, status='completed').first()
         if latest and can_claude else None)
+    legacy_assessment = None
+    if (exp.source_kind == 'work' and request.user.has_perm('assessments.view_aiassessment')
+            and request.user.has_perm('assessments.view_aidimension')):
+        from assessments.models import AiAssessment, FIVE_CRITERIA_VERSION
+        legacy_assessment = (AiAssessment.objects.filter(
+            experience=exp, criteria_version=FIVE_CRITERIA_VERSION)
+            .order_by('-pk').first())
     ctx = _context(admin_view, request, company, 'متن تجربه: ' + exp.title[:100])
     ctx.update({
         'experience': exp,
@@ -205,5 +212,6 @@ def company_experience_detail(admin_view, request, object_id, experience_id):
         'six_axes': axis_rows,
         'can_view_claude': can_claude,
         'last_claude': last_claude,
+        'legacy_assessment': legacy_assessment,
     })
     return TemplateResponse(request, 'admin/companies/company/experience_detail_v103.html', ctx)
