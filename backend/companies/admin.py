@@ -15,10 +15,10 @@ from .models import Company, CompanyVerificationEvent
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('display_name', 'identity_status', 'tech_status', 'tehran_status',
-                    'source_work_count', 'source_interview_count', 'vote_enabled', 'experiences_link', 'review_link',
+    list_display = ('display_name', 'source_work_count', 'source_interview_count',
+                    'identity_status', 'tech_status', 'experiences_link',
                     'checkpoint_bulk_link', 'checkpoint_release_link')
-    list_filter = ('identity_status', 'tech_status', 'tehran_status', 'vote_enabled')
+    list_filter = ('identity_status', 'tech_status')
     search_fields = ('display_name', 'source_url', 'source_name')
     readonly_fields = ('id', 'source_url', 'source_name', 'identity_status', 'tech_status',
                        'tehran_status', 'source_work_count', 'source_interview_count',
