@@ -19,7 +19,8 @@ from criteria_v2.checkpoint_access_v218 import authorize_checkpoint
 from criteria_v2.checkpoint_contract_v218 import ENGINE
 from criteria_v2.checkpoint_private_v218 import _private_run_valid
 from criteria_v2.engine_v207 import story_from_experience
-from criteria_v2.models import CriteriaAnalysis
+from criteria_v2.models import CriteriaAnalysis, CriteriaClaudeValidationRun
+from criteria_v2.claude_six_v233 import allowed as can_view_claude
 from criteria_v2.registry import axes_for
 
 # New 6+6 workflow only. Historical five_v1 data remains in its own DB
@@ -144,9 +145,17 @@ def company_experiences(admin_view, request, object_id):
     page.object_list = list(page.object_list)
     can_six = _can_inspect_six(request)
     latest = _six_runs(page.object_list) if can_six else {}
+    can_claude = can_six and can_view_claude(request)
+    last_claude = {}
+    if can_claude and latest:
+        for check in (CriteriaClaudeValidationRun.objects.filter(
+                analysis_id__in=[run.pk for run in latest.values()],
+                status='completed').order_by('analysis_id', '-pk')):
+            last_claude.setdefault(check.analysis_id, check)
     for exp in page.object_list:
         exp.safe_source_url = _safe_source_url(exp.source_url)
         exp.six_run = latest.get(exp.pk)
+        exp.claude_check = last_claude.get(exp.six_run.pk) if exp.six_run else None
         exp.six_state = _six_state(exp.six_run) if can_six else 'فقط برای بازبین مجاز'
     params = {'q': q, 'kind': kind, 'copyright': copyright_status,
               'attribution': attribution, 'independence': independence}
@@ -161,6 +170,7 @@ def company_experiences(admin_view, request, object_id):
         'independence_filters': INDEPENDENCE_FILTERS,
         'page_query': (query + '&') if query else '',
         'can_view_six': can_six,
+        'can_view_claude': can_claude,
     })
     return TemplateResponse(request, 'admin/companies/company/experiences_list_v103.html', ctx)
 
@@ -181,6 +191,10 @@ def company_experience_detail(admin_view, request, object_id, experience_id):
         score_rows = {row.key: row for row in latest.axis_scores.all()}
         for axis in axes_for(exp.source_kind):
             axis_rows.append({'definition': axis, 'item': score_rows.get(axis.key)})
+    can_claude = can_six and can_view_claude(request)
+    last_claude = (CriteriaClaudeValidationRun.objects.filter(
+        analysis=latest, status='completed').first()
+        if latest and can_claude else None)
     ctx = _context(admin_view, request, company, 'متن تجربه: ' + exp.title[:100])
     ctx.update({
         'experience': exp,
@@ -189,5 +203,7 @@ def company_experience_detail(admin_view, request, object_id, experience_id):
         'six_state': _six_state(latest),
         'six_integrity_ok': integrity_ok,
         'six_axes': axis_rows,
+        'can_view_claude': can_claude,
+        'last_claude': last_claude,
     })
     return TemplateResponse(request, 'admin/companies/company/experience_detail_v103.html', ctx)
