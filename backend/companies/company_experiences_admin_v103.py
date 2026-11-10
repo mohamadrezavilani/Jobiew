@@ -5,6 +5,7 @@ No publication flags, AI scores, provenance or review decisions are modified.
 from urllib.parse import urlencode, urlsplit
 
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import HttpResponseNotAllowed
@@ -12,9 +13,53 @@ from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 
-from assessments.models import AiAssessment, DIMENSIONS, FIVE_CRITERIA_VERSION
 from companies.models import Company
 from experiences.models import PublicExperience
+from criteria_v2.checkpoint_access_v218 import authorize_checkpoint
+from criteria_v2.checkpoint_contract_v218 import ENGINE
+from criteria_v2.checkpoint_private_v218 import _private_run_valid
+from criteria_v2.engine_v207 import story_from_experience
+from criteria_v2.models import CriteriaAnalysis
+from criteria_v2.registry import axes_for
+
+# New 6+6 workflow only. Historical five_v1 data remains in its own DB
+# tables but is never interpreted as a current GPT-6 score.
+def _can_inspect_six(request):
+    if not all(request.user.has_perm(permission) for permission in (
+            'experiences.view_publicexperience',
+            'criteria_v2.view_criteriaanalysis',
+            'criteria_v2.view_criteriaaxisscore')):
+        return False
+    try:
+        authorize_checkpoint(request)
+    except (PermissionDenied, Http404):
+        return False
+    return True
+
+
+def _six_runs(experiences):
+    ids = [row.pk for row in experiences]
+    if not ids:
+        return {}
+    runs = (CriteriaAnalysis.objects.filter(
+        experience_id__in=ids, raw_payload__engine=ENGINE,
+        review_status__in=('pilot_unverified', 'approved', 'no_evaluable_scores'))
+        .order_by('experience_id', '-created_at', '-pk'))
+    latest = {}
+    for run in runs:
+        latest.setdefault(run.experience_id, run)
+    return latest
+
+
+def _six_state(run):
+    if run is None:
+        return 'بدون پیشنهاد ۶معیاری؛ هنوز در checkpoint پردازش نشده'
+    return {
+        'pilot_unverified': 'پیشنهاد خصوصی GPT-6؛ هنوز تأیید نشده',
+        'approved': 'نمره‌های ۶معیاری بازبینی‌شده',
+        'no_evaluable_scores': 'بازبینی‌شده؛ بدون شاهد عددی کافی',
+    }.get(run.review_status, 'نامشخص')
+
 
 PAGE_SIZE = 20
 KIND_FILTERS = {'all': 'همه محتواها', 'work': 'تجربه کاری', 'interview': 'مصاحبه'}
@@ -97,8 +142,12 @@ def company_experiences(admin_view, request, object_id):
 
     page = Paginator(qs.order_by('-imported_at', '-pk'), PAGE_SIZE).get_page(request.GET.get('page', '1'))
     page.object_list = list(page.object_list)
+    can_six = _can_inspect_six(request)
+    latest = _six_runs(page.object_list) if can_six else {}
     for exp in page.object_list:
         exp.safe_source_url = _safe_source_url(exp.source_url)
+        exp.six_run = latest.get(exp.pk)
+        exp.six_state = _six_state(exp.six_run) if can_six else 'فقط برای بازبین مجاز'
     params = {'q': q, 'kind': kind, 'copyright': copyright_status,
               'attribution': attribution, 'independence': independence}
     query = urlencode({k: v for k, v in params.items() if v and v != 'all'})
@@ -111,30 +160,34 @@ def company_experiences(admin_view, request, object_id):
         'attribution_filters': ATTRIBUTION_FILTERS,
         'independence_filters': INDEPENDENCE_FILTERS,
         'page_query': (query + '&') if query else '',
+        'can_view_six': can_six,
     })
     return TemplateResponse(request, 'admin/companies/company/experiences_list_v103.html', ctx)
 
 
 def company_experience_detail(admin_view, request, object_id, experience_id):
-    """Staff-only full source body with optional five_v1 AI review, never public."""
+    """Staff-only source text and current six-axis checkpoint (if available)."""
     if request.method != 'GET':
         return HttpResponseNotAllowed(['GET'])
     company = _company_and_access(admin_view, request, object_id)
     exp = get_object_or_404(PublicExperience, pk=experience_id, company_id=company.pk)
     exp.safe_source_url = _safe_source_url(exp.source_url)
-    can_ai = (request.user.has_perm('assessments.view_aiassessment') and
-              request.user.has_perm('assessments.view_aidimension'))
-    assessments = []
-    if can_ai:
-        assessments = list(AiAssessment.objects.filter(
-            experience_id=exp.pk, criteria_version=FIVE_CRITERIA_VERSION
-        ).prefetch_related('dimensions').order_by('-created_at', '-pk')[:10])
-        labels = dict(DIMENSIONS)
-        for assessment in assessments:
-            assessment.display_dimensions = sorted(assessment.dimensions.all(),
-                key=lambda d: list(labels).index(d.key) if d.key in labels else 99)
-            for dim in assessment.display_dimensions:
-                dim.display_label = labels.get(dim.key, dim.key)
+    can_six = _can_inspect_six(request)
+    latest = _six_runs([exp]).get(exp.pk) if can_six else None
+    integrity_ok = (bool(latest) and _private_run_valid(
+        latest, story_from_experience(exp))) if can_six else False
+    axis_rows = []
+    if latest is not None and integrity_ok:
+        score_rows = {row.key: row for row in latest.axis_scores.all()}
+        for axis in axes_for(exp.source_kind):
+            axis_rows.append({'definition': axis, 'item': score_rows.get(axis.key)})
     ctx = _context(admin_view, request, company, 'متن تجربه: ' + exp.title[:100])
-    ctx.update({'experience': exp, 'assessments': assessments, 'can_see_ai': can_ai})
+    ctx.update({
+        'experience': exp,
+        'can_view_six': can_six,
+        'six_run': latest,
+        'six_state': _six_state(latest),
+        'six_integrity_ok': integrity_ok,
+        'six_axes': axis_rows,
+    })
     return TemplateResponse(request, 'admin/companies/company/experience_detail_v103.html', ctx)

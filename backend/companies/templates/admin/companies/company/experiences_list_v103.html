@@ -5,7 +5,7 @@
 <main class="wi-x" dir="rtl">
   <div class="wi-x-bar">
     <div><p class="wi-x-over">مدیریت محتوای گردآوری‌شده · دسترسی فقط برای مدیران</p><h1>{{ company.display_name }}</h1><p>تجربه‌های کاری و مصاحبه‌های واردشده به پایگاه دادهٔ Jobiew</p></div>
-    <div class="wi-x-nav"><a href="{{ company_change_url }}">مشخصات شرکت</a><a href="{{ company_review_url }}">بررسی و تأیید شرکت</a><a href="{% url 'admin:companies_company_changelist' %}">فهرست شرکت‌ها</a></div>
+    <div class="wi-x-nav"><a href="{{ company_change_url }}">مشخصات شرکت</a><a href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">تأیید گروهی GPT-6</a><a href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">انتشار و موانع آن</a><a href="{% url 'admin:companies_company_changelist' %}">فهرست شرکت‌ها</a></div>
   </div>
   <div class="wi-x-stats">
     <div><strong>{{ totals.total }}</strong><span>کل مطالب واردشده</span></div>
@@ -24,13 +24,14 @@
   </form>
   {% if page_obj.object_list %}
   <div class="wi-x-table-wrap"><table class="wi-x-table">
-    <thead><tr><th>عنوان و متن</th><th>نوع / تاریخ منبع</th><th>وضعیت بررسی</th><th>منبع</th><th>جزئیات</th></tr></thead>
+    <thead><tr><th>عنوان و متن</th><th>نوع / تاریخ منبع</th><th>وضعیت بررسی منبع</th><th>GPT-6 (۶ معیار متناسب با نوع)</th><th>منبع</th><th>جزئیات</th></tr></thead>
     <tbody>{% for exp in page_obj.object_list %}<tr>
       <td><strong>{{ exp.title|truncatechars:120 }}</strong>{% if exp.job_title %}<small>عنوان شغلی: {{ exp.job_title }}</small>{% endif %}<p>{{ exp.body|default:'بدون متن'|truncatechars:220 }}</p></td>
       <td>{{ exp.get_source_kind_display }}<small>{{ exp.published_jalali|default:'تاریخ نامشخص' }}</small></td>
       <td><small>انتساب: {{ exp.company_attribution_status }}</small><small>استقلال: {{ exp.independence_status }}</small><small>حقوقی: {{ exp.copyright_review }}</small></td>
+      <td><strong>{{ exp.six_state }}</strong></td>
       <td>{% if exp.safe_source_url %}<a href="{{ exp.safe_source_url }}" target="_blank" rel="noopener noreferrer">صفحهٔ اصلی ↗</a>{% else %}بدون لینک معتبر{% endif %}</td>
-      <td><a class="button" href="{% url 'admin:companies_company_experience_detail' company.pk exp.pk %}">متن کامل و AI</a></td>
+      <td><a class="button" href="{% url 'admin:companies_company_experience_detail' company.pk exp.pk %}">متن و شش معیار</a></td>
     </tr>{% endfor %}</tbody>
   </table></div>
   {% else %}<p class="wi-x-empty">در این شرکت نتیجه‌ای با فیلترهای انتخاب‌شده پیدا نشد.</p>{% endif %}

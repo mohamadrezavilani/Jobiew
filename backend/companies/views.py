@@ -55,11 +55,7 @@ def _public_job_title(value):
 
 def detail(request, pk):
     c = get_object_or_404(Company, pk=pk)
-    from assessments.models import DIMENSIONS
-    from assessments.publication_workflow_v104 import public_company_assessments
-
-    # Old five-axis scores are archived and never mixed into the new work/interview framework.
-    published = {'summary': [], 'cards': [], 'approved_count': 0, 'has_summary': False}  # jobiew_dual_framework_v200
+    # Historical five_v1 AI assessments are not used anywhere in current public output.
     tab = request.GET.get('tab', 'ai')
     if tab not in ('ai', 'work', 'interview'):
         tab = 'ai'
@@ -67,8 +63,7 @@ def detail(request, pk):
     available = _public_experience_queryset(c)
     work_count = available.filter(source_kind='work').count()
     interview_count = available.filter(source_kind='interview').count()
-    context = {'company': c, 'five_criteria': DIMENSIONS,
-               'published_ai': published, 'active_tab': tab,
+    context = {'company': c, 'active_tab': tab,
                'work_count': work_count, 'interview_count': interview_count}
 
     if tab in ('work', 'interview'):
