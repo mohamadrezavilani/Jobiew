@@ -1,43 +1,53 @@
 {% extends "admin/change_form.html" %}
 {% block after_field_sets %}
+<section class="wi-admin-company">
+  <h2>مسیر کوتاه بررسی و انتشار</h2>
   {% if wi_can_review_checkpoint %}
-  <section class="module" dir="rtl" style="padding:16px;line-height:2;">
-    <h2>امتیازهای شش‌معیاری GPT-6 — وضعیت فعلی</h2>
-    {% if wi_score_state.is_published %}
-      <p><strong>تصمیم انتشار ثبت شده است.</strong>
-      {{ wi_score_state.recorded_count }} پرونده در آخرین تصمیم ثبت شده‌اند.
-      {% if wi_score_state.visible_now %}
-        <strong>{{ wi_score_state.visible_experiences }} تجربهٔ دارای امتیاز اکنون در بخش عمومی قابل نمایش است.</strong>
-        <a href="{{ wi_public_profile_url }}">دیدن امتیازها در سایت</a>
-      {% else %}
-        <strong>فعلاً امتیازی در سایت قابل نمایش نیست:</strong> {{ wi_score_state.reason }}
-      {% endif %}</p>
+  <div class="wi-state" role="status">
+    {% if wi_score_state.visible_now %}
+      <strong>امتیازهای عمومی فعال:</strong> {{ wi_score_state.visible_experiences }} تجربه در حال نمایش است.
+      <a href="{{ wi_public_profile_url }}">نمایش در سایت</a>
+    {% elif wi_score_state.is_published %}
+      <strong>انتشار ثبت شده، ولی نمایش عمومی کامل نیست.</strong> {{ wi_score_state.reason }}
     {% elif wi_score_state.release and wi_score_state.release.decision == 'held' %}
-      <p><strong>نمایش امتیازها به تصمیم مدیر متوقف شده است.</strong></p>
+      <strong>انتشار این شرکت متوقف شده است.</strong>
     {% else %}
-      <p><strong>هنوز انتشار نمره‌های این شرکت ثبت نشده است.</strong></p>
+      <strong>هنوز تصمیم انتشار ثبت نشده است.</strong>
     {% endif %}
-    <p>تاریخچهٔ تصمیم‌ها در دیتابیس محفوظ است؛ لینک‌های زیر برای بررسی یا تغییر تصمیم‌اند و لازم نیست تأییدهای قبلی تکرار شوند.</p>
-    <a class="button" href="{{ wi_checkpoint_bulk_url }}">تأیید گروهی تجربه‌های شرکت</a>
-    &nbsp;
-    <a class="button" href="{{ wi_checkpoint_sources_url }}">بررسی گروهی مدارک تجربه‌ها</a>
-    &nbsp;
-    <a class="button" href="{{ wi_checkpoint_release_url }}">انتشار یا توقف نمایش امتیازهای شرکت</a>
-  </section>
+  </div>
   {% endif %}
-  {{ block.super }}
-  {% if wi_can_see_experiences %}
-  <section class="module" dir="rtl" style="padding:16px;line-height:2;">
-    <h2>تجربه‌ها و مصاحبه‌های ثبت‌شده</h2>
-    <p>متن کامل نظرهای واردشده از منبع، جست‌وجو، وضعیت بررسی و نتایج آزمایشی AI را برای همین شرکت ببینید.</p>
-    <a class="button" href="{{ wi_experiences_url }}">مشاهده نظرهای این شرکت</a>
-  </section>
-  {% endif %}
-  {% if wi_review_url %}
-  <section class="module" dir="rtl" style="padding:16px;line-height:2;">
-    <h2>بررسی و تأیید شرکت</h2>
-    <p>برای تأیید هویت، فناوری‌محور بودن، ارتباط با تهران و انتخاب مکان روی نقشه، از داشبورد یکپارچه استفاده کنید.</p>
-    <a class="button" href="{{ wi_review_url }}">ورود به داشبورد بررسی همین شرکت ←</a>
-  </section>
-  {% endif %}
+  <div class="wi-admin-steps">
+    {% if wi_can_see_experiences %}
+      <div class="wi-admin-step">
+        <span class="wi-step-num">۱</span><h2>نظرها و مصاحبه‌ها</h2>
+        <p>دیدن متن، نمره‌های GPT-6 و نتیجهٔ اختیاری Claude</p>
+        <a class="wi-cta" href="{{ wi_experiences_url }}">باز کردن نظرها</a>
+      </div>
+    {% endif %}
+    {% if wi_can_review_checkpoint %}
+      <div class="wi-admin-step">
+        <span class="wi-step-num">۲</span><h2>تأیید گروهی</h2>
+        <p>تأیید شواهد و نمره‌ها، بدون تکرار تصمیم‌های ثبت‌شده</p>
+        <a class="wi-cta" href="{{ wi_checkpoint_bulk_url }}">بررسی و تأیید</a>
+      </div>
+      <div class="wi-admin-step">
+        <span class="wi-step-num">۳</span><h2>انتشار نهایی</h2>
+        <p>دیدن موانع، رفع موارد لازم و تصمیم انتشار یا توقف</p>
+        <a class="wi-cta" href="{{ wi_checkpoint_release_url }}">وضعیت انتشار</a>
+      </div>
+    {% endif %}
+  </div>
+  <details>
+    <summary>بررسی مدارک و امکانات پیشرفته</summary>
+    <p>این بخش تنها زمانی لازم است که وضعیت انتشار، مجوز یا اصالت منبع ناقص باشد.</p>
+    {% if wi_can_review_checkpoint %}
+      <p><a href="{{ wi_checkpoint_verify_url }}">تأیید هویت و فناوری شرکت</a> ·
+      <a href="{{ wi_checkpoint_sources_url }}">بررسی گروهی حقوق و انتساب نظرها</a></p>
+    {% endif %}
+    {% if wi_review_url %}
+      <p><a href="{{ wi_review_url }}">داشبورد جامع شرکت، نقشه و سایر بررسی‌های قدیمی</a></p>
+    {% endif %}
+  </details>
+</section>
+{{ block.super }}
 {% endblock %}
