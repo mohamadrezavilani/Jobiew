@@ -183,6 +183,97 @@ class PrivateProductionReleaseTests(TestCase):
         with patch.dict('os.environ', public):
             self.assertEqual(company_public_sufficiency(self.company)['work']['axes'][0]['dimension_experience_count'], 0)
 
+    def test_published_score_is_visible_on_homepage_and_persistent_in_admin(self):
+        self.stage()
+        self.review_all()
+        for exp in self.exps:
+            self.clear_provenance(exp)
+        public = {**FLAGS,
+                  'JOBIEW_HOMEPAGE_PUBLIC_ENABLED': '1',
+                  'JOBIEW_DUAL6_PUBLICATION_ENABLED': '1',
+                  'JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED': '1'}
+        release_url = reverse('admin:companies_company_checkpoint_release',
+                              args=[self.company.pk])
+        bulk_url = reverse('admin:companies_company_checkpoint_bulk',
+                           args=[self.company.pk])
+        source_url = reverse('admin:companies_company_checkpoint_sources',
+                             args=[self.company.pk])
+        queue_url = reverse('admin:companies_company_checkpoint_queue')
+        self.client.logout()
+        with patch.dict('os.environ', public):
+            pre = self.client.get(reverse('company-index'),
+                                  {'q': self.company.display_name})
+        self.assertContains(pre, 'امتیاز موجود نیست')
+        self.assertNotContains(pre, '۸.۰')
+        self.as_staff()
+        self.assertEqual(self.release().status_code, 302)
+        self.client.logout()  # Genuine anonymous public homepage after staff logout.
+        with patch.dict('os.environ', public):
+            home = self.client.get(reverse('company-index'),
+                                   {'q': self.company.display_name})
+            detail = self.client.get(reverse('company-detail',
+                                args=[self.company.pk]), {'tab': 'ai'})
+        self.assertEqual(home.status_code, 200)
+        self.assertContains(home, '۸.۰' if '۸.۰'.encode('utf-8') in home.content
+                            else '8.0')
+        self.assertContains(home, 'منتشرشده')
+        self.assertNotContains(home, 'امتیاز موجود نیست')
+        self.assertNotContains(home, BODY)
+        self.assertContains(detail, 'data-chart-mode="published"')
+        self.assertContains(detail, '8.0')
+        self.assertNotContains(detail, BODY)
+        self.as_staff()
+        with patch.dict('os.environ', public):
+            release = self.client.get(release_url, secure=True, HTTP_HOST='jobiew.ir')
+            queue = self.client.get(queue_url, secure=True, HTTP_HOST='jobiew.ir')
+            bulk = self.client.get(bulk_url, secure=True, HTTP_HOST='jobiew.ir')
+            sources = self.client.get(source_url, secure=True, HTTP_HOST='jobiew.ir')
+            change = self.client.get(reverse(
+                'admin:companies_company_change', args=[self.company.pk]),
+                secure=True, HTTP_HOST='jobiew.ir')
+        self.assertEqual(release.status_code, 200)
+        self.assertTrue(release.context['snapshot_matches'])
+        self.assertTrue(release.context['public_state']['visible_now'])
+        self.assertEqual(release.context['public_state']['recorded_count'], 2)
+        self.assertEqual(release.context['public_state']['visible_experiences'], 2)
+        self.assertContains(release, 'این 2 پرونده قبلاً منتشر شده‌اند')
+        self.assertContains(release, 'مشاهدهٔ امتیازهای واقعی')
+        self.assertContains(queue, 'انتشار ثبت شده')
+        self.assertContains(bulk, '2 پروندهٔ بازبینی‌شده')
+        self.assertContains(sources, 'انتشار امتیازهای این شرکت قبلاً ثبت شده است')
+        self.assertContains(change, 'تصمیم انتشار ثبت شده است')
+        self.assertEqual(CriteriaCompanyReleaseEvent.objects.count(), 1)
+
+    def test_release_duplicate_does_not_create_a_second_audit_event(self):
+        self.stage()
+        self.review_all()
+        for exp in self.exps:
+            self.clear_provenance(exp)
+        self.assertEqual(self.release().status_code, 302)
+        self.assertEqual(self.release().status_code, 302)
+        self.assertEqual(CriteriaCompanyReleaseEvent.objects.count(), 1)
+
+    def test_homepage_does_not_show_released_snapshot_when_flag_off_or_held(self):
+        self.stage()
+        self.review_all()
+        for exp in self.exps:
+            self.clear_provenance(exp)
+        self.assertEqual(self.release().status_code, 302)
+        private = {**FLAGS, 'JOBIEW_HOMEPAGE_PUBLIC_ENABLED': '1'}
+        with patch.dict('os.environ', private):
+            disabled = self.client.get(reverse('company-index'),
+                                       {'q': self.company.display_name})
+        self.assertContains(disabled, 'امتیاز موجود نیست')
+        self.assertNotContains(disabled, '8.0')
+        self.assertEqual(self.release(action='held').status_code, 302)
+        public = {**private, 'JOBIEW_DUAL6_PUBLICATION_ENABLED': '1',
+                  'JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED': '1'}
+        with patch.dict('os.environ', public):
+            held = self.client.get(reverse('company-index'),
+                                   {'q': self.company.display_name})
+        self.assertContains(held, 'امتیاز موجود نیست')
+        self.assertNotContains(held, '8.0')
+
     def test_single_company_release_not_another_and_rights_reversal(self):
         self.stage()
         self.review_all()

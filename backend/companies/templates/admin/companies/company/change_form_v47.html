@@ -2,8 +2,22 @@
 {% block after_field_sets %}
   {% if wi_can_review_checkpoint %}
   <section class="module" dir="rtl" style="padding:16px;line-height:2;">
-    <h2>امتیازهای شش‌معیاری GPT-6</h2>
-    <p>اول تجربه‌ها و شواهد شش محور را بررسی و تأیید گروهی کنید؛ سپس فقط پرونده‌های دارای مجوز منبع و تأیید مستقل را برای انتشار انتخاب کنید.</p>
+    <h2>امتیازهای شش‌معیاری GPT-6 — وضعیت فعلی</h2>
+    {% if wi_score_state.is_published %}
+      <p><strong>تصمیم انتشار ثبت شده است.</strong>
+      {{ wi_score_state.recorded_count }} پرونده در آخرین تصمیم ثبت شده‌اند.
+      {% if wi_score_state.visible_now %}
+        <strong>{{ wi_score_state.visible_experiences }} تجربهٔ دارای امتیاز اکنون در بخش عمومی قابل نمایش است.</strong>
+        <a href="{{ wi_public_profile_url }}">دیدن امتیازها در سایت</a>
+      {% else %}
+        <strong>فعلاً امتیازی در سایت قابل نمایش نیست:</strong> {{ wi_score_state.reason }}
+      {% endif %}</p>
+    {% elif wi_score_state.release and wi_score_state.release.decision == 'held' %}
+      <p><strong>نمایش امتیازها به تصمیم مدیر متوقف شده است.</strong></p>
+    {% else %}
+      <p><strong>هنوز انتشار نمره‌های این شرکت ثبت نشده است.</strong></p>
+    {% endif %}
+    <p>تاریخچهٔ تصمیم‌ها در دیتابیس محفوظ است؛ لینک‌های زیر برای بررسی یا تغییر تصمیم‌اند و لازم نیست تأییدهای قبلی تکرار شوند.</p>
     <a class="button" href="{{ wi_checkpoint_bulk_url }}">تأیید گروهی تجربه‌های شرکت</a>
     &nbsp;
     <a class="button" href="{{ wi_checkpoint_sources_url }}">بررسی گروهی مدارک تجربه‌ها</a>

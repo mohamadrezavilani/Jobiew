@@ -127,5 +127,10 @@ def company_public_sufficiency(company):
     for kind in ('work', 'interview'):
         total = PublicExperience.objects.filter(company=company, source_kind=kind).count()
         rows = _approved_dimension_rows(company, kind)
-        output[kind] = make_sufficiency(kind, total, rows, threshold=threshold)
+        scope = make_sufficiency(kind, total, rows, threshold=threshold)
+        # Count distinct experiences with an actually published numeric axis;
+        # the count is NOT equivalent to all approved or imported records.
+        scope['used_experience_count'] = len({experience_id
+                                               for experience_id, _, _ in rows})
+        output[kind] = scope
     return output

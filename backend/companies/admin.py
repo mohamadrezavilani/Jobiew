@@ -127,6 +127,11 @@ class CompanyAdmin(admin.ModelAdmin):
             'admin:companies_company_checkpoint_sources', args=[object_id])
         extra_context['wi_checkpoint_release_url'] = reverse(
             'admin:companies_company_checkpoint_release', args=[object_id])
+        if extra_context['wi_can_review_checkpoint']:
+            from criteria_v2.publication_state_v231 import company_publication_state
+            company = Company.objects.get(pk=object_id)
+            extra_context['wi_score_state'] = company_publication_state(company)
+            extra_context['wi_public_profile_url'] = reverse('company-detail', args=[object_id]) + '?tab=ai#dual-criteria'
         return super().change_view(request, object_id, form_url, extra_context)
 
     def has_add_permission(self, request):
