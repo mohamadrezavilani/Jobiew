@@ -1,0 +1,75 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div id="content-main" dir="rtl" style="max-width:1250px;line-height:1.9">
+<h1>بررسی گروهی مدارک: {{ company.display_name }}</h1>
+<p><a href="{{ release_url }}">بازگشت به موانع انتشار</a> ·
+<a href="{{ bulk_url }}">بازبینی نمره‌های شش‌معیاری</a></p>
+<section class="module" style="padding:16px;line-height:2;margin-bottom:20px">
+<h2>چرا این صفحه لازم است؟</h2>
+<p>نمره‌های GPT-6 قبلاً بررسی شده‌اند. اینجا فقط <strong>انتساب، استقلال، دسته‌بندی و مجوز واقعی استفاده از منبع</strong>
+را برای تجربه‌هایی که شخصاً خوانده‌ای، ثبت می‌کنی. چهار بررسی مستقل‌اند و هیچ‌کدام به‌طور پیش‌فرض انتخاب نشده‌اند.</p>
+<p><strong>{{ available }} تجربهٔ قابل بررسی گروهی</strong> در این شرکت باقی مانده است. موارد ردشده یا تکراریِ صریح در این صفحه قابل تأیید گروهی نیستند و باید جداگانه رسیدگی شوند.</p>
+<p>لینک تجربهٔ اصلی برای انتساب و مقایسهٔ تکراری‌ها ثبت می‌شود؛ <strong>این لینک به‌تنهایی حق استفاده یا انتشار نمی‌دهد.</strong>
+برای تأیید مجوز منبع باید سند جداگانه و واقعی ارائه کنی.</p>
+</section>
+{% if rows %}
+<form action="" method="post">{% csrf_token %}
+<input type="hidden" name="snapshot" value="{{ snapshot }}">
+<div class="module" style="padding:14px;overflow-x:auto">
+<h2>۱. تجربه‌هایی را که واقعاً بررسی کرده‌ای انتخاب کن</h2>
+<table style="width:100%">
+<thead><tr><th>انتخاب</th><th>شناسه</th><th>نوع و متن منبع</th><th>بررسی‌های ناقص</th><th>لینک‌ها</th></tr></thead>
+<tbody>
+{% for row in rows %}
+<tr>
+<td>
+{% if row.eligible %}
+<label><input type="checkbox" name="selected" value="{{ row.exp.pk }}"> انتخاب</label>
+{% else %}<strong>مسدود</strong>{% endif %}
+</td>
+<td>{{ row.exp.pk }}</td>
+<td><strong>{{ row.exp.get_source_kind_display }}</strong>
+<p>{{ row.exp.body|truncatechars:230 }}</p></td>
+<td>{% for gap in row.gap_labels %}{{ gap }}{% if not forloop.last %}، {% endif %}{% endfor %}</td>
+<td><a href="{% url 'admin:companies_company_experience_detail' company.pk row.exp.pk %}" target="_blank" rel="noopener">متن کامل و شش معیار</a>
+· <a href="{{ row.exp.source_url }}" target="_blank" rel="noopener noreferrer">منبع اصلی</a>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+<section class="module" style="padding:16px;margin:18px 0">
+<h2>۲. کدام موارد را مستقلاً تأیید کرده‌ای؟</h2>
+<p>هر گزینه فقط روی تجربه‌های انتخاب‌شده اعمال می‌شود. اگر مدرک کافی نداری، آن را انتخاب نکن.</p>
+<label style="display:block;margin:10px 0"><input type="checkbox" name="checks" value="classification">
+نوع تجربه (کاری/مصاحبه) را از متن بررسی کرده‌ام.</label>
+<label style="display:block;margin:10px 0"><input type="checkbox" name="checks" value="attribution">
+از منبع اصلی، انتساب تجربه به همین شرکت را بررسی کرده‌ام.</label>
+<label style="display:block;margin:10px 0"><input type="checkbox" name="checks" value="independence">
+متن‌ها و تکراری‌ها را مقایسه کرده‌ام و این تجربه‌ها را مستقل تشخیص داده‌ام.</label>
+<label style="display:block;margin:10px 0"><input type="checkbox" name="checks" value="copyright">
+برای استفاده از نتایج تحلیلی منبع، مجوز واقعی و مستند بررسی کرده‌ام.</label>
+<div style="padding:12px;border:1px solid #c5ccd7;border-radius:8px;margin:14px 0">
+<label for="rights_document_url"><strong>لینک سند مجوز</strong> (فقط در صورت انتخاب مجوز منبع)</label>
+<p>یک سند واقعی HTTPS شامل مجوز معتبر برای همین نوع استفاده؛ آدرس خود نظر، مدرک مجوز محسوب نمی‌شود.
+اگر همهٔ تجربه‌های انتخاب‌شده تحت یک مجوز نیستند، آن‌ها را در دسته‌های جداگانه تأیید کن.</p>
+<input id="rights_document_url" name="rights_document_url" type="url" maxlength="1500"
+placeholder="https://example.com/licence-or-permission" style="width:100%;max-width:850px">
+<label style="display:block;margin:10px 0"><input type="checkbox" name="confirm_rights_scope" value="yes">
+من مدرک را مطالعه کرده‌ام و تأیید می‌کنم مجوز برای تمام تجربه‌های انتخابی و انتشار امتیازهای مشتق‌شده معتبر است.</label>
+</div>
+<label for="note"><strong>شرح کوتاه بررسی (یک‌بار برای همین گروه)</strong></label>
+<textarea id="note" name="note" rows="3" minlength="25" maxlength="1200" required
+placeholder="منابع را خواندم، نوع تجربه‌ها را سنجیدم و تطبیق انتساب یا استقلال را با روش ... انجام دادم." style="display:block;width:100%;max-width:900px"></textarea>
+<label style="display:block;margin:16px 0">
+<input type="checkbox" name="confirm_manual" value="yes" required>
+<strong>خودم تمام موارد انتخاب‌شده را بررسی کرده‌ام و می‌دانم هیچ‌کدام از این تصمیم‌ها خودکار تولید نمی‌شود.</strong></label>
+<button type="submit" class="button default">ثبت بررسی‌های انتخاب‌شده و بازگشت به صفحهٔ انتشار</button>
+</section></form>
+{% else %}
+<p>پروندهٔ جدیدی با امتیاز معتبر و نقصِ قابل بررسی گروهی باقی نمانده است.</p>
+{% endif %}
+<p>این صفحه فقط رویدادهای بررسی خصوصی ثبت می‌کند. برای انتشار امتیازها باید در صفحهٔ انتشار شرکت، تصمیم جداگانه بگیری. متن خام تجربه‌ها در این مسیر منتشر نمی‌شود.</p>
+</div>
+{% endblock %}

@@ -71,4 +71,4 @@ jobs:
         run: |
           cd backend
           python manage.py check
-          python manage.py test criteria_v2.test_checkpoint_stage_db_v218 criteria_v2.test_checkpoint_cumulative_db_v221 criteria_v2.test_checkpoint_bulk_review_v222 criteria_v2.test_checkpoint_private_prod_v224 criteria_v2.test_admin_review_v225 criteria_v2.test_easy_company_review_v226 criteria_v2.test_six_axis_admin_v227 companies.test_company_experiences_admin_v103 companies.test_homepage_preview_v219 companies.test_homepage_public_v220 --noinput -v 2
+          python manage.py test criteria_v2.test_checkpoint_stage_db_v218 criteria_v2.test_checkpoint_cumulative_db_v221 criteria_v2.test_checkpoint_bulk_review_v222 criteria_v2.test_checkpoint_private_prod_v224 criteria_v2.test_admin_review_v225 criteria_v2.test_easy_company_review_v226 criteria_v2.test_six_axis_admin_v227 criteria_v2.test_bulk_provenance_v228 companies.test_company_experiences_admin_v103 companies.test_homepage_preview_v219 companies.test_homepage_public_v220 --noinput -v 2
