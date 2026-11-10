@@ -162,11 +162,19 @@ def company_release(request, pk):
     except ValueError:
         raise Http404('Company exceeds release review safety limit')
     token = _token(company, proofs, stats)
+    rights_only = bool(
+        stats['company_verified'] and stats['copyright_missing']
+        and stats['attribution_missing'] == 0
+        and stats['independence_missing'] == 0
+        and stats['classification_missing'] == 0
+        and stats['invalid_or_changed'] == 0
+        and stats['pending'] == 0)
     current = CriteriaCompanyReleaseEvent.objects.filter(company=company).first()
     if request.method == 'GET':
         import os
         response = _private(request, 'criteria_v2/company_release_v224.html', {
             'company': company, 'stats': stats, 'eligible_count': len(proofs),
+            'rights_only': rights_only,
             'admin_mode': request.resolver_match.url_name == 'companies_company_checkpoint_release',
             'current': current, 'token': token,
             'public_enabled': (os.environ.get('JOBIEW_DUAL6_PUBLICATION_ENABLED') == '1'

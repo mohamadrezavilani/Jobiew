@@ -51,9 +51,19 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 {% endif %}
 {% if stats.copyright_missing or stats.attribution_missing or stats.independence_missing or stats.classification_missing %}
 <div class="notice" role="status">
+{% if rights_only %}
+<h3>تمام بررسی‌های عادی انجام شده است؛ فقط مدرک حقوق منبع باقی مانده</h3>
+<p><strong>۳ بررسی برای تجربه‌های نمره‌دار کامل است: دسته‌بندی، انتساب و استقلال.</strong>
+هیچ نیازی به تکرار آن‌ها نیست. مانع فعلی {{ stats.copyright_missing }} پرونده، صرفاً
+ثبت مدرک معتبر دربارهٔ حق استفاده از محتوای منبع برای انتشار امتیازهاست.</p>
+<p><a class="button" href="{% url 'admin:companies_company_checkpoint_sources' company.pk %}"><strong>بررسی و ثبت سند مجوز منبع</strong></a></p>
+<p>اگر سند واقعی مجوز نداری، این مرحله را نمی‌توان با تأیید دوبارهٔ نمره‌ها یا گزینهٔ پیش‌فرض تکمیل کرد.
+امتیازها خصوصی می‌مانند و هیچ داده‌ای از بین نرفته است.</p>
+{% else %}
 <h3>قدم ۲: مدارک تجربه‌ها و نظرات</h3>
 <p><a class="button" href="{% url 'admin:companies_company_checkpoint_sources' company.pk %}"><strong>بررسی گروهی مدارک و دسته‌بندی این شرکت</strong></a></p>
 <p>به‌جای چندین فرم مجزا، تجربه‌های واقعاً بررسی‌شده را انتخاب کن و تأییدهای مستقل را با یک یادداشت ثبت کن. مجوز منبع فقط با سند جداگانه پذیرفته می‌شود.</p>
+{% endif %}
 <p>از میان پرونده‌های تأییدشده و نمره‌دار، تعداد مواردی که این تأییدهای مستقل را ندارند:</p>
 <table>
 <tr><th>مجوز واقعی استفاده و انتشار منبع</th><td><strong>{{ stats.copyright_missing }}</strong></td></tr>
@@ -62,8 +72,10 @@ table{width:100%;border-collapse:collapse}td,th{text-align:right;border-bottom:1
 <tr><th>تأیید نوع تجربه (کاری یا مصاحبه)</th><td><strong>{{ stats.classification_missing }}</strong></td></tr>
 </table>
 <p>لینک منبع به‌تنهایی مجوز بازنشر نیست. فقط برای تجربه‌هایی که واقعاً مدرک دارند، در پنل رویداد بررسی ثبت کن.</p>
+{% if not rights_only %}
 <p><a class="button" href="{% url 'admin:companies_company_experiences' company.pk %}">دیدن تجربه‌های این شرکت و مدارکشان</a>
 &nbsp; <a href="{% url 'dual-criteria-review-queue' %}">صف تأیید نوع تجربه‌ها</a></p>
+{% endif %}
 {% if stats.source_examples %}
 <details>
 <summary>نمایش نمونهٔ پرونده‌های دارای مدارک ناقص</summary>

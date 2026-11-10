@@ -189,6 +189,11 @@ def provenance_review(admin_view, request, object_id):
             for raw in request.POST.getlist('selected'):
                 if raw.isascii() and raw.isdecimal():
                     selected_ids.add(int(raw))
+        normal_remaining = sum(
+            any(gap in STANDARD_SCOPES['standard'] for gap in row['gaps'])
+            for row in rows if row['eligible'])
+        rights_remaining = sum(
+            'copyright' in row['gaps'] for row in rows if row['eligible'])
         ctx = {
             **admin_view.admin_site.each_context(request),
             'title': 'بررسی گروهی مدارک: ' + company.display_name,
@@ -200,6 +205,9 @@ def provenance_review(admin_view, request, object_id):
                 'admin:companies_company_checkpoint_bulk', args=[company.pk]),
             'labels': LABELS,
             'available': sum(row['eligible'] for row in rows),
+            'normal_remaining': normal_remaining,
+            'rights_remaining': rights_remaining,
+            'only_rights_left': normal_remaining == 0 and rights_remaining > 0,
             'selected_ids': selected_ids,
             'error': error,
             'note_value': (request.POST.get('note', '') if request.method == 'POST' else ''),
@@ -307,7 +315,17 @@ def provenance_review(admin_view, request, object_id):
                         ))
                 created += 1
         if not created:
-            return review_page('تأیید تازه‌ای برای موارد انتخابی باقی نمانده است.', status=409)
+            # Already-reviewed ordinary decisions are an idempotent no-op.
+            # Do not force the reviewer through the same approval again;
+            # direct them to the still-missing rights evidence.
+            messages.info(
+                request,
+                'بررسی‌های عادی انتخاب‌شده قبلاً ثبت شده‌اند و نیاز به تکرار ندارند. '
+                'اگر هنوز امتیازی قابل انتشار نیست، مانعِ باقی‌مانده را '
+                'در بخش مجوز استفاده از منبع ببینید.')
+            return redirect(
+                'admin:companies_company_checkpoint_release',
+                object_id=company.pk)
     messages.success(
         request, f'{created} رویداد بررسی برای {len(selected_rows)} تجربه ثبت شد. '
         'هیچ نمره یا متنی خودکار منتشر نشده است.')

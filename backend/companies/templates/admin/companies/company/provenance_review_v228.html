@@ -7,6 +7,8 @@
 <section class="module" style="padding:15px;line-height:2;margin-bottom:16px">
   <p><strong>{{ available }} تجربهٔ قابل‌بررسی</strong> — این موارد برای راحتی تو از ابتدا انتخاب شده‌اند.
   قبل از ثبت، هر تجربه‌ای را که متن یا مدرکش را شخصاً بررسی نکرده‌ای، از انتخاب خارج کن.</p>
+  <p><strong>تأیید عادی باقی‌مانده: {{ normal_remaining }}</strong> ·
+  <strong>مدرک حقوق منبع باقی‌مانده: {{ rights_remaining }}</strong></p>
   <p>تأیید سه مورد «نوع تجربه، انتساب، استقلال» از <strong>مجوز استفاده از منبع</strong> جداست.
   برای ثبت بررسی‌های عادی هیچ سند حقوقی لازم نیست؛ اما همچنان امتیازی عمومی نمی‌شود.</p>
 </section>
@@ -39,6 +41,16 @@
 {% endfor %}
 </tbody></table>
 </section>
+{% if only_rights_left %}
+<section class="module" style="padding:16px;margin:14px 0;border-right:5px solid #16854d">
+<h2>بررسی‌های عادی کامل شده‌اند</h2>
+<p><strong>دسته‌بندی، انتساب و استقلالِ تمام پرونده‌های قابل‌بررسی قبلاً ثبت شده است.</strong>
+نیازی به تکرار تأیید این سه مورد نیست. تنها مانع باقی‌مانده برای {{ rights_remaining }}
+پرونده، سند مجوز استفاده از منبع است؛ بدون آن انتشار امتیازها بسته می‌ماند.</p>
+<p><a href="{{ release_url }}">مشاهدهٔ تعداد دقیق موانع انتشار</a></p>
+</section>
+{% endif %}
+{% if normal_remaining %}
 <section class="module" style="padding:16px;margin:14px 0">
 <h2>۲. ثبت آسان بررسی‌های عادی</h2>
 <p>با ثبت این گزینه، برای تجربه‌های انتخابی فقط <strong>دسته‌بندی، انتساب و استقلال</strong> تأیید می‌شود؛
@@ -57,16 +69,14 @@
 <textarea name="note" id="note" rows="2" maxlength="1200"
 placeholder="اگر نکته‌ای در روش بازبینی داشتی، اینجا ثبت کن؛ لازم نیست متن تکراری بنویسی."
 style="display:block;width:100%;max-width:850px">{{ note_value }}</textarea>
-<label style="display:block;margin:16px 0">
-<input type="checkbox" name="confirm_manual" value="yes" required>
-<strong>تأیید می‌کنم تمام تجربه‌های انتخابی را واقعاً در محدودهٔ بررسی انتخاب‌شده بررسی کرده‌ام.</strong>
-</label>
 <button class="button default" name="action" value="standard" type="submit">
 ثبت بررسی‌های عادی (بدون تأیید مجوز انتشار)
 </button>
 <p><small>این دکمه به مجوز منبع نیاز ندارد، اما گیت انتشار عمومی را دور نمی‌زند.</small></p>
 </section>
-<details {% if rights_open %}open{% endif %} class="module" style="padding:16px;margin:14px 0">
+{% endif %}
+{% if rights_remaining %}
+<details {% if rights_open or only_rights_left %}open{% endif %} class="module" style="padding:16px;margin:14px 0">
 <summary><strong>۳. ثبت مجوز منبع با سند واقعی (اختیاری، مرحلهٔ مستقل)</strong></summary>
 <p>اگر سند قانونی یا مجوز معتبر داری که استفاده از امتیازهای تحلیلی مشتق‌شدهٔ
 <strong>همهٔ تجربه‌های انتخابی</strong> را پوشش می‌دهد، این بخش را تکمیل کن.
@@ -81,6 +91,11 @@ style="display:block;width:100%;max-width:850px;margin:8px 0">
 ثبت فقط مجوز منبع برای تجربه‌های انتخابی
 </button>
 </details>
+{% endif %}
+<label style="display:block;margin:16px 0;padding:12px;border:1px solid #ccd3dd;border-radius:8px">
+<input type="checkbox" name="confirm_manual" value="yes" required>
+<strong>تأیید می‌کنم مواردی که برای این تصمیم انتخاب کرده‌ام، واقعاً شخصاً بررسی شده‌اند.</strong>
+</label>
 </form>
 {% else %}
 <p>پروندهٔ جدیدی با امتیاز معتبر و نقصِ قابل بررسی گروهی باقی نمانده است.</p>
