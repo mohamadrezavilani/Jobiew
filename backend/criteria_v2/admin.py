@@ -4,7 +4,9 @@ Classification decisions are created through the guarded staff queue. Existing
 comments, old ratings, and source text are not editable here.
 """
 from django.contrib import admin
-from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent
+from django.urls import reverse
+from django.utils.html import format_html
+from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent, CheckpointApprovalReceipt
 
 
 class AuditOnlyAdmin(admin.ModelAdmin):
@@ -29,9 +31,32 @@ class CriteriaReviewEventAdmin(AuditOnlyAdmin):
     list_select_related = ('experience', 'reviewer')
 
 
+class CriteriaAxisScoreInline(admin.TabularInline):
+    model = CriteriaAxisScore
+    extra = 0
+    can_delete = False
+    fields = ('key', 'score', 'confidence', 'evidence', 'explanation', 'semantic_status')
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(CriteriaAnalysis)
 class CriteriaAnalysisAdmin(AuditOnlyAdmin):
-    list_display = ('experience', 'criteria_version', 'model_name', 'run_id', 'review_status')
+    inlines = (CriteriaAxisScoreInline,)
+    list_display = ('experience', 'criteria_version', 'model_name', 'run_id', 'review_status', 'review_company')
+
+    @admin.display(description='بازبینی گروهی خصوصی')
+    def review_company(self, obj):
+        return format_html('<a href="{}">بازبینی شرکت</a>', reverse(
+            'dual-checkpoint-bulk-v222', args=[obj.experience.company_id]))
     list_filter = ('criteria_version', 'review_status')
 
 
@@ -42,5 +67,11 @@ class CriteriaAxisScoreAdmin(AuditOnlyAdmin):
 
 @admin.register(CriteriaScoreReviewEvent)
 class CriteriaScoreReviewEventAdmin(AuditOnlyAdmin):
+    list_display = ('analysis', 'reviewer', 'created_at')
+    list_select_related = ('analysis', 'reviewer')
+
+
+@admin.register(CheckpointApprovalReceipt)
+class CheckpointApprovalReceiptAdmin(AuditOnlyAdmin):
     list_display = ('analysis', 'reviewer', 'created_at')
     list_select_related = ('analysis', 'reviewer')

@@ -26,8 +26,11 @@ class Command(BaseCommand):
         parser.add_argument('--apply', action='store_true')
         parser.add_argument('--acknowledge-unverified-private-data', action='store_true')
 
+    def guard_database(self, expected_db):
+        return _guard_local_dev(expected_db)
+
     def handle(self, *args, **opts):
-        database = _guard_local_dev(opts['expected_db'])
+        database = self.guard_database(opts['expected_db'])
         if opts['apply'] != opts['acknowledge_unverified_private_data']:
             raise CommandError('PRIVATE_APPLY_REQUIRES_EXPLICIT_ACKNOWLEDGEMENT')
         try:

@@ -166,3 +166,25 @@ class CriteriaScoreReviewEvent(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError('Score review events are append-only')
+
+
+class CheckpointApprovalReceipt(models.Model):
+    """Immutable human six-axis snapshot; not a rights or publication approval."""
+    analysis = models.OneToOneField(
+        CriteriaAnalysis, on_delete=models.PROTECT, related_name='checkpoint_approval_receipt')
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    score_review_event = models.OneToOneField(
+        CriteriaScoreReviewEvent, on_delete=models.PROTECT)
+    source_content_sha256 = models.CharField(max_length=64)
+    scores_sha256 = models.CharField(max_length=64)
+    batch_token = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError('Approval receipt is append-only')
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError('Approval receipts are append-only')

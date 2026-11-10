@@ -108,6 +108,11 @@ class HomepagePublicCutoverV220Tests(TestCase):
         self.assertIn(b'&lt;img', page.content)
         self.assertIn(b'onerror=alert(42)', page.content)
 
+    def test_public_home_allows_head_health_checks(self):
+        with patch.dict('os.environ', {'JOBIEW_HOMEPAGE_PUBLIC_ENABLED': '1'}):
+            response = self.client.head(reverse('company-index'))
+        self.assertEqual(response.status_code, 200)
+
     def test_post_does_not_enter_new_public_handler(self):
         with patch.dict('os.environ', {'JOBIEW_HOMEPAGE_PUBLIC_ENABLED': '1'}):
             response = self.client.post(reverse('company-index'), data={})

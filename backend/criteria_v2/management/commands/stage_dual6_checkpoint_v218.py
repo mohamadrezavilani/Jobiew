@@ -38,6 +38,37 @@ def _guard_local_dev(expected_db):
     return name
 
 
+def _reviewed_scores_match(normalized, prior):
+    """Accept unchanged human-reviewed runs during cumulative checkpoint reimport.
+
+    Never overwrite human decisions; reject any edited value/evidence or
+    unverified stored review receipt.
+    """
+    dimensions = normalized.get('dimensions')
+    rows = list(prior.axis_scores.all())
+    if not isinstance(dimensions, dict) or len(rows) != 6 or set(dimensions) != {r.key for r in rows}:
+        return False
+    for row in rows:
+        item = dimensions[row.key]
+        status = 'approved' if row.score is not None else 'abstained'
+        if (row.score != item['score'] or row.confidence != item['confidence'] or
+                row.evidence != item['evidence'] or row.explanation != item['explanation'] or
+                row.semantic_status != status):
+            return False
+    if prior.review_status == 'approved':
+        from criteria_v2.checkpoint_receipt_v222 import checkpoint_release_ready
+        return checkpoint_release_ready(prior)
+    if prior.review_status == 'no_evaluable_scores':
+        from criteria_v2.models import CriteriaScoreReviewEvent
+        if any(row.score is not None for row in rows):
+            return False
+        review = CriteriaScoreReviewEvent.objects.filter(analysis=prior).first()
+        return (review is not None and
+                review.source_content_sha256 == prior.source_content_sha256 and
+                review.decisions == {r.key: 'abstain' for r in rows})
+    return False
+
+
 def _existing_run(exp, row, normalized):
     """No competing versions of this checkpoint-engine run for the same source."""
     matches = list(CriteriaAnalysis.objects.filter(
@@ -49,8 +80,7 @@ def _existing_run(exp, row, normalized):
     if len(matches) != 1 or matches[0].run_id != run_id:
         raise CheckpointError('CONFLICTING_CHECKPOINT_RUN_REQUIRES_MANUAL_REVIEW')
     prior = matches[0]
-    if (prior.review_status != STATUS or
-        prior.criteria_version != version_for(exp.source_kind) or
+    if (prior.criteria_version != version_for(exp.source_kind) or
         prior.prompt_version != PROMPT or
         prior.model_name != str(row.get('model_name') or 'chatgpt-private-review')[:120] or
         prior.raw_payload.get('story_sha256') != row['story_sha256'] or
@@ -58,7 +88,8 @@ def _existing_run(exp, row, normalized):
         prior.raw_payload.get('source_rights') != 'NOT_ESTABLISHED' or
         prior.raw_payload.get('semantic_accuracy') != 'NOT_ESTABLISHED' or
         prior.source_content_sha256 != exp.content_sha256 or
-        not stored_scores_match(normalized, prior.axis_scores.all())):
+        not (stored_scores_match(normalized, prior.axis_scores.all())
+             if prior.review_status == STATUS else _reviewed_scores_match(normalized, prior))):
         raise CheckpointError('STAGED_RUN_CHANGED_OR_INCOMPLETE_REQUIRES_REVIEW')
     return 'existing', run_id
 
