@@ -29,8 +29,8 @@
       <nav class="wi-top-nav" aria-label="ناوبری اصلی">
         <a href="{% url 'company-index' %}">شرکت‌ها</a>
         <a href="{% url 'company-map' %}">نقشه شرکت‌ها</a>
-        {% if user.is_authenticated and user.is_staff and perms.companies.view_company and perms.assessments.view_aiassessment %}
-          <a href="{% url 'company-five-criteria-private-compare' %}">مقایسه داخلی</a>
+        {% if user.is_authenticated and user.is_staff and perms.companies.view_company and perms.criteria_v2.view_criteriaanalysis %}
+          <a href="{% url 'admin:companies_company_checkpoint_queue' %}">پنل ۶+۶ مدیران</a>
         {% endif %}
       </nav>
       <form class="wi-search" method="get" action="{% url 'company-index' %}" role="search">
@@ -61,9 +61,9 @@
           <a class="wi-button wi-button--primary" href="{% url 'company-map' %}">
             <span aria-hidden="true">⌖</span> مشاهده نقشه شرکت‌ها
           </a>
-          {% if user.is_authenticated and user.is_staff and perms.companies.view_company and perms.assessments.view_aiassessment %}
-          <a class="wi-button wi-button--subtle" href="{% url 'company-five-criteria-private-preview' company.pk %}">
-            پیش‌نمایش پژوهشی (تاریخی) <span aria-hidden="true">←</span>
+          {% if user.is_authenticated and user.is_staff and perms.companies.view_company and perms.criteria_v2.view_criteriaanalysis and perms.experiences.view_publicexperience %}
+          <a class="wi-button wi-button--subtle" href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">
+            بازبینی و انتشار ۶+۶ <span aria-hidden="true">←</span>
           </a>
           {% endif %}
         </div>

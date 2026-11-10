@@ -7,7 +7,7 @@
     <div class="wi-x-nav"><a href="{{ company_experiences_url }}">بازگشت به نظرهای شرکت</a><a href="{{ company_change_url }}">مشخصات شرکت</a>{% if experience.safe_source_url %}<a href="{{ experience.safe_source_url }}" target="_blank" rel="noopener noreferrer">منبع اصلی ↗</a>{% endif %}</div></div>
   <div class="wi-x-detail-grid">
     <section class="wi-x-panel"><h2>متن تجربه / مصاحبه</h2>
-      <dl class="wi-x-meta"><div><dt>تاریخ انتشار در منبع</dt><dd>{{ experience.published_jalali|default:'نامشخص' }}</dd></div><div><dt>دوره اشتغال</dt><dd>{{ experience.employment_period_jalali|default:'نامشخص' }}</dd></div><div><dt>امتیاز منبع (از ۵)</dt><dd>{{ experience.source_rating_5|default_if_none:'ثبت نشده' }}</dd></div><div><dt>زمان ورود به Jobiew</dt><dd>{{ experience.imported_at|date:'Y/m/d H:i' }}</dd></div></dl>
+      <dl class="wi-x-meta"><div><dt>تاریخ انتشار در منبع</dt><dd>{{ experience.published_jalali|default:'نامشخص' }}</dd></div><div><dt>دوره اشتغال</dt><dd>{{ experience.employment_period_jalali|default:'نامشخص' }}</dd></div><div><dt>زمان ورود به Jobiew</dt><dd>{{ experience.imported_at|date:'Y/m/d H:i' }}</dd></div></dl>
       <div class="wi-x-body">{{ experience.body|default:'متن مستقلی برای این رکورد ثبت نشده است.'|linebreaks }}</div>
       {% if experience.pros %}<h3>نکات مثبت منبع</h3><div class="wi-x-body"><ul>{% for item in experience.pros %}<li>{{ item }}</li>{% endfor %}</ul></div>{% endif %}
       {% if experience.cons %}<h3>نکات منفی منبع</h3><div class="wi-x-body"><ul>{% for item in experience.cons %}<li>{{ item }}</li>{% endfor %}</ul></div>{% endif %}
@@ -22,18 +22,42 @@
       <dt>منبع</dt><dd>{% if experience.safe_source_url %}<a href="{{ experience.safe_source_url }}" target="_blank" rel="noopener noreferrer">مشاهده تجربه در سایت مبدأ</a>{% else %}بدون لینک معتبر{% endif %}</dd>
     </dl></aside>
   </div>
-  {% if can_see_ai %}
-  <section class="wi-x-panel wi-x-ai"><h2>ارزیابی‌های AI با نسخهٔ five_v1</h2><p class="wi-x-note">این ارزیابی‌ها آزمایشی‌اند. امتیازهای سایت مبدأ با امتیازهای AI یکی نیستند و نمایش در این بخش مجوز انتشار عمومی محسوب نمی‌شود.</p>
-    {% for assessment in assessments %}<article class="wi-x-assessment"><p><a class="button" href="{% url 'admin:assessments_aiassessment_publication_detail' assessment.pk %}">بررسی پنج معیار و انتشار AI</a></p><h3>مدل: {{ assessment.model_name }} · {{ assessment.created_at|date:'Y/m/d H:i' }}</h3>
-      {% if experience.source_kind == 'work' %}
-      <p class="wi-x-claude-shortcut"><a class="button" href="{% url 'admin:assessments_aiassessment_claude_detail' assessment.pk %}">صحت‌سنجی با Claude و مقایسهٔ پنج شاخص</a> <span class="wi-x-note">نمایش مقایسه رایگان است؛ اجرای Claude به تأیید جداگانه نیاز دارد.</span></p>
-      {% endif %}
-<p>وضعیت پردازش: {{ assessment.parse_status }} | بازبینی مستقل: {{ assessment.independent_review_status }} | تأیید انتشار: {% if assessment.publish_approved %}بله{% else %}خیر{% endif %}</p>
-      <table class="wi-x-table"><thead><tr><th>شاخص</th><th>امتیاز از ۱۰</th><th>اطمینان</th><th>وضعیت معنایی</th><th>توضیح مدل</th></tr></thead><tbody>
-      {% for dim in assessment.display_dimensions %}<tr><td>{{ dim.display_label }}</td><td>{{ dim.score|default_if_none:'فاقد امتیاز' }}</td><td>{{ dim.confidence }}٪</td><td>{{ dim.semantic_status }}</td><td>{{ dim.explanation|default:'—'|linebreaksbr }}</td></tr>{% empty %}<tr><td colspan="5">برای این اجرا شاخصی ذخیره نشده است.</td></tr>{% endfor %}
-      </tbody></table>
-    </article>{% empty %}<p>برای این تجربه هنوز ارزیابی پنج‌شاخصی ثبت نشده است.</p>{% endfor %}
+  <section class="wi-x-panel wi-x-ai" id="six-axes">
+    <h2>ارزیابی ۶معیاری GPT-6 — {% if experience.source_kind == 'work' %}شرایط کاری{% else %}مصاحبهٔ استخدام{% endif %}</h2>
+    <p class="wi-x-note">چارچوب اختصاصی شامل دقیقاً ۶ محور برای همین نوع تجربه است. نمره‌های فاقد شاهد «نامشخص» هستند، نه صفر. تأیید AI با مجوز بازنشر منبع متفاوت است.</p>
+    {% if not can_view_six %}
+      <p role="status">نمایش پرونده‌های GPT-6 فقط برای بازبینِ مجاز در محیط خصوصی فعال است.</p>
+    {% elif not six_run %}
+      <p role="status"><strong>هنوز تحلیل GPT-6 برای این تجربه ثبت نشده است.</strong> این تجربه در مجموعهٔ واردشدهٔ فعلی امتیازدهی نشده است. نمره‌های تاریخی پنج‌معیاری جایگزین آن نمی‌شوند.</p>
+    {% elif not six_integrity_ok %}
+      <p role="alert"><strong>هشدار:</strong> محتوای منبع یا شواهد نمره‌ها با رکورد ثبت‌شده مطابقت ندارد؛ نمایش امتیازها برای بررسی مجدد مسدود است.</p>
+    {% else %}
+      <p><strong>وضعیت:</strong> {{ six_state }} · مدل: {{ six_run.model_name }} · چارچوب: {{ six_run.get_criteria_version_display }}</p>
+      <table class="wi-x-table">
+        <thead><tr><th>معیار مستقل</th><th>امتیاز از ۱۰</th><th>شواهد متن</th><th>توضیح</th><th>وضعیت بازبینی</th></tr></thead>
+        <tbody>
+          {% for row in six_axes %}
+          <tr>
+            <th scope="row">{{ row.definition.label }}</th>
+            <td>{% if row.item.score != None %}{{ row.item.score }}{% else %}فاقد شاهد (null){% endif %}</td>
+            <td>{% for quote in row.item.evidence %}<blockquote>{{ quote }}</blockquote>{% empty %}—{% endfor %}</td>
+            <td>{{ row.item.explanation|default:"—" }}</td>
+            <td>{{ row.item.semantic_status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+    {% if can_view_six %}
+      <p class="wi-x-nav">
+        <a class="button" href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">بازبینی و تأیید گروهی شرکت</a>
+        <a class="button" href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">دلایل عدم انتشار و تصمیم نهایی</a>
+        <a href="{% url 'dual-criteria-review-queue' %}">بررسی نوع تجربه (کاری یا مصاحبه)</a>
+      </p>
+    {% endif %}
+    <p>برای تأیید حقوق استفاده از این منبع، انتساب و مستقل‌بودن روایت، هر تصمیم را جداگانه و با مدرک واقعی ثبت کنید:
+    <a href="{% url 'admin:experiences_experiencereviewevent_add' %}?experience={{ experience.pk }}">ثبت بررسی منبع این تجربه</a>.</p>
   </section>
-  {% endif %}
+
 </main>
 {% endblock %}

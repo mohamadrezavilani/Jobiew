@@ -106,17 +106,15 @@ class CompanyExperiencesAdminV103Tests(TestCase):
         self.assertEqual(cl.get(self.detail_url).status_code, 200)
         self.assertNotContains(cl.get(self.detail_url), 'ارزیابی‌های AI با نسخهٔ five_v1')
 
-    def test_ai_is_five_v1_and_permission_gated(self):
+    def test_old_five_axis_scores_are_never_displayed_as_current_six(self):
         live = AiAssessment.objects.create(experience=self.exp, criteria_version='five_v1',
             model_name='test-five', prompt_version='v1', run_id='five', raw_payload={})
         AiDimension.objects.create(assessment=live, key='management_environment',
-            score=7, confidence=78, explanation='حمایت مدیر در متن قابل مشاهده است')
-        old = AiAssessment.objects.create(experience=self.exp, criteria_version='legacy9',
-            model_name='test-old', prompt_version='old', run_id='old', raw_payload={})
-        AiDimension.objects.create(assessment=old, key='workload', score=2, confidence=50,
-            explanation='قدیمی و خارج از پنج معیار')
+            score=7, confidence=78, explanation='منطق پنج معیار قدیمی در اینجا نباید نمایش داده شود')
         response = self.client.get(self.detail_url)
-        self.assertContains(response, 'حمایت مدیر در متن قابل مشاهده است')
-        self.assertContains(response, 'کیفیت مدیریت و محیط کاری')
-        self.assertNotContains(response, 'قدیمی و خارج از پنج معیار')
-        self.assertNotContains(response, 'test-old')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'ارزیابی ۶معیاری GPT-6')
+        self.assertNotContains(response, 'منطق پنج معیار قدیمی در اینجا نباید نمایش داده شود')
+        self.assertNotContains(response, 'five_v1')
+        self.assertNotContains(response, 'مقایسهٔ پنج شاخص')
+        self.assertNotContains(response, 'بررسی پنج معیار و انتشار AI')
