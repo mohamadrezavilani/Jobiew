@@ -104,6 +104,40 @@ class BulkCheckpointV222Tests(TestCase):
         self.assertEqual(self.approve(r).status_code, 409)
         self.assertEqual(CriteriaScoreReviewEvent.objects.count(), 2)
 
+    def test_reviewed_runs_remain_visible_and_reimport_is_idempotent(self):
+        from criteria_v2.management.commands.stage_dual6_checkpoint_v218 import stage_one
+        r = self.get_ready()
+        self.assertEqual(self.approve(r).status_code, 302)
+        with patch.dict('os.environ', FLAGS):
+            dashboard = self.client.get(reverse('dual-checkpoint-company-v218', args=[self.company.pk]))
+            self.assertEqual(dashboard.status_code, 200)
+            self.assertEqual(dashboard.context['work']['pilot_valid_cases'], 2)
+            for run in CriteriaAnalysis.objects.all():
+                response = self.client.get(reverse('dual-checkpoint-detail-v218', args=[run.pk]))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'متن آماده‌شده')
+        for exp in self.exps:
+            run = CriteriaAnalysis.objects.get(experience=exp)
+            dims = {}
+            for axis in run.axis_scores.all():
+                dims[axis.key] = {
+                    'score': axis.score,
+                    'confidence': axis.confidence,
+                    'evidence': axis.evidence[0] if axis.evidence else '',
+                    'explanation': axis.explanation,
+                }
+            original = {
+                'experience_id': exp.pk, 'company_id': self.company.pk,
+                'kind': 'work', 'source_content_sha256': exp.content_sha256,
+                'story_sha256': story_digest(story_from_experience(exp)),
+                'review_status': 'unverified_private_proposal',
+                'model_name': 'GPT-6-synthetic',
+                'prediction': {'detected_kind': 'work', 'kind_confidence': 91, 'dimensions': dims},
+            }
+            self.assertFalse(stage_one(original))
+        self.assertEqual(CriteriaAnalysis.objects.count(), 2)
+        self.assertEqual(CriteriaScoreReviewEvent.objects.count(), 2)
+
     def test_review_does_not_automatically_publish_scores(self):
         r = self.get_ready()
         self.assertEqual(self.approve(r).status_code, 302)

@@ -31,8 +31,26 @@ class CriteriaReviewEventAdmin(AuditOnlyAdmin):
     list_select_related = ('experience', 'reviewer')
 
 
+class CriteriaAxisScoreInline(admin.TabularInline):
+    model = CriteriaAxisScore
+    extra = 0
+    can_delete = False
+    fields = ('key', 'score', 'confidence', 'evidence', 'explanation', 'semantic_status')
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(CriteriaAnalysis)
 class CriteriaAnalysisAdmin(AuditOnlyAdmin):
+    inlines = (CriteriaAxisScoreInline,)
     list_display = ('experience', 'criteria_version', 'model_name', 'run_id', 'review_status', 'review_company')
 
     @admin.display(description='بازبینی گروهی خصوصی')
