@@ -50,3 +50,6 @@ JOBIEW_CRAWLER_PERMISSION_CONFIRMED=0
 - محیط staging HTTPS واقعی: **انجام نشده** (آدرس/دسترسی به سرور در اختیار این عامل نیست).
 - مرورگر واقعی staging با حساب staff: **انجام نشده**.
 - deploy و تغییر صفحه عمومی: **انجام نشده**.
+## دفاع در برابر الگوی پسوندی `ALLOWED_HOSTS`
+
+صرفاً بررسی برابرنبودن نام میزبان کافی نیست: تنظیمی نظیر `DJANGO_ALLOWED_HOSTS=.example.test` هم staging و هم production را مجاز می‌کند. گیت خصوصی اکنون با `django.http.request.validate_host` هر الگوی `ALLOWED_HOSTS` را که host تولید را بپذیرد رد می‌کند؛ شامل نام دقیق، `*` و پسوند دامنه (`.example.test`). این گیت به‌جای تفکیک واقعی سرویس‌ها، VPN و HTTPS نیست.

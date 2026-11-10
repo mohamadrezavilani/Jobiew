@@ -220,6 +220,33 @@ class HomepagePreviewV219Tests(TestCase):
             self.assertEqual(self.client.get(self.url, HTTP_HOST='stage.example.test', secure=True).status_code, 404)
 
     @override_settings(DEBUG=False, SECURE_SSL_REDIRECT=False,
+                       ALLOWED_HOSTS=['.example.test'])
+    def test_staging_rejects_django_suffix_wildcard_host_in_allowlist(self):
+        """A dotted Django host pattern also accepts the production hostname."""
+        with self._authorized(), patch.dict('os.environ', {
+            'JOBIEW_HOMEPAGE_STAGING_ENABLED': '1',
+            'JOBIEW_HOMEPAGE_STAGING_HOST': 'stage.example.test',
+            'JOBIEW_HOMEPAGE_PUBLIC_HOST': 'www.example.test',
+            'JOBIEW_DUAL6_PUBLICATION_ENABLED': '0',
+        }):
+            self.assertEqual(
+                self.client.get(self.url, HTTP_HOST='stage.example.test', secure=True).status_code, 404
+            )
+
+    @override_settings(DEBUG=False, SECURE_SSL_REDIRECT=False,
+                       ALLOWED_HOSTS=['*'])
+    def test_staging_rejects_global_wildcard_hosts(self):
+        with self._authorized(), patch.dict('os.environ', {
+            'JOBIEW_HOMEPAGE_STAGING_ENABLED': '1',
+            'JOBIEW_HOMEPAGE_STAGING_HOST': 'stage.example.test',
+            'JOBIEW_HOMEPAGE_PUBLIC_HOST': 'www.example.test',
+            'JOBIEW_DUAL6_PUBLICATION_ENABLED': '0',
+        }):
+            self.assertEqual(
+                self.client.get(self.url, HTTP_HOST='stage.example.test', secure=True).status_code, 404
+            )
+
+    @override_settings(DEBUG=False, SECURE_SSL_REDIRECT=False,
                        ALLOWED_HOSTS=['stage.example.test'])
     def test_prod_publication_gate_cannot_open_preview(self):
         with self._authorized(), patch.dict('os.environ', {

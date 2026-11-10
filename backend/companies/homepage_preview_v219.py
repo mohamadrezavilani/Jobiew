@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import Http404
+from django.http.request import validate_host
 from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
@@ -28,7 +29,7 @@ def authorize_home_preview(request):
         # An explicitly named, different public hostname is required: a typo
         # in a staging env must never unlock this private view on production.
         if (not expected or not public or expected == public or
-                '*' in settings.ALLOWED_HOSTS or public in settings.ALLOWED_HOSTS or
+                validate_host(public, settings.ALLOWED_HOSTS) or
                 '/' in expected or ':' in expected or '/' in public or ':' in public or
                 request.get_host().split(':', 1)[0].lower() != expected or
                 not request.is_secure()):
