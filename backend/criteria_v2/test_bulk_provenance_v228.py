@@ -172,6 +172,38 @@ class ProvenanceBulkV228Tests(TestCase):
         self.assertEqual(release.context['stats']['classification_missing'], 0)
         self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
 
+    def test_repeated_normal_review_is_informational_no_op_and_only_rights_remain(self):
+        first = self.get()
+        self.assertEqual(first.context['normal_remaining'], 2)
+        self.assertFalse(first.context['only_rights_left'])
+        self.assertEqual(self.post(self.form(first)).status_code, 302)
+        self.assertEqual(ExperienceReviewEvent.objects.count(), 4)
+        self.assertEqual(CriteriaReviewEvent.objects.count(), 2)
+
+        # Only true rights evidence remains: don't offer the same ordinary
+        # decisions again or render the old "nothing left" error.
+        after = self.get()
+        self.assertEqual(after.status_code, 200)
+        self.assertEqual(after.context['normal_remaining'], 0)
+        self.assertEqual(after.context['rights_remaining'], 2)
+        self.assertTrue(after.context['only_rights_left'])
+        self.assertContains(after, 'بررسی‌های عادی کامل شده‌اند')
+        self.assertNotContains(after, 'name="action" value="standard"')
+        self.assertContains(after, 'name="action" value="rights"')
+        repeated = self.post(self.form(after))
+        self.assertEqual(repeated.status_code, 302)
+        self.assertEqual(repeated.url, self.release)
+        self.assertEqual(ExperienceReviewEvent.objects.count(), 4)
+        self.assertEqual(CriteriaReviewEvent.objects.count(), 2)
+        self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
+
+        release = self.get(self.release)
+        self.assertTrue(release.context['rights_only'])
+        self.assertEqual(release.context['eligible_count'], 0)
+        self.assertEqual(release.context['stats']['copyright_missing'], 2)
+        self.assertContains(release, 'فقط مدرک حقوق منبع باقی مانده')
+        self.assertNotContains(release, 'صف تأیید نوع تجربه‌ها')
+
     def test_independent_rights_document_then_explicit_company_release(self):
         first = self.get()
         self.assertEqual(self.post(self.form(first)).status_code, 302)
