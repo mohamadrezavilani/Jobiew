@@ -7,8 +7,9 @@ import os
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import F
+from django.db.models import Count, Q
 from django.http import Http404
+from django.http.request import validate_host
 from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
@@ -24,8 +25,15 @@ def authorize_home_preview(request):
                 os.environ.get('JOBIEW_DUAL6_PUBLICATION_ENABLED', '0') != '0'):
             raise Http404('Homepage staging disabled')
         expected = os.environ.get('JOBIEW_HOMEPAGE_STAGING_HOST', '').lower().strip()
-        if not expected or request.get_host().split(':')[0].lower() != expected or not request.is_secure():
-            raise Http404('Homepage staging requires its dedicated HTTPS host')
+        public = os.environ.get('JOBIEW_HOMEPAGE_PUBLIC_HOST', '').lower().strip()
+        # An explicitly named, different public hostname is required: a typo
+        # in a staging env must never unlock this private view on production.
+        if (not expected or not public or expected == public or
+                validate_host(public, settings.ALLOWED_HOSTS) or
+                '/' in expected or ':' in expected or '/' in public or ':' in public or
+                request.get_host().split(':', 1)[0].lower() != expected or
+                not request.is_secure()):
+            raise Http404('Homepage staging requires a separate HTTPS host')
     user = request.user
     if not (user.is_authenticated and user.is_active and user.is_staff and
             user.has_perm('companies.view_company')):
@@ -43,15 +51,25 @@ def preview(request):
     sort = sort if sort in ('most', 'name') else 'most'
     verified = request.GET.get('verified') == '1'
     has_records = request.GET.get('has_records') == '1'
-    count_field = 'source_work_count' if mode == 'work' else 'source_interview_count'
+    # Match the existing public company-detail archive visibility policy.
+    # The imported `source_*_count` is not authoritative: it can include
+    # duplicate, blocked or rejected items that must not be counted here.
+    public_rows = (
+        Q(experiences__source_kind=mode)
+        & (Q(experiences__source_url__startswith='https://') |
+           Q(experiences__source_url__startswith='http://'))
+        & ~Q(experiences__copyright_review='blocked')
+        & ~Q(experiences__company_attribution_status='rejected')
+        & ~Q(experiences__independence_status='duplicate')
+    )
     queryset = Company.objects.all()
     if q:
         queryset = queryset.filter(display_name__icontains=q)
     if verified:
         queryset = queryset.filter(identity_status='verified', tech_status='verified', tehran_status='verified')
+    queryset = queryset.annotate(experience_count=Count('experiences', filter=public_rows, distinct=True))
     if has_records:
-        queryset = queryset.filter(**{count_field + '__gt': 0})
-    queryset = queryset.annotate(experience_count=F(count_field))
+        queryset = queryset.filter(experience_count__gt=0)
     if sort == 'most':
         queryset = queryset.order_by('-experience_count', 'display_name', 'pk')
     else:

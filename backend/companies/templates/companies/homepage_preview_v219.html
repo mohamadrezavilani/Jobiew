@@ -9,10 +9,8 @@
   <meta name="description" content="پیش‌نمایش خصوصی طراحی صفحه نخست جابیو با داده‌های قابل نمایش عمومی و بدون امتیاز تأییدنشده">
   <title>پیش‌نمایش صفحهٔ نخست | جابیو</title>
   <link rel="icon" type="image/svg+xml" href="{% static 'companies/img/jobiew_symbol_home_v219.svg' %}">
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="{% static 'companies/css/jobiew_vazir_v110.css' %}">
   <link rel="stylesheet" href="{% static 'companies/css/homepage_preview_v219.css' %}">
-  <script defer src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
   <script defer src="{% static 'companies/js/homepage_preview_v219.js' %}"></script>
   <script defer src="{% static 'companies/js/persian_digits_v22.js' %}"></script>
 </head>
@@ -20,7 +18,7 @@
       data-geojson-url="{% url 'verified-company-locations' %}"
       data-map-fallback-url="{% url 'company-map' %}">
   <a class="home-skip" href="#main-content">رفتن به محتوا</a>
-  <p class="preview-note" role="status">پیش‌نمایش خصوصی طراحی؛ اعداد و نام‌ها از آرشیو فعلی هستند، نه امتیازهای تأییدشده. هیچ امتیاز شرکت منتشر نشده است.</p>
+  <p class="preview-note" role="status">پیش‌نمایش خصوصی طراحی؛ نام‌ها از آرشیو فعلی و شمارنده‌ها فقط از تجربه‌های قابل فهرست عمومی هستند؛ این‌ها امتیاز تأییدشده نیستند. هیچ امتیاز شرکت منتشر نشده است.</p>
   <header class="top">
     <div class="brand"><a href="{% url 'company-index' %}" aria-label="جابیو، بازگشت به فهرست فعلی"><img class="brand-logo" src="{% static 'companies/img/jobiew_logo_home_v219.svg' %}" alt="جابیو" width="142" height="45"></a></div>
     <nav aria-label="ناوبری صفحه">
@@ -85,7 +83,7 @@
             <a class="company" href="{% url 'company-detail' company.pk %}" data-company-id="{{ company.pk }}">
               <div class="logo" aria-hidden="true">{{ company.display_name|slice:':1' }}</div>
               <div><div class="cname">{{ company.display_name }}</div>
-                <div class="meta"><span>{{ company.experience_count }} تجربهٔ {% if mode == 'work' %}کاری{% else %}مصاحبه{% endif %} در آرشیو منبع</span>
+                <div class="meta"><span>{{ company.experience_count }} تجربهٔ {% if mode == 'work' %}کاری{% else %}مصاحبه{% endif %} قابل فهرست</span>
                   {% if company.identity_status == 'verified' and company.tech_status == 'verified' and company.tehran_status == 'verified' %}<span>هویت، فناوری و تهران: بررسی‌شده</span>{% else %}<span>انتساب یا دسته‌بندی در انتظار تأیید</span>{% endif %}</div>
               </div>
               <div class="companypreview">
@@ -117,7 +115,7 @@
       <p>امتیازهای شرایط کاری و شرایط مصاحبه دو چارچوب مستقل هستند. نمودارهای خالی نشان‌دهندهٔ صفر یا ارزیابی منفی نیستند: هیچ امتیاز تأییدنشده‌ای در این صفحه استفاده نشده است. نمایش عمومیِ امتیازها نیازمند تأیید منبع، انتساب، کیفیت و تصمیم مستقل انتشار است.</p>
     </article>
     <article id="about-data"><h2>اطلاعات شرکت‌ها از کجا می‌آیند؟</h2>
-      <p>نام شرکت‌ها و شمار تجربه‌ها از رکوردهای آرشیویِ دارای منشأ خارجی می‌آیند و لزوماً تأیید هویت یا کیفیت شرکت نیستند. نقشه فقط نقاط تأییدشده را می‌خواند. برای شناخت محدودیت‌های هر شرکت، <a href="{% url 'company-index' %}">فهرست و پروفایل‌های فعلی</a> را ببینید.</p>
+      <p>نام شرکت‌ها از آرشیو دارای منشأ خارجی می‌آید و شمار تجربه‌های این فهرست فقط رکوردهای قابل فهرست عمومی، پس از حذف موارد ردشده، مسدودشده و تکراری، را دربر می‌گیرد. این فرایند به معنی تأیید هویت یا کیفیت شرکت نیست. نقشه فقط نقاط تأییدشده را می‌خواند. برای شناخت محدودیت‌های هر شرکت، <a href="{% url 'company-index' %}">فهرست و پروفایل‌های فعلی</a> را ببینید.</p>
     </article>
   </section>
   <footer class="site-footer">

@@ -17,16 +17,17 @@
 
 ## راه‌اندازی فقط برای تست
 
-برای توسعهٔ محلی با `DJANGO_DEBUG=1`، کلید `JOBIEW_HOMEPAGE_PREVIEW_ENABLED=1` لازم است و کاربر باید staff با مجوز مشاهده شرکت باشد. برای staging با `DEBUG=False`، هر چهار شرط مستقل زیر لازم‌اند:
+برای توسعهٔ محلی با `DJANGO_DEBUG=1`، کلید `JOBIEW_HOMEPAGE_PREVIEW_ENABLED=1` لازم است و کاربر باید staff با مجوز مشاهده شرکت باشد. برای staging با `DEBUG=False`، هر پنج شرط مستقل زیر لازم‌اند:
 
 ```
 JOBIEW_HOMEPAGE_PREVIEW_ENABLED=1
 JOBIEW_HOMEPAGE_STAGING_ENABLED=1
 JOBIEW_HOMEPAGE_STAGING_HOST=your-dedicated-staging.example
+JOBIEW_HOMEPAGE_PUBLIC_HOST=your-real-production-host.example
 JOBIEW_DUAL6_PUBLICATION_ENABLED=0
 ```
 
-در staging باید HTTPS واقعی با پیکربندی صحیح trust-proxy فعال باشد؛ host دقیقاً باید با مقدار تنظیم‌شده برابر باشد. این تنظیمات را **هرگز روی دامنهٔ عمومی production** به کار نبرید. مسیر داخل `internal/` قرار دارد و پاسخ `private, no-store` و `noindex` دارد.
+در staging باید HTTPS واقعی با پیکربندی صحیح trust-proxy فعال باشد؛ host دقیقاً باید با مقدار staging برابر و حتماً متفاوت از `JOBIEW_HOMEPAGE_PUBLIC_HOST` باشد؛ `ALLOWED_HOSTS` سرویس staging نباید wildcard یا host تولیدی را داشته باشد؛ اگر host عمومی تنظیم نشده یا با staging برابر باشد، صفحه پاسخ ۴۰۴ خواهد داد. این تنظیمات را **هرگز روی دامنهٔ عمومی production** به کار نبرید. مسیر داخل `internal/` قرار دارد و پاسخ `private, no-store` و `noindex` دارد.
 
 ## دستورات تست
 
@@ -39,3 +40,15 @@ python manage.py test companies.test_company_ui_v23 companies.test_public_map_v2
 ```
 
 این تغییر هیچ migration، فایل دیتابیس، تماس مدل پولی یا امتیازدهی جدیدی ندارد. پیش‌نمایش HTTPS عمومی برای مالک، بکاپ و rollback تولیدی و بازبینی روی سرور همچنان مراحل مستقل‌اند. انتشار واقعی نمره‌ها نیازمند تأیید حقوقی/معنایی و رضایت صریح مالک است.
+
+## همخوانی شمارنده با صفحهٔ عمومی
+
+فیلدهای `Company.source_work_count` و `Company.source_interview_count` شمارنده‌های ورودی منبع‌اند و ممکن است شامل تجربهٔ ردشده، مسدودشده یا تکراری باشند. در پیش‌نمایش صفحهٔ اول از `Count` فیلترشدهٔ `PublicExperience` با همان قاعدهٔ صفحهٔ جزئیات عمومی استفاده می‌شود: نوع مستقل work/interview، نشانی HTTP(S)، غیر `blocked`، غیر `rejected` و غیر `duplicate`. این به معنی تأیید حق بازنشر متن نیست؛ هیچ متن خامی در صفحه نشان داده نمی‌شود.
+
+## بهبود تعامل و مصرف شبکه
+
+دکمهٔ فیلتر در حالت باز، سایر بخش‌های صفحه را موقتاً `inert` می‌کند و پس از بستن، وضعیت قبلی عناصر بازگردانده می‌شود. فوکوس با Tab و رویداد programmatic درون dialog باقی می‌ماند و Escape آن را می‌بندد. فایل‌های خارجی MapLibre تنها پس از دریافت موفق دست‌کم یک موقعیت مستقل تأییدشده برای شرکت‌های همان صفحه بارگیری می‌شوند. بنابراین وقتی پینی وجود ندارد، صفحهٔ خصوصی هیچ درخواست MapLibre به CDN نمی‌فرستد؛ سایر داده‌ها نیز فقط از منبع عمومی موجود می‌آیند.
+
+## تست JavaScript بدون وابستگی مرورگر
+
+`node --test tests/homepage_frontend_v219.test.mjs` شش آزمون مصنوعی برای عملکرد drawer، جلوگیری از دریافت CDN بدون نقطه، تأیید پین واقعی، حذف موقعیت نامعتبر و fallback API اجرا می‌کند. این تست DOM تقلیدی است و **جایگزین تست واقعی browser/HTTPS staging، بازبینی بصری و screen reader نیست**.
