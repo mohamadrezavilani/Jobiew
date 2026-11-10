@@ -48,9 +48,20 @@
         </tbody>
       </table>
     {% endif %}
+    {% if can_view_six and six_run %}
+    <section class="module" style="padding:12px;margin:14px 0">
+    <h3>بررسی مستقل با Claude (شش معیار)</h3>
+    {% if claude_run %}
+      <p><strong>قبلاً انجام شده:</strong> {{ claude_run.get_status_display }} · {{ claude_run.created_at|date:"Y/m/d H:i" }}</p>
+    {% else %}
+      <p>هنوز برای این تحلیل نتیجهٔ مستقل Claude ثبت نشده است. درخواست پولی فقط با تأیید جداگانه اجرا می‌شود.</p>
+    {% endif %}
+    <p><a class="button" href="{% url 'admin:companies_company_experience_claude' company.pk experience.pk %}">{% if claude_run %}مشاهدهٔ نتیجهٔ Claude{% else %}بررسی با Claude و مشاهدهٔ نتیجه{% endif %}</a></p>
+    </section>
+    {% endif %}
     {% if can_view_six %}
       <p class="wi-x-nav">
-        <a class="button" href="{% url 'admin:companies_company_checkpoint_bulk' company.pk %}">بازبینی و تأیید گروهی شرکت</a>
+        <a class="button" href="{% url 'admin:companies_company_workflow' company.pk %}">میز کار شرکت و اقدام بعدی</a>
         <a class="button" href="{% url 'admin:companies_company_checkpoint_release' company.pk %}">دلایل عدم انتشار و تصمیم نهایی</a>
         <a href="{% url 'dual-criteria-review-queue' %}">بررسی نوع تجربه (کاری یا مصاحبه)</a>
       </p>

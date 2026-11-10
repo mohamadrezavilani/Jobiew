@@ -1,0 +1,72 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<main dir="rtl" style="max-width:1050px;line-height:1.9">
+<p><a href="{{ back_url }}">بازگشت به متن و شش معیار</a> ·
+<a href="{% url 'admin:companies_company_workflow' company.pk %}">میز کار شرکت</a></p>
+<h1>بررسی مستقل با Claude — {{ experience.title }}</h1>
+<p>این بررسی فقط نظر دوم دربارهٔ <strong>شش معیار {{ experience.get_source_kind_display }}</strong> است.
+با نتیجهٔ GPT-6 مقایسه می‌شود؛ هیچ امتیاز، تأیید انسانی یا تصمیم انتشاری را تغییر نمی‌دهد.</p>
+<section class="module" style="padding:16px;margin:14px 0">
+<h2>وضعیت و تاریخچهٔ همین تجربه</h2>
+{% if existing %}
+  <p><strong>قبلاً اجرا شده:</strong> {{ existing.get_status_display }} ·
+  {{ existing.created_at|date:"Y/m/d H:i" }} ·
+  مدل {{ existing.model_id }} · {{ existing.requested_by }}</p>
+  {% if not current %}
+  <p role="alert"><strong>متن یا تحلیل منبع بعد از اجرای Claude تغییر کرده است.</strong>
+  نتیجهٔ قبلی تاریخی است و به‌جای نتیجهٔ فعلی نمایش داده نمی‌شود.</p>
+  {% elif existing.status == 'failed' %}
+  <p>اجرای قبلی موفق نبود ({{ existing.error_type }}). اجرای خودکار یا تکرار هزینه‌دار فعال نیست.</p>
+  {% elif existing.status == 'needs_review' %}
+  <p>Claude نوع تجربه را با اطمینان کافی تأیید نکرده است؛ نمره‌های آن پذیرفته نشده‌اند.</p>
+  {% elif existing.status == 'running' %}
+  <p>درخواست قبلی ثبت شده است. اگر وضعیت مدت زیادی تغییر نکرد، بررسی فنی لازم است؛ دوباره اجرا نکن.</p>
+  {% endif %}
+{% else %}
+  <p>برای این تحلیل هنوز بررسی Claude ثبت نشده است.</p>
+{% endif %}
+</section>
+{% if existing and current and valid_analysis and existing.status == 'completed' %}
+<section class="module" style="padding:16px;overflow-x:auto">
+<h2>مقایسهٔ شش معیار — GPT-6 در برابر Claude</h2>
+<table><thead><tr><th>معیار</th><th>GPT-6</th><th>Claude</th><th>اختلاف</th><th>شاهد و توضیح Claude</th></tr></thead>
+<tbody>{% for row in rows %}
+<tr>
+<th>{{ row.label }}</th>
+<td>{{ row.original|default_if_none:"فاقد شاهد" }}</td>
+<td>{{ row.claude|default_if_none:"فاقد شاهد" }}</td>
+<td>{{ row.delta|default_if_none:"—" }}</td>
+<td>{% for quote in row.evidence %}<blockquote>{{ quote }}</blockquote>{% empty %}—{% endfor %}
+<p>{{ row.explanation }}</p></td>
+</tr>
+{% endfor %}</tbody></table>
+<p>این اختلاف‌ها صرفاً برای تصمیم انسانی‌اند. نتیجهٔ Claude، مجوز انتشار یا جایگزین امتیاز GPT-6 نیست.</p>
+</section>
+{% endif %}
+{% if not existing %}
+<section class="module" style="padding:16px">
+<h2>درخواست یک بررسی جدید (اختیاری و هزینه‌دار)</h2>
+<p>مدل: {{ model }} · استفاده‌شده: {{ used }} از سقف {{ limit }} درخواست.</p>
+{% if not enabled %}
+<p role="status"><strong>اجرای پولی Claude فعلاً روی سرور غیرفعال یا بدون کلید/سهمیه است.</strong>
+مشاهدهٔ نتیجه‌های قبلی همچنان ممکن است.</p>
+{% elif not valid_analysis %}
+<p role="status">اعتبار شواهد تحلیل GPT-6 تأیید نشده است؛ ابتدا پروندهٔ منبع را بررسی کن.</p>
+{% elif not rights_ready %}
+<p role="status">برای این تجربه سند بررسی حقوق استفاده از منبع ثبت نشده است. قبل از ارسال متن به سرویس بیرونی باید حق این نوع استفاده را مستند بررسی کنید.</p>
+{% elif not can_run %}
+<p role="status">مجوز ثبت درخواست Claude برای کاربر فعلی وجود ندارد.</p>
+{% else %}
+<form method="post" action="{{ review_url }}">{% csrf_token %}
+<p><label><input type="checkbox" name="confirm_external_rights" value="yes" required>
+تأیید می‌کنم مجوز معتبر برای پردازش این متن نزد سرویس بیرونی را بررسی کرده‌ام.</label></p>
+<p><label><input type="checkbox" name="confirm_paid" value="yes" required>
+درخواست پولی و یک‌بارهٔ Claude را آگاهانه تأیید می‌کنم.</label></p>
+<button type="submit" class="button default">اجرای یک‌بارهٔ بررسی Claude</button>
+</form>
+{% endif %}
+</section>
+{% endif %}
+<p>نکتهٔ امنیتی: متن منبع در این صفحه خصوصی است و برای مدل بیرونی تا حد ممکن از اطلاعات شناسایی‌کننده پاکسازی می‌شود، اما حذف تمام شناسه‌های شخصی قابل تضمین نیست. هیچ پردازش پولی در بازدید صفحه انجام نمی‌شود.</p>
+</main>
+{% endblock %}

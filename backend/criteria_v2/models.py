@@ -239,3 +239,55 @@ class CriteriaCompanyReleaseEvent(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError('Company releases are append-only')
+
+
+class CriteriaClaudeComparison(models.Model):
+    """Optional, independent paid Claude second opinion on a private 6-axis run.
+
+    Never modifies checkpoint, human review, publication, rights or source text.
+    Only one attempt per analyzed experience: no implicit paid retries.
+    """
+    STATUS = [
+        ('running', 'درحال اجرا'),
+        ('completed', 'تکمیل‌شده'),
+        ('needs_review', 'نیازمند بررسی نوع تجربه'),
+        ('failed', 'ناموفق'),
+    ]
+    analysis = models.OneToOneField(
+        CriteriaAnalysis, on_delete=models.PROTECT,
+        related_name='claude_six_comparison')
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    source_content_sha256 = models.CharField(max_length=64)
+    story_sha256 = models.CharField(max_length=64)
+    model_id = models.CharField(max_length=100)
+    status = models.CharField(max_length=24, choices=STATUS, default='running')
+    detected_kind = models.CharField(max_length=20, blank=True)
+    claude_axes = models.JSONField(default=dict, blank=True)
+    comparison = models.JSONField(default=dict, blank=True)
+    input_tokens = models.PositiveIntegerField(default=0)
+    output_tokens = models.PositiveIntegerField(default=0)
+    error_type = models.CharField(max_length=64, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ('-created_at', '-pk')
+
+    def clean(self):
+        super().clean()
+        if self.pk:
+            raise ValidationError('Claude review audit cannot be edited via forms.')
+        if self.analysis_id and self.source_content_sha256 != self.analysis.source_content_sha256:
+            raise ValidationError('Claude source hash must match the original checkpoint.')
+        if len(self.story_sha256) != 64:
+            raise ValidationError('Claude story fingerprint must be recorded.')
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValueError('Claude review audit cannot be manually rewritten.')
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError('Claude review audit is protected.')

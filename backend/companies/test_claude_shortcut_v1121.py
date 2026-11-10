@@ -36,19 +36,18 @@ class ClaudeShortcutCompatTests(TestCase):
     def detail(self, exp):
         return reverse('admin:companies_company_experience_detail', args=[self.company.pk, exp.pk])
 
-    def test_direct_claude_link_is_only_on_work_five_v1(self):
+    def test_historical_five_axis_claude_links_not_misrepresented_as_current(self):
         response = self.client.get(self.detail(self.work))
         self.assertEqual(response.status_code, 200)
-        destination = reverse('admin:assessments_aiassessment_claude_detail', args=[self.work_eval.pk])
-        self.assertContains(response, destination)
-        self.assertContains(response, 'صحت‌سنجی با Claude و مقایسهٔ پنج شاخص')
-        self.assertNotContains(response, 'legacy')
-        self.assertNotContains(response, reverse('admin:assessments_aiassessment_claude_detail', args=[self.interview_eval.pk]))
-        self.assertEqual(self.client.get(destination).status_code, 200)
+        self.assertNotContains(response, 'صحت‌سنجی با Claude و مقایسهٔ پنج شاخص')
+        self.assertNotContains(response, reverse(
+            'admin:assessments_aiassessment_claude_detail',
+            args=[self.work_eval.pk]))
+        self.assertContains(response, 'هنوز تحلیل GPT-6 برای این تجربه ثبت نشده است')
         from assessments.claude_validation_models_v111 import ClaudeValidationRun
         self.assertEqual(ClaudeValidationRun.objects.count(), 0)
 
-    def test_interview_does_not_get_workplace_claude_link(self):
+    def test_interview_five_axis_legacy_does_not_enable_paid_six_axis_call(self):
         response = self.client.get(self.detail(self.interview))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'صحت‌سنجی با Claude و مقایسهٔ پنج شاخص')
