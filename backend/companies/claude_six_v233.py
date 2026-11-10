@@ -120,9 +120,11 @@ def claude_six_review(admin_view, request, object_id, experience_id):
         if len(story.strip()) < 50:
             messages.error(request, 'متن این تجربه برای بررسی مستقل کافی نیست.')
             return redirect(url)
-        # One reservation per analysis. Lock its company to serialize starts
-        # within one company; unique FK prevents double charge for that case.
+        # The first company row is a global quota mutex on PostgreSQL:
+        # concurrent requests for different companies cannot overspend the
+        # configured request cap. One-to-one FK also prevents duplicate runs.
         with transaction.atomic():
+            Company.objects.select_for_update().order_by('pk').first()
             Company.objects.select_for_update().get(pk=company.pk)
             if CriteriaClaudeComparison.objects.filter(analysis=analysis).exists():
                 messages.info(request, 'بررسی قبلاً ثبت شده است.')

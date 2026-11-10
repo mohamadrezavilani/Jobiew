@@ -16,10 +16,9 @@ class JobiewAdminSite(AdminSite):
     # AI, vote, and audit tables remain registered and retain their URLs.
     VISIBLE_MODELS = {
         'auth': {'user', 'group'},
-        'companies': {'company', 'companyverificationevent'},
-        'experiences': {'publicexperience', 'experiencereviewevent'},
+        'companies': {'company'},
+        'experiences': {'publicexperience'},
         'criteria_v2': {'criteriaanalysis'},
-        'locations': {'companylocationreviewevent'},
     }
 
     def get_app_list(self, request, app_label=None):

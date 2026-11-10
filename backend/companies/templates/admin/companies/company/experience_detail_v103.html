@@ -49,7 +49,7 @@
       </table>
     {% endif %}
     {% if can_view_six and six_run %}
-    <section class="module" style="padding:12px;margin:14px 0">
+    <section class="module wi-x-claude-shortcut" style="padding:12px;margin:14px 0">
     <h3>بررسی مستقل با Claude (شش معیار)</h3>
     {% if claude_run %}
       <p><strong>قبلاً انجام شده:</strong> {{ claude_run.get_status_display }} · {{ claude_run.created_at|date:"Y/m/d H:i" }}</p>
