@@ -13,6 +13,7 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from companies.models import Company
 from experiences.models import PublicExperience
@@ -90,6 +91,7 @@ def _prepare(company):
 
 
 @never_cache
+@ensure_csrf_cookie
 @require_http_methods(['GET', 'POST'])
 def company_bulk_review(request, pk):
     authorize_checkpoint(request)
@@ -99,11 +101,17 @@ def company_bulk_review(request, pk):
     company = get_object_or_404(Company, pk=pk)
     if request.method == 'GET':
         rows, ready, token = _prepare(company)
-        return _private(request, 'criteria_v2/checkpoint_bulk_review_v222.html', {
+        response = _private(request, 'criteria_v2/checkpoint_bulk_review_v222.html', {
             'company': company, 'rows': rows, 'ready_count': len(ready),
             'total_count': len(rows), 'token': token, 'cap': MAX_COMPANY_RUNS,
             'can_approve': request.user.has_perm('criteria_v2.add_criteriascorereviewevent'),
+            'admin_mode': request.resolver_match.url_name == 'companies_company_checkpoint_bulk',
         })
+        # HTTPS form POSTs require Origin or same-origin Referer for Django CSRF.
+        # The generic read-only _private() no-referrer policy previously hid
+        # Referer on browsers that omit Origin for same-origin form POSTs.
+        response['Referrer-Policy'] = 'same-origin'
+        return response
     note = (request.POST.get('note') or '').strip()
     if (request.POST.get('confirm_reviewed') != 'yes' or
             request.POST.get('confirm_private') != 'yes' or
@@ -166,4 +174,6 @@ def company_bulk_review(request, pk):
                 )
             approved_runs += 1
     messages.success(request, f'{approved_runs} پرونده بازبینی و در حسابرسی خصوصی ثبت شد؛ انتشار عمومی انجام نشد.')
+    if request.resolver_match.url_name == 'companies_company_checkpoint_bulk':
+        return redirect('admin:companies_company_checkpoint_bulk', object_id=pk)
     return redirect('dual-checkpoint-bulk-v222', pk=pk)

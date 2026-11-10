@@ -20,8 +20,11 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set for production")
 ALLOWED_HOSTS = [v.strip() for v in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",") if v.strip()]
 CSRF_TRUSTED_ORIGINS = [v.strip() for v in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if v.strip()]
+# Do not weaken CSRF enforcement: log only categorized, non-secret failure
+# reasons so CDN/proxy/cookie problems can be diagnosed on production.
+CSRF_FAILURE_VIEW = "workplace_insights.csrf_feedback_v225.csrf_failure"
 INSTALLED_APPS = [
-    "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
+    "workplace_insights.admin_config.JobiewAdminConfig", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "companies", "experiences", "assessments", "voting", "locations",
     "criteria_v2",  # jobiew_dual_framework_v200

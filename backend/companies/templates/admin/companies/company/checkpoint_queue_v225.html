@@ -1,0 +1,37 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div id="content-main" dir="rtl">
+<h1>تأیید گروهی و انتشار شرکت‌ها</h1>
+<p>این فهرست فقط امتیازهای خصوصی واردشده از checkpoint را نشان می‌دهد. ابتدا روایت‌ها و شواهد شش محور را بررسی کنید؛ سپس تأیید گروهی بزنید. انتشار عمومی نیازمند تصمیم و مجوز مستند جداگانه است.</p>
+<form method="get" action="">
+  <label for="q">جست‌وجوی شرکت</label>
+  <input type="search" name="q" id="q" value="{{ q }}" maxlength="90">
+  <button type="submit" class="button">جست‌وجو</button>
+</form>
+<div class="module" style="overflow-x:auto;margin-top:15px">
+<table>
+<thead><tr><th>شرکت</th><th>کل</th><th>در انتظار</th><th>بازبینی شده و نمره‌دار</th><th>فاقد شاهد کافی</th><th>اقدام‌ها</th></tr></thead>
+<tbody>
+{% for item in page %}
+<tr>
+<th scope="row">{{ item.experience__company__display_name }}</th>
+<td>{{ item.total }}</td><td>{{ item.pending }}</td><td>{{ item.approved }}</td><td>{{ item.no_evidence }}</td>
+<td>
+<a href="{% url 'admin:companies_company_checkpoint_bulk' item.experience__company_id %}">تأیید گروهی</a>
+&nbsp;·&nbsp;
+<a href="{% url 'admin:companies_company_checkpoint_release' item.experience__company_id %}">انتشار/توقف</a>
+&nbsp;·&nbsp;
+<a href="{% url 'admin:companies_company_experiences' item.experience__company_id %}">تجربه‌ها</a>
+</td></tr>
+{% empty %}<tr><td colspan="6">هیچ پرونده‌ای با این شرایط یافت نشد.</td></tr>{% endfor %}
+</tbody></table>
+</div>
+{% if page.paginator.num_pages > 1 %}
+<p>صفحهٔ {{ page.number }} از {{ page.paginator.num_pages }}
+{% if page.has_previous %}<a href="?q={{ q|urlencode }}&page={{ page.previous_page_number }}">قبلی</a>{% endif %}
+{% if page.has_next %}<a href="?q={{ q|urlencode }}&page={{ page.next_page_number }}">بعدی</a>{% endif %}
+</p>
+{% endif %}
+<p><a href="{% url 'admin:index' %}">بازگشت به خانهٔ مدیریت</a></p>
+</div>
+{% endblock %}
