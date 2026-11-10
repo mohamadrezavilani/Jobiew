@@ -8,7 +8,9 @@ from .engine_v207 import story_digest, story_from_experience
 from .models import CriteriaAnalysis, CriteriaReviewEvent
 from .registry import VERSIONS, axes_for
 from .sufficiency_contract_v208 import MIN_SUFFICIENT_EXPERIENCES, make_sufficiency
-from experiences.models import PublicExperience
+from experiences.models import PublicExperience, ExperienceReviewEvent
+from .checkpoint_contract_v218 import ENGINE as CHECKPOINT_ENGINE
+from .checkpoint_receipt_v222 import checkpoint_release_ready
 
 
 def publication_enabled():
@@ -40,6 +42,17 @@ def _latest_classifications(company, kind):
     return latest
 
 
+def _checkpoint_rights_provenance_valid(exp):
+    """Current rights, attribution and independence need append-only evidence."""
+    for field, decision in (('copyright', 'approved'), ('attribution', 'verified'),
+                            ('independence', 'verified')):
+        latest = (ExperienceReviewEvent.objects.filter(experience=exp, review_field=field)
+                  .order_by('-created_at', '-pk').first())
+        if latest is None or latest.decision != decision or not latest.evidence_url:
+            return False
+    return True
+
+
 def _approved_dimension_rows(company, kind):
     """Only latest approved, current-source, explicitly source-cleared analyses.
 
@@ -68,8 +81,16 @@ def _approved_dimension_rows(company, kind):
         seen.add(exp.pk)  # NEVER count more than one run for this experience.
         if latest_reviews.get(exp.pk) != ('confirmed', exp.content_sha256):
             continue
-        if (analysis.source_content_sha256 != exp.content_sha256 or
-            analysis.raw_payload.get('engine') != 'jobiew_dual6_evidence_v207'):
+        if analysis.source_content_sha256 != exp.content_sha256:
+            continue
+        engine = analysis.raw_payload.get('engine')
+        if engine == CHECKPOINT_ENGINE:
+            if (os.environ.get('JOBIEW_GPT6_APPROVED_PUBLICATION_ENABLED', '0') != '1'
+                    or exp.independence_status != 'verified'
+                    or not _checkpoint_rights_provenance_valid(exp)
+                    or not checkpoint_release_ready(analysis)):
+                continue
+        elif engine != 'jobiew_dual6_evidence_v207':
             continue
         story = story_from_experience(exp)
         if analysis.raw_payload.get('story_sha256') != story_digest(story):

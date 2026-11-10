@@ -4,7 +4,9 @@ Classification decisions are created through the guarded staff queue. Existing
 comments, old ratings, and source text are not editable here.
 """
 from django.contrib import admin
-from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent
+from django.urls import reverse
+from django.utils.html import format_html
+from .models import CriteriaReviewEvent, CriteriaAnalysis, CriteriaAxisScore, CriteriaScoreReviewEvent, CheckpointApprovalReceipt
 
 
 class AuditOnlyAdmin(admin.ModelAdmin):
@@ -31,7 +33,12 @@ class CriteriaReviewEventAdmin(AuditOnlyAdmin):
 
 @admin.register(CriteriaAnalysis)
 class CriteriaAnalysisAdmin(AuditOnlyAdmin):
-    list_display = ('experience', 'criteria_version', 'model_name', 'run_id', 'review_status')
+    list_display = ('experience', 'criteria_version', 'model_name', 'run_id', 'review_status', 'review_company')
+
+    @admin.display(description='بازبینی گروهی خصوصی')
+    def review_company(self, obj):
+        return format_html('<a href="{}">بازبینی شرکت</a>', reverse(
+            'dual-checkpoint-bulk-v222', args=[obj.experience.company_id]))
     list_filter = ('criteria_version', 'review_status')
 
 
@@ -42,5 +49,11 @@ class CriteriaAxisScoreAdmin(AuditOnlyAdmin):
 
 @admin.register(CriteriaScoreReviewEvent)
 class CriteriaScoreReviewEventAdmin(AuditOnlyAdmin):
+    list_display = ('analysis', 'reviewer', 'created_at')
+    list_select_related = ('analysis', 'reviewer')
+
+
+@admin.register(CheckpointApprovalReceipt)
+class CheckpointApprovalReceiptAdmin(AuditOnlyAdmin):
     list_display = ('analysis', 'reviewer', 'created_at')
     list_select_related = ('analysis', 'reviewer')

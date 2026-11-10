@@ -160,6 +160,7 @@ class CheckpointV218StagingAccessTests(TestCase):
         url = reverse('dual-checkpoint-dashboard-v218')
         flags = {'JOBIEW_CHECKPOINT_STAGING_ENABLED': '1',
                  'JOBIEW_CHECKPOINT_STAGING_HOST': 'private-staging.example.invalid',
+                 'JOBIEW_CHECKPOINT_PUBLIC_HOST': 'www.example.invalid',
                  'JOBIEW_DUAL6_PUBLICATION_ENABLED': '0'}
         with patch.dict('os.environ', flags):
             self.client.force_login(self.user)
@@ -173,6 +174,7 @@ class CheckpointV218StagingAccessTests(TestCase):
         self.client.force_login(self.user)
         with patch.dict('os.environ', {'JOBIEW_CHECKPOINT_STAGING_ENABLED': '1',
                    'JOBIEW_CHECKPOINT_STAGING_HOST': 'private-staging.example.invalid',
+                 'JOBIEW_CHECKPOINT_PUBLIC_HOST': 'www.example.invalid',
                    'JOBIEW_DUAL6_PUBLICATION_ENABLED': '1'}):
             self.assertEqual(self.client.get(reverse('dual-checkpoint-dashboard-v218'),
                             secure=True, HTTP_HOST='private-staging.example.invalid').status_code, 404)
