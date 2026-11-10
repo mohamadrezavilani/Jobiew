@@ -12,14 +12,11 @@ from django import forms
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponse, HttpResponseNotAllowed
 
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
-
-
-
 
 from .models import Company, CompanyVerificationEvent
 
