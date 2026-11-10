@@ -189,6 +189,26 @@ class ClaudeSixAdminV233Tests(TestCase):
         public = self.client.get(reverse('company-detail', args=[self.company.pk]))
         self.assertNotContains(public, 'یک برداشت مستقل با شاهد متنی مستقیم')
 
+    def test_global_experience_admin_offers_six_and_claude_with_persisted_status(self):
+        exp = self.exps['work']
+        url = reverse('admin:experiences_publicexperience_changelist')
+        page = self.get(exp)
+        self.assertEqual(page.status_code, 200)
+        with patch.dict('os.environ', FLAGS):
+            listing = self.client.get(url, secure=True, HTTP_HOST='jobiew.ir')
+        self.assertEqual(listing.status_code, 200)
+        self.assertContains(listing, 'متن و شش معیار')
+        self.assertContains(listing, 'بررسی اختیاری')
+        self.assertContains(listing, self.url(exp))
+        self.rights(exp)
+        with patch('criteria_v2.claude_six_v233.call_claude',
+                   return_value=self.mock_response('work')):
+            self.assertEqual(self.post(exp).status_code, 302)
+        with patch.dict('os.environ', FLAGS):
+            after = self.client.get(url, secure=True, HTTP_HOST='jobiew.ir')
+        self.assertContains(after, 'نمایش نتیجهٔ قبلی')
+        self.assertFalse(CriteriaCompanyReleaseEvent.objects.exists())
+
     def test_interview_uses_six_interview_axes_and_never_five_v1(self):
         exp = self.exps['interview']
         self.rights(exp)

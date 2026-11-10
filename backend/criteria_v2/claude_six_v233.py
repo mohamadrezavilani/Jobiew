@@ -6,7 +6,7 @@ The run is permanently bound to the source and six-axis analysis snapshot.
 import hashlib
 import json
 import os
-from django.db import transaction
+from django.db import transaction, connection
 from django.utils import timezone
 
 from .claude_six_models_v233 import ClaudeSixCheck
@@ -122,6 +122,11 @@ def run_one(analysis, user):
     # Validate request (including model ID and source length) before reserving a run.
     payload = build_request(analysis.experience.source_kind, story, model)
     with transaction.atomic():
+        # Serialize quota reservations across DIFFERENT analyses too. Row locks
+        # alone cannot protect a global paid-call limit on PostgreSQL.
+        if connection.vendor == 'postgresql':
+            with connection.cursor() as cursor:
+                cursor.execute('SELECT pg_advisory_xact_lock(%s)', [23300919])
         analysis = (CriteriaAnalysis.objects.select_for_update()
                     .select_related('experience').get(pk=analysis.pk))
         if not valid_analysis(analysis):
