@@ -3,6 +3,7 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 from .review_dashboard_v47 import review_dashboard
 from .company_experiences_admin_v103 import company_experiences, company_experience_detail
+from .claude_six_admin_v233 import claude_six_detail
 from .pilot_review_queue_v48 import pilot_review_queue
 from .checkpoint_admin_queue_v225 import checkpoint_review_queue
 from .quick_company_review_v226 import quick_company_review
@@ -52,6 +53,9 @@ class CompanyAdmin(admin.ModelAdmin):
             path('<path:object_id>/checkpoint/release/',
                  self.admin_site.admin_view(self.checkpoint_release_view),
                  name='companies_company_checkpoint_release'),
+            path('<path:object_id>/experiences/<int:experience_id>/claude/',
+                 self.admin_site.admin_view(self.claude_six_detail_view),
+                 name='companies_company_experience_claude'),
             path('<path:object_id>/experiences/<int:experience_id>/',
                  self.admin_site.admin_view(self.experience_detail_view),
                  name='companies_company_experience_detail'),
@@ -91,6 +95,9 @@ class CompanyAdmin(admin.ModelAdmin):
 
     def experiences_view(self, request, object_id):
         return company_experiences(self, request, object_id)
+
+    def claude_six_detail_view(self, request, object_id, experience_id):
+        return claude_six_detail(self, request, object_id, experience_id)
 
     def experience_detail_view(self, request, object_id, experience_id):
         return company_experience_detail(self, request, object_id, experience_id)
