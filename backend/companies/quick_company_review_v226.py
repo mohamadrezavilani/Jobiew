@@ -12,13 +12,14 @@ from django import forms
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import HttpResponse, Http404
+from django.http import HttpResponseNotAllowed
+
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import reverse
-from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_http_methods
+
+
+
 
 from .models import Company, CompanyVerificationEvent
 
@@ -68,10 +69,9 @@ def _snapshot(company):
             ensure_ascii=False, separators=(',', ':')).encode()).hexdigest()
 
 
-@never_cache
-@ensure_csrf_cookie
-@require_http_methods(['GET', 'POST'])
 def quick_company_review(admin_view, request, object_id):
+    if request.method not in ('GET', 'POST'):
+        return HttpResponseNotAllowed(['GET', 'POST'])
     company = get_object_or_404(Company, pk=object_id)
     if not admin_view.has_view_permission(request, company):
         raise PermissionDenied
@@ -79,7 +79,7 @@ def quick_company_review(admin_view, request, object_id):
         raise PermissionDenied('Company verification permission required')
     snapshot = _snapshot(company)
     initial = {'evidence_url': _safe_suggested_link(company.source_url)}
-    form = QuickVerificationForm(request.POST or None, initial=initial)
+    form = QuickVerificationForm(request.POST if request.method == 'POST' else None, initial=initial)
     if request.method == 'POST' and form.is_valid():
         if request.POST.get('snapshot') != snapshot:
             return HttpResponse('COMPANY_VERIFICATION_STALE_RELOAD', status=409)
@@ -110,6 +110,7 @@ def quick_company_review(admin_view, request, object_id):
         **admin_view.admin_site.each_context(request),
         'title': 'تأیید سریع شرکت: ' + company.display_name,
         'company': company, 'form': form, 'snapshot': snapshot,
+        'suggested_url': initial['evidence_url'],
         'release_url': reverse('admin:companies_company_checkpoint_release', args=[company.pk]),
         'opts': admin_view.model._meta,
         'has_view_permission': True,

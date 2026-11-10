@@ -12,8 +12,8 @@
 </section>
 <section class="module" style="padding:16px;border-radius:10px;margin:16px 0">
 <h2>۲. مدرک را بررسی کن</h2>
-{% if company.source_url %}
-<p><a href="{{ company.source_url }}" rel="noopener noreferrer" target="_blank">باز کردن صفحهٔ منبع مربوط به شرکت</a></p>
+{% if suggested_url %}
+<p><a href="{{ suggested_url }}" rel="noopener noreferrer" target="_blank">باز کردن صفحهٔ منبع مربوط به شرکت</a></p>
 {% endif %}
 <p>آدرس منبع فقط به عنوان پیشنهاد پر شده است. اگر آن صفحه برای اثبات هویت یا فعالیت فناوری کافی نیست، مدرک دقیق‌تری وارد کن یا آن گزینه را تأیید نکن.</p>
 <form method="post" action="">{% csrf_token %}
