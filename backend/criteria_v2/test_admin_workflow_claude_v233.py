@@ -121,34 +121,43 @@ class TaskFirstAdminV233Tests(TestCase):
         self.assertNotContains(page, 'مقایسهٔ پنج شاخص')
         self.assertFalse(CriteriaClaudeComparison.objects.exists())
 
-    def test_claude_paid_request_requires_rights_and_two_confirmations(self):
+    @patch('companies.claude_six_v233.call_claude')
+    def test_claude_needs_only_paid_confirmation_not_publication_rights(self, paid):
+        """A valid private 6+6 analysis can be independently reviewed without a publication-rights event."""
+        dims = {
+            axis.key: {
+                'score': 7 if i == 0 else None,
+                'confidence': 90 if i == 0 else 0,
+                'evidence': QUOTE if i == 0 else '',
+                'explanation': 'شاهد در متن وجود دارد و این ارزیابی مستقل است.'
+            } for i, axis in enumerate(axes_for('work'))
+        }
+        paid.return_value = {
+            'stop_reason': 'end_turn',
+            'content': [{'type': 'text', 'text': json.dumps({
+                'detected_kind': 'work', 'kind_confidence': 94,
+                'dimensions': dims}, ensure_ascii=False)}],
+            'usage': {'input_tokens': 111, 'output_tokens': 222},
+        }
         self.get(self.claude)
-        with patch('companies.claude_six_v233.call_claude') as paid:
-            out = self.post(self.claude, {'confirm_paid': 'yes',
-                                          'confirm_external_rights': 'yes',
-                                          'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value})
-        self.assertEqual(out.status_code, 302)
-        self.assertFalse(CriteriaClaudeComparison.objects.exists())
-        paid.assert_not_called()
-        ExperienceReviewEvent.objects.create(
-            experience=self.exp, review_field='copyright', decision='approved',
-            evidence_url='https://example.invalid/licence',
-            rationale='این مدرک برای ارزیابی مستقل و مجاز بودن پردازش بررسی شد.',
-            reviewer=self.staff)
-        with patch('companies.claude_six_v233.call_claude') as paid:
-            missing = self.post(self.claude, {'confirm_paid': 'yes',
+        with patch('companies.claude_six_v233.call_claude') as not_called:
+            missing = self.post(self.claude, {
                 'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value})
         self.assertEqual(missing.status_code, 302)
-        paid.assert_not_called()
-        self.assertFalse(CriteriaClaudeComparison.objects.exists())
+        not_called.assert_not_called()
+        self.assertFalse(ExperienceReviewEvent.objects.exists())
+        result = self.post(self.claude, {
+            'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value,
+            'confirm_paid': 'yes'})
+        self.assertEqual(result.status_code, 302)
+        paid.assert_called_once()
+        saved = CriteriaClaudeComparison.objects.get()
+        self.assertEqual(saved.status, 'completed')
+        self.assertEqual(saved.input_tokens, 111)
+        self.assertFalse(ExperienceReviewEvent.objects.exists())
 
     @patch('companies.claude_six_v233.call_claude')
     def test_one_explicit_run_is_saved_and_rendered_but_does_not_publish(self, paid):
-        ExperienceReviewEvent.objects.create(
-            experience=self.exp, review_field='copyright', decision='approved',
-            evidence_url='https://example.invalid/licence',
-            rationale='مدرک معتبر برای استفادهٔ مستقل بررسی انسانی شد.',
-            reviewer=self.staff)
         dims = {
             a.key: {
                 'score': 7 if i == 0 else None,
@@ -193,23 +202,18 @@ class TaskFirstAdminV233Tests(TestCase):
 
     @patch('companies.claude_six_v233.call_claude')
     def test_disabled_default_or_bad_origin_does_not_incur_paid_call(self, paid):
-        ExperienceReviewEvent.objects.create(
-            experience=self.exp, review_field='copyright', decision='approved',
-            evidence_url='https://example.invalid/licence',
-            rationale='مدرک ارسال پردازش متن برای استفادهٔ مستقل بررسی شد.',
-            reviewer=self.staff)
         self.get(self.claude)
         disabled = {**FLAGS, 'JOBIEW_CLAUDE_SIX_ENABLED': '0'}
         with patch.dict('os.environ', disabled):
             result = self.client.post(self.claude, {
-                'confirm_paid': 'yes', 'confirm_external_rights': 'yes',
+                'confirm_paid': 'yes',
                 'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value},
                 secure=True, HTTP_HOST='jobiew.ir',
                 HTTP_REFERER='https://jobiew.ir' + self.claude)
         self.assertEqual(result.status_code, 302)
         self.assertFalse(CriteriaClaudeComparison.objects.exists())
         origin = self.client.post(self.claude, {
-            'confirm_paid': 'yes', 'confirm_external_rights': 'yes',
+            'confirm_paid': 'yes',
             'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value},
             secure=True, HTTP_HOST='jobiew.ir', HTTP_ORIGIN='https://evil.invalid')
         self.assertEqual(origin.status_code, 403)
@@ -238,11 +242,6 @@ class TaskFirstAdminV233Tests(TestCase):
     @patch('companies.claude_six_v233.call_claude')
     def test_claude_needs_review_exposes_outcome_without_fabricating_scores(self, paid):
         """A paid mismatch must remain visible with zero published or accepted axes."""
-        ExperienceReviewEvent.objects.create(
-            experience=self.exp, review_field='copyright', decision='approved',
-            evidence_url='https://example.invalid/external-processing-right',
-            rationale='حق پردازش مستقل روایت توسط بازبین بررسی و مستند شد.',
-            reviewer=self.staff)
         paid.return_value = {
             'stop_reason': 'end_turn',
             'content': [{'type': 'text', 'text': json.dumps({
