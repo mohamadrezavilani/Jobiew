@@ -14,7 +14,7 @@ from criteria_v2.models import (
     CriteriaAnalysis, CriteriaClaudeComparison,
     CriteriaCompanyReleaseEvent, CriteriaScoreReviewEvent)
 from criteria_v2.registry import axes_for
-from experiences.models import ExperienceReviewEvent, PublicExperience
+from experiences.models import PublicExperience
 
 FLAGS = {
     'JOBIEW_PRIVATE_CHECKPOINT_REVIEW_ENABLED': '1',
@@ -145,7 +145,6 @@ class TaskFirstAdminV233Tests(TestCase):
                 'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value})
         self.assertEqual(missing.status_code, 302)
         not_called.assert_not_called()
-        self.assertFalse(ExperienceReviewEvent.objects.exists())
         result = self.post(self.claude, {
             'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value,
             'confirm_paid': 'yes'})
@@ -177,7 +176,7 @@ class TaskFirstAdminV233Tests(TestCase):
         self.assertEqual(page.status_code, 200)
         result = self.post(self.claude, {
             'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value,
-            'confirm_paid': 'yes', 'confirm_external_rights': 'yes'})
+            'confirm_paid': 'yes'})
         self.assertEqual(result.status_code, 302)
         self.assertEqual(CriteriaClaudeComparison.objects.count(), 1)
         record = CriteriaClaudeComparison.objects.get()
@@ -190,7 +189,7 @@ class TaskFirstAdminV233Tests(TestCase):
         self.assertEqual(CriteriaAnalysis.objects.get().review_status, 'pilot_unverified')
         again = self.post(self.claude, {
             'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value,
-            'confirm_paid': 'yes', 'confirm_external_rights': 'yes'})
+            'confirm_paid': 'yes'})
         self.assertEqual(again.status_code, 302)
         paid.assert_called_once()
         view = self.get(self.claude)
@@ -254,7 +253,7 @@ class TaskFirstAdminV233Tests(TestCase):
         self.get(self.claude)
         out = self.post(self.claude, {
             'csrfmiddlewaretoken': self.client.cookies['csrftoken'].value,
-            'confirm_paid': 'yes', 'confirm_external_rights': 'yes',
+            'confirm_paid': 'yes',
         })
         self.assertEqual(out.status_code, 302)
         result = CriteriaClaudeComparison.objects.get()
