@@ -14,7 +14,9 @@ from .checkpoint_qav218 import AXES, STATES, CheckpointError, strict_json, parse
 
 MAX_ZIP_SIZE = 120 * 1024 * 1024
 MAX_UNCOMPRESSED = 240 * 1024 * 1024
-MAX_FILES = 500
+# The v65 cumulative checkpoint carries 779 small, individually hashed history
+# and annotation members. Keep a finite bound while accepting that format.
+MAX_FILES = 1000
 HEX_SHA = re.compile(r'[a-f0-9]{64}\Z')
 REVIEWED_STATES = {'assistant_reviewed_draft', 'assistant_reviewed_all_null'}
 
@@ -88,7 +90,10 @@ def validate_cumulative(checkpoint_path, *, expected_checkpoint_sha256,
             and checkpoint.get('no_independent_human_gold') is True,
             'PUBLICATION_OR_RIGHTS_FLAGS_NOT_UNVERIFIED')
     require(quality.get('validation') == 'PASS'
-            and quality.get('validation_scope') == 'structural_schema_and_verbatim_evidence_only'
+            and quality.get('validation_scope') in {
+                'structural_schema_and_verbatim_evidence_only',
+                'custom_independent_structural_schema_and_verbatim_evidence',
+            }
             and quality.get('semantic_claims_fact_checked') is False
             and quality.get('publication_enabled') is False,
             'INVALID_QUALITY_AUDIT_SCOPE')
