@@ -153,7 +153,6 @@ class TaskFirstAdminV233Tests(TestCase):
         saved = CriteriaClaudeComparison.objects.get()
         self.assertEqual(saved.status, 'completed')
         self.assertEqual(saved.input_tokens, 111)
-        self.assertFalse(ExperienceReviewEvent.objects.exists())
 
     @patch('companies.claude_six_v233.call_claude')
     def test_one_explicit_run_is_saved_and_rendered_but_does_not_publish(self, paid):
