@@ -106,7 +106,7 @@ sudo systemd-run --unit="jobiew-checkpoint-v65-dry-$(date +%s)" --wait --pipe --
 - `duplicate_source_skipped_in_scan=8`
 - `checkpoint_numeric=19480`
 - `checkpoint_abstentions=15674`
-- `source_db_identity_and_evidence=PREFLIGHT_PASS` (در گزارش‌های فرمان دسته‌ای، نبود این فیلد به‌تنهایی خطا نیست؛ خطاهای preflight باید با exit code غیرصفر متوقف شوند)
+- فرمان با exit code صفر و `mode=DRY_RUN_READ_ONLY` برگردد؛ در حالت `--all-batches` هر mismatch پیش از هر نوشتن باعث توقف با exit code غیرصفر می‌شود.
 - `publication=DISABLED`
 
 اگر خطای source mismatch، quote mismatch، archive validation یا guard دریافت شد، **هیچ apply نکنید** و متن/هش را برای عبور از کنترل تغییر ندهید. تعداد `would_insert` و `previously_staged` به وضعیت واقعی DB وابسته است.
@@ -133,4 +133,4 @@ sudo systemd-run --unit="jobiew-checkpoint-v65-verify-$(date +%s)" --wait --pipe
   /opt/jobiew/.venv/bin/python manage.py shell -c "from django.db.models import Count; from criteria_v2.models import CriteriaAnalysis, CriteriaAxisScore; q=CriteriaAnalysis.objects.filter(raw_payload__engine='jobiew_gpt6_private_checkpoint_v218'); print({'analyses':q.count(),'axis_rows':CriteriaAxisScore.objects.filter(analysis__in=q).count(),'bad_axis_count':q.annotate(n=Count('axis_scores')).exclude(n=6).count(),'numeric_axes':CriteriaAxisScore.objects.filter(analysis__in=q,score__isnull=False).count(),'null_axes':CriteriaAxisScore.objects.filter(analysis__in=q,score__isnull=True).count(),'pilot_unverified':q.filter(review_status='pilot_unverified').count(),'publication_disabled':q.filter(raw_payload__publication='DISABLED').count()})"
 ```
 
-برای ۵٬۸۵۱ تحلیل مستقل تازه، در صورت نبود مورد قبلی از همین engine، انتظار می‌رود ۵٬۸۵۱ تحلیل، ۳۵٬۱۰۶ محور، ۱۹٬۴۸۰ محور عددی و ۱۵٬۶۲۶ محور null ثبت شوند. تعداد واقعی باید با `inserted`، `previously_staged` و وضعیت قبل از اجرا تطبیق داده شود. هیچ تحلیل یا محور به‌طور خودکار approved نمی‌شود؛ تمام محورها `unreviewed` و تمام تحلیل‌ها `pilot_unverified` می‌مانند. پرچم‌های انتشار تغییر نمی‌کنند.
+برای ۵٬۸۵۱ تحلیل مستقل تازه، در صورت نبود مورد قبلی از همین engine، انتظار می‌رود ۵٬۸۵۱ تحلیل، ۳۵٬۱۰۶ محور، ۱۹٬۴۷۵ محور عددی و ۱۵٬۶۳۱ محور null ثبت شوند. تعداد واقعی باید با `inserted`، `previously_staged` و وضعیت قبل از اجرا تطبیق داده شود. هیچ تحلیل یا محور به‌طور خودکار approved نمی‌شود؛ تمام محورها `unreviewed` و تمام تحلیل‌ها `pilot_unverified` می‌مانند. پرچم‌های انتشار تغییر نمی‌کنند.
