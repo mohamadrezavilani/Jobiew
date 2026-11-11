@@ -1,7 +1,7 @@
 """Opt-in independent Claude check for the current six-axis GPT-6 framework.
 
-No calls on GET, no batch calls or retries, explicit authorisation/rights
-attestation on every paid POST. Never changes reviewed GPT-6 scores.
+No calls on GET, no batch calls or retries, explicit paid/external-processing
+confirmation on every POST. Never changes reviewed GPT-6 scores.
 """
 import os
 import re
@@ -61,18 +61,6 @@ def _comparison_rows(analysis, record):
     return result
 
 
-def _rights_for_external_processing(exp):
-    """The source must be reviewed, not merely carry a claimed approval flag."""
-    from experiences.models import ExperienceReviewEvent
-    latest = (ExperienceReviewEvent.objects.filter(
-        experience=exp, review_field='copyright')
-        .order_by('-created_at', '-pk').first())
-    return bool(
-        exp.copyright_review == 'approved' and
-        latest and latest.decision == 'approved' and latest.evidence_url
-    )
-
-
 def claude_six_review(admin_view, request, object_id, experience_id):
     if request.method not in ('GET', 'POST'):
         return HttpResponseNotAllowed(['GET', 'POST'])
@@ -96,7 +84,6 @@ def claude_six_review(admin_view, request, object_id, experience_id):
     can_run = request.user.has_perm('criteria_v2.add_criteriaclaudecomparison')
     enabled, limit, model = _available()
     used = CriteriaClaudeComparison.objects.count()
-    source_rights = _rights_for_external_processing(exp)
     url = reverse('admin:companies_company_experience_claude',
                   args=[company.pk, exp.pk])
     back = reverse('admin:companies_company_experience_detail',
@@ -107,12 +94,8 @@ def claude_six_review(admin_view, request, object_id, experience_id):
         if existing:
             messages.info(request, 'نتیجهٔ قبلی Claude ثبت شده است؛ اجرای مجدد خودکار انجام نمی‌شود.')
             return redirect(url)
-        if (request.POST.get('confirm_paid') != 'yes' or
-                request.POST.get('confirm_external_rights') != 'yes'):
-            messages.error(request, 'اجازهٔ ارسال به سرویس بیرونی و هزینهٔ احتمالی باید صریحاً تأیید شود.')
-            return redirect(url)
-        if not source_rights:
-            messages.error(request, 'مدرک حق استفاده از منبع برای این تجربه ثبت نشده است؛ ارسال بیرونی مجاز نیست.')
+        if request.POST.get('confirm_paid') != 'yes':
+            messages.error(request, 'ارسال متن به Anthropic و هزینهٔ احتمالی باید صریحاً تأیید شود.')
             return redirect(url)
         if not valid or not enabled or used >= limit:
             messages.error(request, 'اجرای Claude غیرفعال یا سهمیه تمام است، یا شواهد شش‌معیاری معتبر نیست.')
@@ -183,7 +166,7 @@ def claude_six_review(admin_view, request, object_id, experience_id):
         'valid_analysis': valid, 'existing': existing,
         'current': current,
         'rows': _comparison_rows(analysis, existing) if current and valid else [],
-        'enabled': enabled, 'can_run': can_run, 'rights_ready': source_rights,
+        'enabled': enabled, 'can_run': can_run,
         'model': model, 'limit': limit, 'used': used,
         'back_url': back, 'review_url': url,
     }
