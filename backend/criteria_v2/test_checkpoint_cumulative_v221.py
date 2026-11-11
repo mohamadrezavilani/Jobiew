@@ -15,7 +15,7 @@ def encode(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True).encode('utf8')
 
 
-def synthetic():
+def synthetic(*, quality_scope='structural_schema_and_verbatim_evidence_only'):
     story = 'یک روایت ساختگی صرفاً برای تست اعتبارسنجی فرمت و نقل قول.'
     digest = sha256(story.encode('utf8')).hexdigest()
     ledger = [
@@ -55,7 +55,7 @@ def synthetic():
         'exact_duplicate_stories': 0,
     }
     quality = {
-        'validation': 'PASS', 'validation_scope': 'structural_schema_and_verbatim_evidence_only',
+        'validation': 'PASS', 'validation_scope': quality_scope,
         'semantic_claims_fact_checked': False, 'publication_enabled': False,
         'reviewed_record_count': 1, 'numeric_axis_count': 1, 'abstained_axis_count': 5,
         'by_kind': {'work': {'reviewed': 1}, 'interview': {'reviewed': 0}},
@@ -102,6 +102,22 @@ class CumulativeCheckpointPureTests(unittest.TestCase):
         self.assertEqual(summary['abstentions'], 5)
         self.assertEqual(summary['publication'], 'DISABLED')
         self.assertFalse(summary['source_archive_verified_here'])
+
+    def test_accepts_v65_scope_and_779_member_archive(self):
+        other = synthetic(
+            quality_scope='custom_independent_structural_schema_and_verbatim_evidence')
+        # The final v65 handoff contains 779 members; archive scripts stay inert.
+        for i in range(773):
+            other[f'history/manual_notes_{i:04d}.py'] = b'# inert, hashed checkpoint history\\n'
+        rows, ledger, summary = self.run_loader(other)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(len(ledger), 2)
+        self.assertEqual(summary['unexecuted_archive_members_checked'], 778)
+
+    def test_rejects_unknown_quality_audit_scope(self):
+        other = synthetic(quality_scope='semantic_truth_and_rights_verified')
+        with self.assertRaises(CheckpointError):
+            self.run_loader(other)
 
     def test_requires_both_independently_pinned_sha256(self):
         with self.assertRaises(CheckpointError):
